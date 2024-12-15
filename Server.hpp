@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/15 20:29:26 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/15 22:54:58 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
  * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
  * - [ ] Implement error_page member
  * - [ ] If cannot listen on default port 80 try 8080
+ * - [ ] Instead of checking everywhere for the trailing ';' and if it's starts with proper directrive do it somewhere else
 */
 
 class Server
@@ -41,9 +42,8 @@ class Server
 		std::string					host;
 		unsigned short				port;
 		std::vector<std::string>	server_name;
-		// bool						is_default;
 		// std::map<int, std::string>	error_page;
-		// size_t						client_max_body_size;
+		size_t						client_max_body_size;
 		// location
 
 	public:
@@ -51,14 +51,17 @@ class Server
 		Server();
 		~Server();
 
+
 		void						parse_listen(std::string directive);
 		void						set_server_name(std::string directive);
+		void						set_client_max_body_size(std::string directive);
 		std::string					get_host( void ) const;
 		unsigned short				get_port( void ) const;
 		std::vector<std::string>	get_server_name( void ) const;
 
 
 };
-std::ostream&	operator<<(std::ostream& os, const Server& serv);
+std::ostream&	operator<<(std::ostream& os, const Server & serv);
+std::string		extract_parameters(const std::string & name, const std::string & directive);
 
 #endif

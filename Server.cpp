@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/15 20:49:33 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/15 22:55:04 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,9 @@
 Server::Server() :
 	host("0.0.0.0"),
 	port(80),
-	server_name(1)
-	// is_default(true), // should be true if this is the first server in the conf
+	server_name(1),
 	// error_page(NULL),
-	// client_max_body_size(1'000'000)
+	client_max_body_size(1 << 20)
 {
 }
 
@@ -30,40 +29,65 @@ Server::~Server()
 {
 }
 
+std::string		extract_parameters(const std::string & name, const std::string & directive)
+{
+	std::string	arg;
+
+	if (directive.find(name) == 0)
+	{
+		arg = directive.substr(directive.find(' ') + 1);
+		arg = arg.substr(0, arg.size() - 1);
+		return arg;
+	}
+	return "";
+}
+
 void			Server::parse_listen(std::string directive)
 {
-	std::string		argument;
+	std::string		arg;
 
-	if (directive.rfind("listen ") != 0 || directive.back() != ';')
-		std::cerr << "Invalid listen directive" << std::endl;
-	argument = directive.substr(directive.find(' ') + 1);
-	argument = argument.substr(0, argument.size() - 1);
-	const size_t	colon_pos = argument.rfind(':');
+	arg = extract_parameters("listen", directive);
+	const size_t	colon_pos = arg.rfind(':');
 	if (colon_pos != std::string::npos &&
-		(argument.find(']') < colon_pos ||
-		argument.find(']') == std::string::npos))
+		(arg.find(']') < colon_pos ||
+		arg.find(']') == std::string::npos))
 	{
-		host = argument.substr(0, colon_pos);
-		port = std::stoi(argument.substr(colon_pos + 1));
+		host = arg.substr(0, colon_pos);
+		port = std::stoi(arg.substr(colon_pos + 1));
 	}
-	else if (argument.find_first_not_of("0123456789") == std::string::npos)
-		port = std::stoi(argument);
+	else if (arg.find_first_not_of("0123456789") == std::string::npos)
+		port = std::stoi(arg);
 	else
-		host = argument;
+		host = arg;
 }
 
 void			Server::set_server_name(std::string directive)
 {
-	std::string			argument;
+	std::string			arg;
 
-	if (directive.rfind("server_name ") != 0 || directive.back() != ';')
-		std::cerr << "Invalid server_name directive" << std::endl;
-	argument = directive.substr(directive.find(' ') + 1);
-	argument = argument.substr(0, argument.size() - 1);
+	arg = extract_parameters("server_name", directive);
 	server_name.pop_back();
-	std::istringstream	iss(argument);
+	std::istringstream	iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
         server_name.push_back(std::move(token));
+}
+
+void			Server::set_client_max_body_size(std::string directive)
+{
+	std::string	arg;
+
+	arg = extract_parameters("client_max_body_size", directive);
+	if (arg.find_first_not_of("0123456789") <= arg.size() - 2)
+	{
+		if (std::tolower(arg.back()) == 'k')
+			client_max_body_size = std::stoi(arg) << 10;
+		else if (std::tolower(arg.back()) == 'm')
+			client_max_body_size = std::stoi(arg) << 20;
+		else if (std::isdigit(arg.back()))
+			client_max_body_size = std::stoi(arg);
+	}
+	else
+		std::cerr << "Invalid input" << std::endl;
 }
 
 std::string		Server::get_host( void ) const
