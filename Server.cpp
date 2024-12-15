@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/15 22:55:04 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/15 23:11:08 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,12 +77,12 @@ void			Server::set_client_max_body_size(std::string directive)
 	std::string	arg;
 
 	arg = extract_parameters("client_max_body_size", directive);
-	if (arg.find_first_not_of("0123456789") <= arg.size() - 2)
+	if (arg.substr(0, arg.size() - 2).find_first_not_of("0123456789") == std::string::npos)
 	{
 		if (std::tolower(arg.back()) == 'k')
-			client_max_body_size = std::stoi(arg) << 10;
+			client_max_body_size = (std::stoi(arg) << 10);
 		else if (std::tolower(arg.back()) == 'm')
-			client_max_body_size = std::stoi(arg) << 20;
+			client_max_body_size = (std::stoi(arg) << 20);
 		else if (std::isdigit(arg.back()))
 			client_max_body_size = std::stoi(arg);
 	}
@@ -103,6 +103,11 @@ unsigned short	Server::get_port( void ) const
 std::vector<std::string>	Server::get_server_name( void ) const
 {
 	return server_name;
+}
+
+size_t						Server::get_client_max_body_size( void ) const
+{
+	return client_max_body_size;
 }
 
 std::ostream&	operator<<(std::ostream& os, const Server& serv)
