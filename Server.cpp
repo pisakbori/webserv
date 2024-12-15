@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/15 19:58:20 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/15 20:49:33 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 Server::Server() :
 	host("0.0.0.0"),
 	port(80),
-	server_name(new std::string())
+	server_name(1)
 	// is_default(true), // should be true if this is the first server in the conf
 	// error_page(NULL),
 	// client_max_body_size(1'000'000)
@@ -28,10 +28,9 @@ Server::Server() :
 
 Server::~Server()
 {
-	delete server_name;
 }
 
-void	Server::parse_listen(std::string directive)
+void			Server::parse_listen(std::string directive)
 {
 	std::string		argument;
 
@@ -53,6 +52,20 @@ void	Server::parse_listen(std::string directive)
 		host = argument;
 }
 
+void			Server::set_server_name(std::string directive)
+{
+	std::string			argument;
+
+	if (directive.rfind("server_name ") != 0 || directive.back() != ';')
+		std::cerr << "Invalid server_name directive" << std::endl;
+	argument = directive.substr(directive.find(' ') + 1);
+	argument = argument.substr(0, argument.size() - 1);
+	server_name.pop_back();
+	std::istringstream	iss(argument);
+	for (std::string token; std::getline(iss, token, ' ');)
+        server_name.push_back(std::move(token));
+}
+
 std::string		Server::get_host( void ) const
 {
 	return host;
@@ -61,6 +74,11 @@ std::string		Server::get_host( void ) const
 unsigned short	Server::get_port( void ) const
 {
 	return port;
+}
+
+std::vector<std::string>	Server::get_server_name( void ) const
+{
+	return server_name;
 }
 
 std::ostream&	operator<<(std::ostream& os, const Server& serv)

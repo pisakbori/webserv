@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/15 18:26:30 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/15 20:29:26 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,11 @@
 
 // # include <map>
 # include <string>
+# include <vector>
 # include <iostream>
 # include <arpa/inet.h>
 # include <sys/socket.h>
+# include <sstream>
 
 /*
  * Server class stores information regarding server directive in the .conf
@@ -38,7 +40,7 @@ class Server
 
 		std::string					host;
 		unsigned short				port;
-		std::string					*server_name;
+		std::vector<std::string>	server_name;
 		// bool						is_default;
 		// std::map<int, std::string>	error_page;
 		// size_t						client_max_body_size;
@@ -49,9 +51,11 @@ class Server
 		Server();
 		~Server();
 
-		void			parse_listen(std::string directive);
-		std::string		get_host( void ) const;
-		unsigned short	get_port( void ) const;
+		void						parse_listen(std::string directive);
+		void						set_server_name(std::string directive);
+		std::string					get_host( void ) const;
+		unsigned short				get_port( void ) const;
+		std::vector<std::string>	get_server_name( void ) const;
 
 
 };
