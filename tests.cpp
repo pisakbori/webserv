@@ -104,9 +104,50 @@ void	test_set_client_max_body_size(void)
 		if (!size_match) {
 			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 			if (!size_match) {
-				std::cerr << "  Expected host: " << outputs[i] 
+				std::cerr << "  Expected size: " << outputs[i] 
 							<< ", but got: " << serv.get_client_max_body_size() << "\n";
 			}
+		}
+	}
+}
+
+void	test_set_error_page(void)
+{
+	std::string inputs[] = {
+		"error_page 404             /404.html;",
+		"error_page 500 502 503 504 /50x.html;",
+		"error_page 404 =200 /empty.gif;",
+		"error_page 404 = /404.php;",
+		"error_page 403      http://example.com/forbidden.html;",
+		"error_page 404 =301 http://example.com/notfound.html;"
+	};
+	std::vector<int> just_403;
+	just_403.push_back(403);
+	std::vector<int> just_404;
+	just_404.push_back(404);
+	std::vector<int> multiple_codes;
+	multiple_codes.push_back(500);
+	multiple_codes.push_back(502);
+	multiple_codes.push_back(503);
+	multiple_codes.push_back(504);
+	err_page_t outputs[] = {
+		{just_404, 200, "/404.html"},
+		{multiple_codes, 200, "/50x.html"},
+		{just_404, 200, "/empty.gif"},
+		{just_404, 0, "/404.php"},
+		{just_403, 200, "http://example.com/forbidden.html"},
+		{just_404, 301, "http://example.com/notfound.html"}
+	};
+	size_t test_count = sizeof(inputs) / sizeof(inputs[0]);
+	for (size_t i = 0; i < test_count; ++i)
+	{
+		Server serv;
+		serv.set_error_page(inputs[i]);
+		bool codes = serv.get_error_page().code == outputs[i].code;
+		bool overwrites = serv.get_error_page().overwrite == outputs[i].overwrite;
+		bool uris = serv.get_error_page().uri == outputs[i].uri;
+		if (!codes || !overwrites || !uris) {
+			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 		}
 	}
 }
