@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:45:09 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/16 22:58:26 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,10 @@ Server::Server(Server const & src) :
 {
 }
 
+Server::~Server()
+{
+}
+
 Server &	Server::operator=(Server const & rhs)
 {
 	if (this != &rhs)
@@ -41,10 +45,6 @@ Server &	Server::operator=(Server const & rhs)
 		this->client_max_body_size = rhs.client_max_body_size;
 	}
 	return *this;
-}
-
-Server::~Server()
-{
 }
 
 std::string		extract_parameters(const std::string & name, const std::string & directive)
