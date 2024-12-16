@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/15 23:11:08 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/16 17:43:08 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ Server::Server() :
 	host("0.0.0.0"),
 	port(80),
 	server_name(1),
-	// error_page(NULL),
+	error_page(),
 	client_max_body_size(1 << 20)
 {
 }
@@ -72,6 +72,31 @@ void			Server::set_server_name(std::string directive)
         server_name.push_back(std::move(token));
 }
 
+void			Server::set_error_page(std::string directive)
+{
+	std::string	arg;
+
+	arg = extract_parameters("error_page", directive);
+	std::istringstream	iss(arg);
+	for (std::string token; std::getline(iss, token, ' ');)
+	{
+		if (token == "=")
+			error_page.overwrite = 0;
+		else if (token.size() == 3 && std::isdigit(token[0]) &&
+			std::isdigit(token[1]) && std::isdigit(token[2]))
+		{
+			error_page.code.push_back(std::stoi(token));
+			error_page.overwrite = 200;
+		}
+		else if (token.size() == 4 && token.front() == '=' &&
+			std::isdigit(token[1]) && std::isdigit(token[2]) &&
+			std::isdigit(token[3]))
+			error_page.overwrite = std::stoi(token.substr(1));
+		else
+			error_page.uri = token;
+	}
+}
+
 void			Server::set_client_max_body_size(std::string directive)
 {
 	std::string	arg;
@@ -103,6 +128,11 @@ unsigned short	Server::get_port( void ) const
 std::vector<std::string>	Server::get_server_name( void ) const
 {
 	return server_name;
+}
+
+err_page_t					Server::get_error_page( void ) const
+{
+	return error_page;
 }
 
 size_t						Server::get_client_max_body_size( void ) const
