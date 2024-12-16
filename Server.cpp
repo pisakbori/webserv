@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 17:43:08 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/16 22:28:16 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,10 +138,4 @@ err_page_t					Server::get_error_page( void ) const
 size_t						Server::get_client_max_body_size( void ) const
 {
 	return client_max_body_size;
-}
-
-std::ostream&	operator<<(std::ostream& os, const Server& serv)
-{
-	os << serv.get_host() << ":" << serv.get_port();
-	return os;
 }

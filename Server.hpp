@@ -6,14 +6,13 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 17:30:11 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/16 22:28:08 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-// # include <map>
 # include <string>
 # include <vector>
 # include <iostream>
@@ -27,12 +26,8 @@
  * https://nginx.org/en/docs/http/ngx_http_core_module.html
  * #TODO
  * - [ ] (?) Inherit from the http directive
- * - [ ] Implement location member: vvv
- * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
- * - [ ] Implement error_page member
- * - [ ] If cannot listen on default port 80 try 8080
- * - [ ] Check if port is in proper range before assignment
- * - [x] Instead of checking everywhere for the trailing ';' and if it's starts with proper directrive do it somewhere else
+ * - [ ] Refactor for orthodox form
+ * - [ ] Check if port, host, error_code is in proper before assignment
 */
 
 typedef struct err_page_s
@@ -52,13 +47,12 @@ class Server
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
 		size_t						client_max_body_size;
-		// location
+		class 						Location;
 
 	public:
 
 		Server();
 		~Server();
-
 
 		void						parse_listen(std::string directive);
 		void						set_server_name(std::string directive);
@@ -72,7 +66,6 @@ class Server
 
 
 };
-std::ostream&	operator<<(std::ostream& os, const Server & serv);
 std::string		extract_parameters(const std::string & name, const std::string & directive);
 
 #endif
