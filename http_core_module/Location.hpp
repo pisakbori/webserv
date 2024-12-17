@@ -6,22 +6,26 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:31:20 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:51:19 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 18:58:50 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
 
-# include "Server.hpp"
+# include <vector>
+# include <string>
+# include <iostream>
+# include <sstream>
 
 /*
  * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
  * #TODO
+ * - [ ] uri 
  * - [ ] Implement all CGI stuff...
 */
 
-class Server::Location
+class Location
 {
 
 	private:
@@ -52,5 +56,7 @@ class Server::Location
 
 
 };
+std::string		extract_parameters(const std::string & name, const std::string & directive);
+
 
 #endif

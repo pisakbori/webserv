@@ -6,13 +6,13 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:36:50 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:56:24 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 18:49:01 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-Server::Location::Location() :
+Location::Location() :
 	allow(),
 	redirect(),
 	root("html"),
@@ -25,7 +25,7 @@ Server::Location::Location() :
 	index.push_back("index.html");
 }
 
-Server::Location::Location(Location const & src) :
+Location::Location(Location const & src) :
 	allow(src.allow),
 	redirect(src.redirect),
 	root(src.root),
@@ -34,11 +34,11 @@ Server::Location::Location(Location const & src) :
 {
 }
 
-Server::Location::~Location()
+Location::~Location()
 {
 }
 
-Server::Location &	Server::Location::operator=(Location const & rhs)
+Location &	Location::operator=(Location const & rhs)
 {
 	if (this != &rhs)
 	{

@@ -6,28 +6,27 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:49:11 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:50:00 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 21:19:32 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-void	Server::Location::set_allow(std::string directive)
+void	Location::set_allow(std::string directive)
 {
 	std::string	arg;
 
 	arg = extract_parameters("allow", directive);
 	std::istringstream	iss(arg);
+	allow.clear();
 	for (std::string token; std::getline(iss, token, ' ');)
 	{
-		std::vector<std::string>::iterator	position;
-		position = std::find(allow.begin(), allow.end(), token);
-		if (position != allow.end())
-			allow.erase(position);
+		if (token == "HEAD" || token == "GET" || token == "POST")
+			allow.push_back(token);
 	}
 }
 
-void	Server::Location::set_redirect(std::string directive)
+void	Location::set_redirect(std::string directive)
 {
 	std::string	arg;
 
@@ -51,7 +50,7 @@ void	Server::Location::set_redirect(std::string directive)
 	}
 }
 
-void	Server::Location::set_root(std::string directive)
+void	Location::set_root(std::string directive)
 {
 	std::string	arg;
 
@@ -59,7 +58,7 @@ void	Server::Location::set_root(std::string directive)
 	root = arg;
 }
 
-void	Server::Location::set_autoindex(std::string directive)
+void	Location::set_autoindex(std::string directive)
 {
 	std::string	arg;
 
@@ -70,7 +69,7 @@ void	Server::Location::set_autoindex(std::string directive)
 		autoindex = false;
 }
 
-void	Server::Location::set_index(std::string directive)
+void	Location::set_index(std::string directive)
 {
 	std::string			arg;
 
