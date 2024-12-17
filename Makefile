@@ -3,13 +3,16 @@ COMPILER	=		c++
 FLAGS		=		-Wall -Wextra -Werror
 STANDARD	=		--std=c++98
 HTTP_DIR	=		http_core_module
+TEST_DIR	=		tests
 SOURCES     =       main.cpp \
 					$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/ServerSet.cpp \
 					$(HTTP_DIR)/ServerGet.cpp \
 					$(HTTP_DIR)/Location.cpp \
 					$(HTTP_DIR)/LocationSet.cpp \
-					$(HTTP_DIR)/LocationGet.cpp
+					$(HTTP_DIR)/LocationGet.cpp \
+					$(TEST_DIR)/server.cpp \
+					$(TEST_DIR)/location.cpp
 OBJECTS		=		$(SOURCES:.cpp=.o)
 
 all:	$(NAME)

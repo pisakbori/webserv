@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:37:36 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:45:28 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 21:07:30 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,4 +35,9 @@ err_page_t					Server::get_error_page(void) const
 size_t						Server::get_client_max_body_size(void) const
 {
 	return client_max_body_size;
+}
+
+Location &					Server::get_location(void)
+{
+	return location;
 }

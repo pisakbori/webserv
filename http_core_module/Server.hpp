@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:46:35 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 21:07:35 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 # include <arpa/inet.h>
 # include <sys/socket.h>
 # include <sstream>
+# include "Location.hpp"
 
 /*
  * Server class stores information regarding server directive in the .conf
@@ -29,7 +30,7 @@
  * - [ ] Check if port, host, error_code is in proper before assignment
 */
 
-typedef struct err_page_s
+typedef struct	err_page_s
 {
 	std::vector<int>	code;
 	int					overwrite;
@@ -46,7 +47,7 @@ class Server
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
 		size_t						client_max_body_size;
-		class 						Location;
+		Location					location;
 
 	public:
 
@@ -64,6 +65,7 @@ class Server
 		std::vector<std::string>	get_server_name(void) const;
 		err_page_t					get_error_page(void) const;
 		size_t						get_client_max_body_size(void) const;
+		Location &					get_location(void);
 
 
 };
