@@ -6,11 +6,16 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:49:11 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 21:19:32 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 22:03:56 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
+
+void	Location::set_uri(std::string uri)
+{
+	this->uri = uri;
+}
 
 void	Location::set_allow(std::string directive)
 {

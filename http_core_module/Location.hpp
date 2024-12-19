@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:31:20 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 18:58:50 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/17 22:04:24 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 /*
  * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
  * #TODO
- * - [ ] uri 
+ * - [x] uri 
  * - [ ] Implement all CGI stuff...
 */
 
@@ -30,6 +30,7 @@ class Location
 
 	private:
 		
+		std::string					uri;
 		std::vector<std::string>	allow;
 		std::pair<int, std::string>	redirect;
 		std::string					root;
@@ -43,11 +44,13 @@ class Location
 		~Location();
 		Location &	operator=(Location const & rhs);
 		
+		void						set_uri(std::string uri);
 		void						set_allow(std::string directive);
 		void						set_redirect(std::string directive);
 		void						set_root(std::string directive);
 		void						set_autoindex(std::string directive);
 		void						set_index(std::string directive);
+		std::string					get_uri(void) const;
 		std::vector<std::string>	get_allow(void) const;
 		std::pair<int, std::string>	get_redirect(void) const;
 		std::string					get_root(void) const;
