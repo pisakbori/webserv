@@ -6,22 +6,55 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:49:11 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 22:03:56 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 17:48:47 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-void	Location::set_uri(std::string uri)
+void			Location::populate_location(std::ifstream & infile)
 {
-	this->uri = uri;
+	std::string		directives[] =
+	{
+		"allow",
+		"redirect",
+		"root",
+		"autoindex",
+		"index"
+	};
+	void	(Location::*fnptr[])( std::string ) =
+	{
+		&Location::set_allow,
+		&Location::set_redirect,
+		&Location::set_root,
+		&Location::set_autoindex,
+		&Location::set_index
+	};
+	std::string		line;
+	while (std::getline(infile, line))
+		this->set_location(directives, fnptr, line);
 }
 
-void	Location::set_allow(std::string directive)
+void			Location::set_location(std::string *directives, void (Location::*fnptr[])( std::string ), std::string directive)
 {
-	std::string	arg;
+	int	i;
+	int	N = 5;
 
-	arg = extract_parameters("allow", directive);
+	i = 0;
+	while (i < N && directive.find(directives[i]) == std::string::npos)
+		i++;
+	std::string arg = extract_parameters(directives[i], directive);
+	if (i != N)
+		(this->*fnptr[i])(arg);
+}
+
+void	Location::set_uri(std::string uri)
+{
+	this->uri = extract_parameters("location", uri);
+}
+
+void	Location::set_allow(std::string arg)
+{
 	std::istringstream	iss(arg);
 	allow.clear();
 	for (std::string token; std::getline(iss, token, ' ');)
@@ -31,11 +64,8 @@ void	Location::set_allow(std::string directive)
 	}
 }
 
-void	Location::set_redirect(std::string directive)
+void	Location::set_redirect(std::string arg)
 {
-	std::string	arg;
-
-	arg = extract_parameters("redirect", directive);
 	std::istringstream	iss(arg);
 	std::string	token;
 	if (std::getline(iss, token, ' '))
@@ -55,30 +85,21 @@ void	Location::set_redirect(std::string directive)
 	}
 }
 
-void	Location::set_root(std::string directive)
+void	Location::set_root(std::string arg)
 {
-	std::string	arg;
-
-	arg = extract_parameters("root", directive);
 	root = arg;
 }
 
-void	Location::set_autoindex(std::string directive)
+void	Location::set_autoindex(std::string arg)
 {
-	std::string	arg;
-
-	arg = extract_parameters("autoindex", directive);
 	if (arg == "on")
 		autoindex = true;
 	else if (arg == "off")
 		autoindex = false;
 }
 
-void	Location::set_index(std::string directive)
+void	Location::set_index(std::string arg)
 {
-	std::string			arg;
-
-	arg = extract_parameters("index", directive);
 	index.pop_back();
 	std::istringstream	iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)

@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:31:20 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 22:04:24 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 17:34:15 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,11 @@
 # include <string>
 # include <iostream>
 # include <sstream>
+# include <fstream>
 
 /*
  * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
  * #TODO
- * - [x] uri 
  * - [ ] Implement all CGI stuff...
 */
 
@@ -44,12 +44,14 @@ class Location
 		~Location();
 		Location &	operator=(Location const & rhs);
 		
+		void						populate_location(std::ifstream & infile);
+		void						set_location(std::string *directives, void (Location::*fnptr[])( std::string ), std::string directive);
 		void						set_uri(std::string uri);
-		void						set_allow(std::string directive);
-		void						set_redirect(std::string directive);
-		void						set_root(std::string directive);
-		void						set_autoindex(std::string directive);
-		void						set_index(std::string directive);
+		void						set_allow(std::string arg);
+		void						set_redirect(std::string arg);
+		void						set_root(std::string arg);
+		void						set_autoindex(std::string arg);
+		void						set_index(std::string arg);
 		std::string					get_uri(void) const;
 		std::vector<std::string>	get_allow(void) const;
 		std::pair<int, std::string>	get_redirect(void) const;
@@ -59,6 +61,7 @@ class Location
 
 
 };
+std::ostream &	operator<<(std::ostream & os, const Location & location);
 std::string		extract_parameters(const std::string & name, const std::string & directive);
 
 
