@@ -36,43 +36,60 @@ Validate &Validate::operator=(const Validate &other)
 }
 
 // Member functions
-void Validate::url(std::string str)
+std::string Validate::url(std::string str)
 {
+	std::stringstream msg;
 	size_t i = 0;
 
 	std::string invalid = " ()#<>{}|\\^~[]`";
 	while (i < str.length())
 	{
 		if (invalid.find(str[i]) != std::string::npos)
-			throw HttpError("Bad Request: Invalid character in url", 400);
+		{
+			msg << "Bad Request: Invalid character in url at position "<< i << " " << static_cast<int>(str[i]); 
+			throw HttpError(msg.str(), 400);
+		}
 		i++;
 	}
+	return str;
 }
 
-void Validate::sanitize(std::string str)
+std::string Validate::sanitize(std::string &str)
 {
-	size_t i = 0;
+    std::stringstream msg;
 
+	if (!str.empty() && str.back() == '\r')
+		str.pop_back();
+	size_t i = 0;
 	while (i < str.length())
 	{
 		if ((i < str.length() - 1) && (str[i] == '\r' && str[i + 1] == '\n'))
 			i++;
 		else if ((str[i] <= 31 && str[i] >= 0) || str[i] == 127)
-			throw HttpError("Bad Request: Control character found", 400);
+		{
+			msg << "Bad Request: Control character found at position "<< i << " "<< static_cast<int>(str[i]); 
+			throw HttpError(msg.str(), 400);
+		}
 		i++;
 	}
+	return str;
 }
 
-void Validate::headerName(std::string str)
+std::string Validate::headerName(std::string str)
 {
 	size_t i = 0;
 
 	while (i < str.length())
 	{
 		if (!(isalnum(str[i]) || str[i] == '-' || str[i] == '_'))
+		{
+			std::cout<<">" <<str<<"<"<<std::endl;
+
 			throw HttpError("Bad Request: Invalid character in header name", 400);
+		}
 		i++;
 	}
+	return str;
 }
 
 // Getters

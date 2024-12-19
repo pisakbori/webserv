@@ -54,6 +54,7 @@
 #include "Validate.hpp"
 #include "HttpError.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 
 #include <iostream>
 #include <string>
@@ -86,9 +87,16 @@ int main(int argc, char **argv)
 		readFile("test-requests/GET.txt");
 		// readFile("test-requests/valid_nl.txt");
 	}
-	catch (std::exception &e)
+	catch (HttpError &e)
 	{
+			// }
+	// catch (std::exception &e)
+	// {
+	// 	throw HttpError("Bad Request: Invalid method", 400);
+	// }
 		std::clog << "Error: " << e.what() << std::endl;
+		Response res = Response();
+		std::clog << e.code() <<": " << res.statuses.find(e.code())->second <<std::endl;
 	}
 	return 0;
 }

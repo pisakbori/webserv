@@ -1,8 +1,10 @@
 #ifndef Validate_HPP
 #define Validate_HPP
 
-#include <string>
 #include "HttpError.hpp"
+#include <string>
+#include <sstream>
+#include <iostream>
 
 class Validate
 {
@@ -23,9 +25,9 @@ public:
 	Validate &operator=(const Validate &);
 
 	// Member functions
-	static void url(std::string str);
-	static void sanitize(std::string str);
-	static void headerName(std::string str);
+	static std::string url(std::string str);
+	static std::string sanitize(std::string &str);
+	static std::string headerName(std::string str);
 	// Getters
 
 	// Setters

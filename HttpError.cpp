@@ -23,12 +23,12 @@ HttpError::HttpError(HttpError const &ex) { *this = ex; };
 HttpError &HttpError::operator=(const HttpError &ex)
 {
 	_message = ex.getMessage();
-	_code = ex.getCode();
+	_code = ex.code();
 	return *this;
 };
 
 std::string const &HttpError::getMessage() const { return _message; };
-int const &HttpError::getCode() const { return _code; };
+int HttpError::code() const { return _code; };
 
 const char *HttpError::what() const noexcept
 {

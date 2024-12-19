@@ -27,7 +27,7 @@ public:
 	HttpError(HttpError const &ex);
 	HttpError &operator=(const HttpError &ex);
 	std::string const &getMessage() const;
-	int const &getCode() const;
+	int code() const;
 	virtual ~HttpError() noexcept override;
 	const char *what(void) const noexcept override;
 };
