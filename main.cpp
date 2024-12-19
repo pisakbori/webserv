@@ -34,5 +34,6 @@ int	main(int argc, char *argv[])
 		return 1;
 	parse_config(argv[1]);
 
+	test_parse_request_header();
 	return 0;
 }
