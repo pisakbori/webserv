@@ -20,20 +20,11 @@ void	parse_config(std::string file_name)
 
 int	main(int argc, char *argv[])
 {
-	// test_parse_listen();
-	// test_set_server_name();
-	// test_set_client_max_body_size();
-	// test_set_error_page();
-
-	// test_allow();
-	// test_redirect();
-	// test_root();
-	// test_autoindex();
-	// test_index();
 	if (argc != 2)
 		return 1;
 	parse_config(argv[1]);
 
 	test_parse_request_header();
+	test_server_parsing();
 	return 0;
 }

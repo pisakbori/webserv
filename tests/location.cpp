@@ -3,9 +3,9 @@
 void	test_allow(void)
 {
 	std::string	inputs[] = {
-		"allow HEAD GET POST;",
-		"allow POST;",
-		"allow ;"
+		"HEAD GET POST",
+		"POST",
+		""
 	};
 	std::vector<std::string> outputs[3];
 	outputs[0].push_back("HEAD");
@@ -16,9 +16,9 @@ void	test_allow(void)
 	for (size_t i = 0; i < test_count; ++i)
 	{
 		Server serv;
-		serv.get_location().set_allow(inputs[i]);
-		std::vector<std::string>path(serv.get_location().get_allow());
-		bool test = serv.get_location().get_allow() == outputs[i];
+		serv.location.set_allow(inputs[i]);
+		std::vector<std::string>path(serv.location.get_allow());
+		bool test = serv.location.get_allow() == outputs[i];
 		if (!test) {
 			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 			for (std::vector<std::string>::const_iterator i = path.begin(); i != path.end(); ++i)
@@ -31,9 +31,9 @@ void	test_allow(void)
 void	test_redirect(void)
 {
 	std::string	inputs[] = {
-		"redirect 301 some_url;",
-		"redirect some_url;",
-		"redirect 502;",
+		"301 some_url",
+		"some_url",
+		"502",
 	};
 	std::pair<int, std::string> outputs[3];
 	outputs[0].first = 301;
@@ -46,8 +46,8 @@ void	test_redirect(void)
 	for (size_t i = 0; i < test_count; ++i)
 	{
 		Server serv;
-		serv.get_location().set_redirect(inputs[i]);
-		bool test = serv.get_location().get_redirect() == outputs[i];
+		serv.location.set_redirect(inputs[i]);
+		bool test = serv.location.get_redirect() == outputs[i];
 		if (!test) {
 			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 		}
@@ -57,8 +57,8 @@ void	test_redirect(void)
 void	test_root(void)
 {
 	std::string	inputs[] = {
-		"root some_url;",
-		"root /data/w3;"
+		"some_url",
+		"/data/w3"
 	};
 	std::string	outputs[] = {
 		"some_url",
@@ -68,8 +68,8 @@ void	test_root(void)
 	for (size_t i = 0; i < test_count; ++i)
 	{
 		Server serv;
-		serv.get_location().set_root(inputs[i]);
-		bool test = serv.get_location().get_root() == outputs[i];
+		serv.location.set_root(inputs[i]);
+		bool test = serv.location.get_root() == outputs[i];
 		if (!test) {
 			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 		}
@@ -79,8 +79,8 @@ void	test_root(void)
 void	test_autoindex(void)
 {
 	std::string	inputs[] = {
-		"autoindex on;",
-		"autoindex off;"
+		"on",
+		"off"
 	};
 	bool	outputs[] = {
 		true,
@@ -90,8 +90,8 @@ void	test_autoindex(void)
 	for (size_t i = 0; i < test_count; ++i)
 	{
 		Server serv;
-		serv.get_location().set_autoindex(inputs[i]);
-		bool test = serv.get_location().get_autoindex() == outputs[i];
+		serv.location.set_autoindex(inputs[i]);
+		bool test = serv.location.get_autoindex() == outputs[i];
 		if (!test) {
 			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 		}
@@ -101,9 +101,9 @@ void	test_autoindex(void)
 void	test_index(void)
 {
 	std::string	inputs[] = {
-		"index index.$geo.html index.html;",
-		"index index.html index.htm index.php;",
-		"index index.html;"
+		"index.$geo.html index.html",
+		"index.html index.htm index.php",
+		"index.html"
 	};
 	std::vector<std::string> outputs[3];
 	outputs[0].push_back("index.$geo.html");
@@ -116,8 +116,8 @@ void	test_index(void)
 	for (size_t i = 0; i < test_count; ++i)
 	{
 		Server serv;
-		serv.get_location().set_index(inputs[i]);
-		bool test = serv.get_location().get_index() == outputs[i];
+		serv.location.set_index(inputs[i]);
+		bool test = serv.location.get_index() == outputs[i];
 		if (!test) {
 			std::cerr << "Test " << i + 1 << " failed for input: \"" << inputs[i] << "\"\n";
 		}

@@ -3,13 +3,13 @@
 void	test_parse_listen(void)
 {
 	std::string inputs[] = {
-		"listen 127.0.0.1:8000;",
-		"listen 127.0.0.1;",
-		"listen 8000;",
-		"listen *:8000;",
-		"listen localhost:8000;",
-		"listen [::]:8000;",
-		"listen [::1];"
+		"127.0.0.1:8000",
+		"127.0.0.1",
+		"8000",
+		"*:8000",
+		"localhost:8000",
+		"[::]:8000",
+		"[::1]"
 	};
 
 	unsigned short expected_ports[] = {
@@ -57,10 +57,10 @@ void	test_parse_listen(void)
 void	test_set_server_name(void)
 {
 	std::string inputs[] = {
-		"server_name example.com www.example.com;",
-		"server_name example.com *.example.com www.example.*;",
-		"server_name .example.com;",
-		"server_name _;"
+		"example.com www.example.com",
+		"example.com *.example.com www.example.*",
+		".example.com",
+		"_"
 	};
 	std::vector<std::string> expected_names[4];
 	expected_names[0].push_back("example.com");
@@ -85,12 +85,12 @@ void	test_set_server_name(void)
 void	test_set_error_page(void)
 {
 	std::string inputs[] = {
-		"error_page 404             /404.html;",
-		"error_page 500 502 503 504 /50x.html;",
-		"error_page 404 =200 /empty.gif;",
-		"error_page 404 = /404.php;",
-		"error_page 403      http://example.com/forbidden.html;",
-		"error_page 404 =301 http://example.com/notfound.html;"
+		"404             /404.html",
+		"500 502 503 504 /50x.html",
+		"404 =200 /empty.gif",
+		"404 = /404.php",
+		"403      http://example.com/forbidden.html",
+		"404 =301 http://example.com/notfound.html"
 	};
 	std::vector<int> just_403;
 	just_403.push_back(403);
@@ -126,9 +126,9 @@ void	test_set_error_page(void)
 void	test_set_client_max_body_size(void)
 {
 	std::string inputs[] = {
-		"client_max_body_size 2m;",
-		"client_max_body_size 1024;",
-		"client_max_body_size 14k;",
+		"2m",
+		"1024",
+		"14k",
 	};
 	size_t		outputs[] = {
 		2 << 20,
@@ -149,4 +149,18 @@ void	test_set_client_max_body_size(void)
 			}
 		}
 	}
+}
+
+void	test_server_parsing(void)
+{
+	test_parse_listen();
+	test_set_server_name();
+	test_set_client_max_body_size();
+	test_set_error_page();
+
+	test_allow();
+	test_redirect();
+	test_root();
+	test_autoindex();
+	test_index();
 }
