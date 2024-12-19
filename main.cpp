@@ -47,12 +47,13 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 19:36:32 by bpisak-l          #+#    #+#             */
-/*   Updated: 2024/12/16 19:55:06 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2024/12/18 22:15:47 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Validate.hpp"
 #include "HttpError.hpp"
+#include "Request.hpp"
 
 #include <iostream>
 #include <string>
@@ -68,10 +69,9 @@ int readFile(std::string filename)
 		std::cerr << "Error: Could not open the file: " << filename << std::endl;
 		return 1;
 	}
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	std::string str = buffer.str();
-	Validate::sanitize(str);
+	// buffer << file.rdbuf();
+	// std::string str = buffer.str();
+	Request req = Request(file);
 	file.close();
 	return 0;
 }
@@ -82,7 +82,8 @@ int main(int argc, char **argv)
 	(void)argv;
 	try
 	{
-		readFile("test-requests/control_characters.txt");
+		// readFile("test-requests/control_characters.txt");
+		readFile("test-requests/GET.txt");
 		// readFile("test-requests/valid_nl.txt");
 	}
 	catch (std::exception &e)

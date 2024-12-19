@@ -1,4 +1,4 @@
-SRCS = main.cpp Validate.cpp HttpError.cpp
+SRCS = main.cpp Validate.cpp HttpError.cpp Request.cpp
 NAME = webserv
 CC = clang++
 CFLAGS = -Wall -Wextra -Werror
