@@ -6,17 +6,49 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:38:59 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/16 22:39:26 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 15:24:31 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-void			Server::parse_listen(std::string directive)
+void			Server::populate_server(std::ifstream & infile)
 {
-	std::string		arg;
+	std::string		directives[] =
+	{
+		"listen",
+		"server_name",
+		"error_page",
+		"client_max_body_size"
+	};
+	void	(Server::*fnptr[])( std::string ) =
+	{
+		&Server::parse_listen,
+		&Server::set_server_name,
+		&Server::set_error_page,
+		&Server::set_client_max_body_size
+	};
+	std::string		line;
 
-	arg = extract_parameters("listen", directive);
+	while (std::getline(infile, line))
+		this->set_server(directives, fnptr, line);
+}
+
+void			Server::set_server(std::string *directives, void (Server::*fnptr[])( std::string ), std::string directive)
+{
+	size_t			i;
+	const size_t	N = 4;
+
+	i = 0;
+	while (i < N && directive.find(directives[i]) == std::string::npos)
+		i++;
+	std::string arg = extract_parameters(directives[i], directive);
+	if (i != N)
+		(this->*fnptr[i])(arg);
+}
+
+void			Server::parse_listen(std::string arg)
+{
 	const size_t	colon_pos = arg.rfind(':');
 	if (colon_pos != std::string::npos &&
 		(arg.find(']') < colon_pos ||
@@ -31,22 +63,16 @@ void			Server::parse_listen(std::string directive)
 		host = arg;
 }
 
-void			Server::set_server_name(std::string directive)
+void			Server::set_server_name(std::string arg)
 {
-	std::string			arg;
-
-	arg = extract_parameters("server_name", directive);
 	server_name.pop_back();
 	std::istringstream	iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
         server_name.push_back(std::move(token));
 }
 
-void			Server::set_error_page(std::string directive)
+void			Server::set_error_page(std::string arg)
 {
-	std::string	arg;
-
-	arg = extract_parameters("error_page", directive);
 	std::istringstream	iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 	{
@@ -67,11 +93,8 @@ void			Server::set_error_page(std::string directive)
 	}
 }
 
-void			Server::set_client_max_body_size(std::string directive)
+void			Server::set_client_max_body_size(std::string arg)
 {
-	std::string	arg;
-
-	arg = extract_parameters("client_max_body_size", directive);
 	if (arg.substr(0, arg.size() - 2).find_first_not_of("0123456789") == std::string::npos)
 	{
 		if (std::tolower(arg.back()) == 'k')

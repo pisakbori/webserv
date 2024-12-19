@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 21:13:06 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 15:29:50 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ Server::~Server()
 {
 }
 
-Server &	Server::operator=(Server const & rhs)
+Server &		Server::operator=(Server const & rhs)
 {
 	if (this != &rhs)
 	{
@@ -47,15 +47,37 @@ Server &	Server::operator=(Server const & rhs)
 	return *this;
 }
 
+std::ostream&	operator<<(std::ostream& os, const Server& server)
+{
+	os << "host: " << server.get_host() << std::endl;
+	os << "port: " << server.get_port() << std::endl;
+	os << "server_name: ";
+	std::vector<std::string> v(server.get_server_name());
+	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
+		os << *i << ' ';
+	os << std::endl;
+	os << "error_page: " << std::endl;
+	std::vector<int> vint(server.get_error_page().code);
+	os << "  code(s): ";
+	for (size_t i = 0; i < vint.size(); ++i)
+  		os << vint[i] << ' ';
+	os << std::endl;
+	os << "  overwrite: " << server.get_error_page().overwrite << std::endl;
+	os << "  uri: " << server.get_error_page().uri << std::endl;
+	os << "client_max_body_size: " << server.get_client_max_body_size();
+	// os << "location: " << server.get_location() << std::endl;
+	return os;
+}
+
 std::string		extract_parameters(const std::string & name, const std::string & directive)
 {
 	std::string	arg;
-
-	if (directive.find(name) == 0 && directive.find(' ') != std::string::npos)
-	{
+	(void)name;
+	// if (directive.find(name) != std::string::npos && directive.find(' ') != std::string::npos)
+	// {
 		arg = directive.substr(directive.find(' ') + 1);
 		arg = arg.substr(0, arg.size() - 1);
 		return arg;
-	}
-	return "";
+	// }
+	// return "";
 }

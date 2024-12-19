@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 21:07:35 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 15:32:01 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <string>
 # include <vector>
 # include <iostream>
+# include <fstream>
 # include <arpa/inet.h>
 # include <sys/socket.h>
 # include <sstream>
@@ -26,8 +27,8 @@
  * It's inspired by nginx directives: 
  * https://nginx.org/en/docs/http/ngx_http_core_module.html
  * #TODO
- * - [ ] (?) Inherit from the http directive
  * - [ ] Check if port, host, error_code is in proper before assignment
+ * - [ ] Server can have multiple locations
 */
 
 typedef struct	err_page_s
@@ -56,10 +57,12 @@ class Server
 		~Server();
 		Server &	operator=(Server const & rhs);
 
-		void						parse_listen(std::string directive);
-		void						set_server_name(std::string directive);
-		void						set_error_page(std::string directive);
-		void						set_client_max_body_size(std::string directive);
+		void						populate_server(std::ifstream & infile);
+		void						set_server(std::string *directives, void (Server::*fnptr[])( std::string ), std::string directive);
+		void						parse_listen(std::string arg);
+		void						set_server_name(std::string arg);
+		void						set_error_page(std::string arg);
+		void						set_client_max_body_size(std::string arg);
 		std::string					get_host(void) const;
 		unsigned short				get_port(void) const;
 		std::vector<std::string>	get_server_name(void) const;
@@ -69,6 +72,7 @@ class Server
 
 
 };
+std::ostream&	operator<<(std::ostream& os, const Server& server);
 std::string		extract_parameters(const std::string & name, const std::string & directive);
 
 #endif
