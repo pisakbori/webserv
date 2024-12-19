@@ -1,12 +1,7 @@
 #include "tests.hpp"
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
 
 Request* parseRequest(std::string filename)
 {
-	std::cout << filename << std::endl;
 	std::ifstream file(filename);
 	if (!file.is_open())
 	{

@@ -4,8 +4,6 @@
 #include <cassert>
 #include <iostream>
 #include "../http_core_module/Server.hpp"
-#include "../response_request/Validate.hpp"
-#include "../response_request/HttpError.hpp"
 #include "../response_request/Request.hpp"
 #include "../response_request/Response.hpp"
 

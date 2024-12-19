@@ -1,14 +1,9 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
-#include <string>
-#include <map>
-#include <fstream>
-#include <iostream>
-#include <algorithm>
-
 #include "HttpError.hpp"
 #include "Validate.hpp"
+#include "CommonIncludes.hpp"
 
 class Request
 {

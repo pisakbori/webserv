@@ -1,7 +1,5 @@
 #include "Validate.hpp"
 
-#include <iostream>
-
 // Constructor
 Validate::Validate()
 {
