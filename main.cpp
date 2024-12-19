@@ -1,7 +1,7 @@
 #include "http_core_module/Server.hpp"
 #include "tests/tests.hpp"
 
-int	main( void )
+int main(void)
 {
 	test_parse_listen();
 	test_set_server_name();
@@ -14,5 +14,6 @@ int	main( void )
 	test_autoindex();
 	test_index();
 
+	test_parse_request_header();
 	return 0;
 }
