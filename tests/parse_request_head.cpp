@@ -18,9 +18,9 @@ void valid_request()
 	assert(req->getMethod() == "GET");
 	assert(req->getUri() == "/index.html?user=123");
 	assert(req->getProtocol() == "HTTP/1.1");
-	assert(req->getHeader().find("Host")->second == "example.com");
-	assert(req->getHeader().find("User-Agent")->second == "curl/7.68.0");
-	assert(req->getHeader().find("try")->second == "");
+	assert(req->getHeader().find("HOST")->second == "example.com");
+	assert(req->getHeader().find("USER-AGENT")->second == "curl/7.68.0");
+	assert(req->getHeader().find("TRY")->second == "");
 }
 
 void bad_request()

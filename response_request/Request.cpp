@@ -74,12 +74,13 @@ void Request::parseRequestLine(std::ifstream& stream)
 		auto end        = std::find_if(line.begin(), semi, [](unsigned char c)
 		                               { return (c == ' ' || c == '\t'); });
 		std::string key = Validate::headerName(std::string(line.begin(), end));
+		std::transform(key.begin(), key.end(), key.begin(),
+		               [](unsigned char c) { return std::toupper(c); });
 		auto start = std::find_if_not(semi + 1, line.end(), [](unsigned char c)
 		                              { return (c == ' ' || c == '\t'); });
 		end        = std::find_if(start, line.end(), [](unsigned char c)
 		                          { return (c == ' ' || c == '\t'); });
 		std::string value = std::string(start, end);
-
 		_header.insert(_header.begin(),
 		               std::pair<std::string, std::string>(key, value));
 	}
