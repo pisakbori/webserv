@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:36:50 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 22:02:19 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 17:49:04 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,4 +52,24 @@ Location &	Location::operator=(Location const & rhs)
 		this->index = rhs.index;
 	}
 	return *this;
+}
+
+std::ostream &	operator<<(std::ostream & os, const Location & location)
+{
+	os << "  uri: " << location.get_uri() << std::endl;
+	os << "  allow: ";
+	std::vector<std::string> v(location.get_allow());
+	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
+		os << *i << ' ';
+	os << std::endl;
+	os << "  redirect: ";
+	os << location.get_redirect().first << ' ';
+	os << location.get_redirect().second << std::endl;
+	os << "  root: " << location.get_root() << std::endl;
+	os << "  autoindex: " << std::boolalpha << location.get_autoindex() << std::endl;
+	os << "  index: ";
+	v = location.get_index();
+	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
+		os << *i << ' ';
+	return os;
 }
