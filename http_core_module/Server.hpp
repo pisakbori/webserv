@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 15:32:01 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2024/12/19 17:43:51 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,6 @@ class Server
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
 		size_t						client_max_body_size;
-		Location					location;
 
 	public:
 
@@ -68,11 +67,11 @@ class Server
 		std::vector<std::string>	get_server_name(void) const;
 		err_page_t					get_error_page(void) const;
 		size_t						get_client_max_body_size(void) const;
-		Location &					get_location(void);
+		Location					location;
 
 
 };
-std::ostream&	operator<<(std::ostream& os, const Server& server);
+std::ostream &	operator<<(std::ostream & os, const Server & server);
 std::string		extract_parameters(const std::string & name, const std::string & directive);
 
 #endif
