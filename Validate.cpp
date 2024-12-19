@@ -11,13 +11,14 @@ Validate::Validate()
 // Parameterized constructor
 // Validate::Validate()
 // {
-// 	std::cout << "\e[2mParameterized constructor Validate called\e[0m" << std::endl;
+// 	std::cout << "\e[2mParameterized constructor Validate called\e[0m" <<
+// std::endl;
 // }
 
 // Copy constructor
-Validate::Validate(const Validate &other)
+Validate::Validate(const Validate& other)
 {
-	(void)other;
+	(void) other;
 	std::cout << "\e[2mCopy constructor Validate called\e[0m" << std::endl;
 }
 
@@ -28,9 +29,9 @@ Validate::~Validate()
 }
 
 // Overloads
-Validate &Validate::operator=(const Validate &other)
+Validate& Validate::operator=(const Validate& other)
 {
-	(void)other;
+	(void) other;
 	std::cout << "\e[2mAssignation operator Validate called\e[0m" << std::endl;
 	return (*this);
 }
@@ -46,7 +47,8 @@ std::string Validate::url(std::string str)
 	{
 		if (invalid.find(str[i]) != std::string::npos)
 		{
-			msg << "Bad Request: Invalid character in url at position "<< i << " " << static_cast<int>(str[i]); 
+			msg << "Bad Request: Invalid character in url at position " << i
+			    << " " << static_cast<int>(str[i]);
 			throw HttpError(msg.str(), 400);
 		}
 		i++;
@@ -54,9 +56,9 @@ std::string Validate::url(std::string str)
 	return str;
 }
 
-std::string Validate::sanitize(std::string &str)
+std::string Validate::sanitize(std::string& str)
 {
-    std::stringstream msg;
+	std::stringstream msg;
 
 	if (!str.empty() && str.back() == '\r')
 		str.pop_back();
@@ -67,7 +69,8 @@ std::string Validate::sanitize(std::string &str)
 			i++;
 		else if ((str[i] <= 31 && str[i] >= 0) || str[i] == 127)
 		{
-			msg << "Bad Request: Control character found at position "<< i << " "<< static_cast<int>(str[i]); 
+			msg << "Bad Request: Control character found at position " << i
+			    << " " << static_cast<int>(str[i]);
 			throw HttpError(msg.str(), 400);
 		}
 		i++;
@@ -79,13 +82,15 @@ std::string Validate::headerName(std::string str)
 {
 	size_t i = 0;
 
+	if (!str.length())
+		throw HttpError("Bad Request: Empty header name", 400);
 	while (i < str.length())
 	{
 		if (!(isalnum(str[i]) || str[i] == '-' || str[i] == '_'))
 		{
-			std::cout<<">" <<str<<"<"<<std::endl;
-
-			throw HttpError("Bad Request: Invalid character in header name", 400);
+			std::cout << ">" << str << "<" << std::endl;
+			throw HttpError("Bad Request: Invalid character in header name",
+			                400);
 		}
 		i++;
 	}

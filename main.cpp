@@ -17,10 +17,9 @@
 // 	hints.ai_socktype = SOCK_STREAM;
 // 	hints.ai_flags = AI_PASSIVE;
 // 	getaddrinfo(NULL, port, &hints, &servinfo);
-// 	sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-// 	bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
-// 	listen(sockfd, 1);
-// 	addr_size = sizeof their_addr;
+// 	sockfd = socket(servinfo->ai_family, servinfo->ai_socktype,
+// servinfo->ai_protocol); 	bind(sockfd, servinfo->ai_addr,
+// servinfo->ai_addrlen); 	listen(sockfd, 1); 	addr_size = sizeof their_addr;
 //     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
 // 	send(new_fd, message, strlen(message), 0);
 // 	freeaddrinfo(servinfo);
@@ -67,36 +66,40 @@ int readFile(std::string filename)
 	std::ifstream file(filename);
 	if (!file.is_open())
 	{
-		std::cerr << "Error: Could not open the file: " << filename << std::endl;
+		std::cerr << "Error: Could not open the file: " << filename
+		          << std::endl;
 		return 1;
 	}
 	// buffer << file.rdbuf();
 	// std::string str = buffer.str();
 	Request req = Request(file);
+	std::cout << req;
+
 	file.close();
 	return 0;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-	(void)argc;
-	(void)argv;
+	(void) argc;
+	(void) argv;
 	try
 	{
 		// readFile("test-requests/control_characters.txt");
 		readFile("test-requests/GET.txt");
 		// readFile("test-requests/valid_nl.txt");
 	}
-	catch (HttpError &e)
+	catch (HttpError& e)
 	{
-			// }
-	// catch (std::exception &e)
-	// {
-	// 	throw HttpError("Bad Request: Invalid method", 400);
-	// }
+		// }
+		// catch (std::exception &e)
+		// {
+		// 	throw HttpError("Bad Request: Invalid method", 400);
+		// }
 		std::clog << "Error: " << e.what() << std::endl;
 		Response res = Response();
-		std::clog << e.code() <<": " << res.statuses.find(e.code())->second <<std::endl;
+		std::clog << e.code() << ": " << res.statuses.find(e.code())->second
+		          << std::endl;
 	}
 	return 0;
 }
