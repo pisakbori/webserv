@@ -1,0 +1,8 @@
+server {
+    listen 80;  # Port to listen on.
+    server_name example.com;  # Hostname or domain.
+    location / {
+        root /var/www/html;  # Directory to serve files from.
+        index index.html;  # Default file to serve.
+    }
+}
