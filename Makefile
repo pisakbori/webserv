@@ -18,6 +18,7 @@ SOURCES     =       main.cpp \
 					$(REQ_RES_DIR)/Request.cpp \
 					$(REQ_RES_DIR)/Response.cpp \
 					connection/Connection.cpp \
+					connection/RunningServer.cpp \
 					$(TEST_DIR)/server.cpp \
 					$(TEST_DIR)/location.cpp \
 					$(TEST_DIR)/parse_request_head.cpp \

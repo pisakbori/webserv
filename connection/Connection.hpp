@@ -1,23 +1,25 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
-#include "Server.hpp"
+#include "RunningServer.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
+#include <fcntl.h>
 
 class Connection
 {
 private:
-	Server _server;
+	RunningServer *_server;
 	Request _req;
 	Response _res;
-	// int _fd;
+	int _fd;
 
 public:
 	// Constructor
 	Connection();
 
 	// Parameterized constructor
+	Connection(RunningServer *rs);
 
 	// Copy constructor
 	Connection(const Connection &);
@@ -31,8 +33,10 @@ public:
 	// Member functions
 
 	// Getters
+	int getFd();
 
 	// Setters
+	void setFD(int fd);
 };
 
 #endif
