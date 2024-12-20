@@ -5,6 +5,7 @@ STANDARD	=		--std=c++17
 HTTP_DIR	=		http_core_module
 REQ_RES_DIR	=		response_request
 TEST_DIR	=		tests
+INCLUDE		=		-I./http_core_module -I./connection -I./response_request
 SOURCES     =       main.cpp \
 					$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/ServerSet.cpp \
@@ -16,15 +17,18 @@ SOURCES     =       main.cpp \
 					$(REQ_RES_DIR)/HttpError.cpp \
 					$(REQ_RES_DIR)/Request.cpp \
 					$(REQ_RES_DIR)/Response.cpp \
+					connection/Connection.cpp \
 					$(TEST_DIR)/server.cpp \
 					$(TEST_DIR)/location.cpp \
-					$(TEST_DIR)/parse_request_head.cpp
+					$(TEST_DIR)/parse_request_head.cpp \
+					$(TEST_DIR)/one_connection.cpp \
+					$(TEST_DIR)/client.cpp
 OBJECTS		=		$(SOURCES:.cpp=.o)
 
 all:	$(NAME)
 
 %.o: %.cpp
-	$(COMPILER) $(FLAGS) $(STANDARD) -o $@ -c $<
+	$(COMPILER) $(FLAGS) $(STANDARD) $(INCLUDE) -o $@ -c $<
 
 $(NAME): $(OBJECTS)
 	$(COMPILER) $(OBJECTS) -o $(NAME)

@@ -9,4 +9,7 @@
 #include <exception>
 #include <sstream>
 
+#define READ_BUFFER_SIZE 8192 // 8 KB buffer
+#define MAX_QUEUED 1000
+
 #endif
