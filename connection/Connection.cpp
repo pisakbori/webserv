@@ -1,11 +1,11 @@
 #include "Connection.hpp"
 
-#include <iostream>
-
 // Constructor
 Connection::Connection()
 {
 	std::cout << "\e[2mDefault constructor Connection called\e[0m" << std::endl;
+	_server = nullptr;
+	_fd = -1;
 }
 
 // Parameterized constructor
@@ -24,12 +24,13 @@ Connection::Connection(RunningServer *rs)
 	if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
+	std::cout << "fd is " << _fd << std::endl;
 }
 
 // Copy constructor
 Connection::Connection(const Connection &other)
 {
-	(void)other;
+	*this = other;
 	std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
 }
 
@@ -37,18 +38,42 @@ Connection::Connection(const Connection &other)
 Connection::~Connection()
 {
 	std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
-	close(_fd);
 }
 
 // Overloads
 Connection &Connection::operator=(const Connection &other)
 {
-	(void)other;
-	std::cout << "\e[2mAssignation operator Connection called\e[0m" << std::endl;
-	return (*this);
+	std::cout << "\e[2mAssign operator Connection called\e[0m" << std::endl;
+	if (this != &other)
+	{
+		_server = other._server;
+		_req = other._req;
+		_res = other._res;
+		_fd = other._fd;
+	}
+	return *this;
 }
 
 // Member functions
+void Connection::append(std::string const &str)
+{
+	_req.append(str);
+}
+
+void Connection::process()
+{
+	try
+	{
+		_req.parseRequest();
+		std::cout << _req;
+	}
+	catch (HttpError &e)
+	{
+		std::cerr << "Error" << '\n';
+		std::cerr << Response::statuses.at(e.code()) << '\n';
+		std::cerr << e.what() << '\n';
+	}
+}
 
 // Getters
 int Connection::getFd()

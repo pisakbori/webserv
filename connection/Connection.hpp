@@ -5,16 +5,17 @@
 #include "Response.hpp"
 #include "Request.hpp"
 #include <fcntl.h>
+#include <iostream>
 
 class Connection
 {
 private:
 	RunningServer *_server;
-	Request _req;
 	Response _res;
 	int _fd;
 
 public:
+	Request _req;
 	// Constructor
 	Connection();
 
@@ -31,6 +32,8 @@ public:
 	Connection &operator=(const Connection &);
 
 	// Member functions
+	void process();
+	void append(std::string const &str);
 
 	// Getters
 	int getFd();

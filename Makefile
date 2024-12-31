@@ -6,8 +6,7 @@ HTTP_DIR	=		http_core_module
 REQ_RES_DIR	=		response_request
 TEST_DIR	=		tests
 INCLUDE		=		-I./http_core_module -I./connection -I./response_request
-SOURCES     =       main.cpp \
-					$(HTTP_DIR)/Server.cpp \
+SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/ServerSet.cpp \
 					$(HTTP_DIR)/ServerGet.cpp \
 					$(HTTP_DIR)/Location.cpp \
@@ -31,8 +30,11 @@ all:	$(NAME)
 %.o: %.cpp
 	$(COMPILER) $(FLAGS) $(STANDARD) $(INCLUDE) -o $@ -c $<
 
-$(NAME): $(OBJECTS)
-	$(COMPILER) $(OBJECTS) -o $(NAME)
+$(NAME): $(OBJECTS) main.o
+	$(COMPILER) $(OBJECTS) main.o -o $(NAME)
+
+test: $(OBJECTS) test.o
+	$(COMPILER) $(OBJECTS) test.o -o test
 
 clean:
 	rm -rf $(OBJECTS)

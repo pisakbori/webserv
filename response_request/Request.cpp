@@ -7,18 +7,14 @@
 // Default constructor
 Request::Request()
 {
-}
-
-Request::Request(std::ifstream &stream)
-{
-	parseRequestLine(stream);
+	std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
 }
 
 // Copy constructor
 Request::Request(const Request &other)
 {
-	(void)other;
-	// std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
+	*this = other;
+	std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
 }
 
 // Destructor
@@ -30,10 +26,16 @@ Request::~Request()
 // Overloads
 Request &Request::operator=(const Request &other)
 {
-	(void)other;
-	// std::cout << "\e[2mAssignation operator Request called\e[0m" <<
-	// std::endl;
-	return (*this);
+	std::cout << "\e[2mAssign operator Request called\e[0m" << std::endl;
+	if (this != &other)
+	{
+		_stream << other._stream.str();
+		_header = other._header;
+		_method = other._method;
+		_protocol = other._protocol;
+		_uri = other._uri;
+	}
+	return *this;
 }
 
 std::ostream &operator<<(std::ostream &os, const Request &req)
@@ -50,11 +52,11 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 
 // Member functions
 
-void Request::parseRequestLine(std::ifstream &stream)
+void Request::parseRequest()
 {
 	std::string line;
 	// <Method> <Request-URI> <HTTP-Version>
-	std::getline(stream, line);
+	std::getline(_stream, line);
 	line = Validate::sanitize(line);
 	size_t separator1 = line.find(" ");
 	_method = line.substr(0, separator1);
@@ -62,9 +64,11 @@ void Request::parseRequestLine(std::ifstream &stream)
 	_uri =
 		Validate::url(line.substr(separator1 + 1, separator2 - separator1 - 1));
 	_protocol = line.substr(separator2 + 1, line.length() - separator2);
+	if (_protocol != "HTTP/1.1")
+		throw HttpError(_protocol + " protocol not supported", 505);
 
 	// field-name: OWS field-value OWS
-	while (std::getline(stream, line))
+	while (std::getline(_stream, line))
 	{
 		line = Validate::sanitize(line);
 		auto semi = std::find(line.begin(), line.end(), ':');
@@ -86,9 +90,15 @@ void Request::parseRequestLine(std::ifstream &stream)
 	}
 }
 
-// Getters
+void Request::append(std::string const &str)
+{
+	this->_stream << std::string(str);
+}
 
-std::string const &Request::getMethod() const
+// Getterss
+
+std::string const &
+Request::getMethod() const
 {
 	return _method;
 }

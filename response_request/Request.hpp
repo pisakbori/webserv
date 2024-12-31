@@ -12,11 +12,11 @@ private:
 	std::string _uri;
 	std::string _protocol;
 	std::map<std::string, std::string> _header;
+	std::stringstream _stream;
 
 public:
 	// Constructor
 	Request();
-	Request(std::ifstream &stream);
 
 	// Parameterized constructor
 
@@ -30,8 +30,9 @@ public:
 	Request &operator=(const Request &);
 
 	// Member functions
+	void append(std::string const &str);
+	void parseRequest();
 
-	void parseRequestLine(std::ifstream &stream);
 	// Getters
 	std::string const &getProtocol() const;
 	std::string const &getUri() const;

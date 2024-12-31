@@ -5,29 +5,32 @@
 
 class Response
 {
-	private:
-		
-	public:
-		const std::map<int, std::string> statuses;
+private:
+	std::string _method;
+	std::string _uri;
+	std::string _protocol;
+	std::map<std::string, std::string> _header;
+
+public:
+	static const std::map<int, std::string> statuses;
 	// Constructor
-		Response();
+	Response();
 	// Parameterized constructor
-		
+
 	// Copy constructor
-		Response(const Response &);
-		
+	Response(const Response &);
+
 	// Destructor
-		~Response();
-		
+	~Response();
+
 	// Overloads
-		Response	&operator=(const Response &);
-		
+	Response &operator=(const Response &);
+
 	// Member functions
-		
+
 	// Getters
-		
+
 	// Setters
-		
 };
 
 #endif

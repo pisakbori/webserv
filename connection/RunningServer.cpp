@@ -25,7 +25,7 @@ RunningServer::RunningServer(Server &serv)
 // Copy constructor
 RunningServer::RunningServer(const RunningServer &other)
 {
-	(void)other;
+	*this = other;
 	std::cout << "\e[2mCopy constructor RunningServer called\e[0m" << std::endl;
 }
 
@@ -39,9 +39,13 @@ RunningServer::~RunningServer()
 // Overloads
 RunningServer &RunningServer::operator=(const RunningServer &other)
 {
-	(void)other;
-	std::cout << "\e[2mAssignation operator RunningServer called\e[0m" << std::endl;
-	return (*this);
+	std::cout << "\e[2mAssign operator RunningServer called\e[0m" << std::endl;
+	if (this != &other)
+	{
+		_listenFd = other._listenFd;
+		_serverAddr = other._serverAddr;
+	}
+	return *this;
 }
 
 // Member functions
