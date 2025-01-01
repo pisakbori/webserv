@@ -9,7 +9,7 @@ Connection::Connection()
 }
 
 // Parameterized constructor
-Connection::Connection(RunningServer *rs)
+Connection::Connection(Server *rs)
 {
 	_server = rs;
 	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
@@ -18,6 +18,7 @@ Connection::Connection(RunningServer *rs)
 	_fd = accept(_server->getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
 	if (_fd < 0)
 		throw std::runtime_error("ERROR on accept");
+	// TODO::forbidden flag
 	int flags = fcntl(_fd, F_GETFL, 0);
 	if (flags == -1)
 		throw std::runtime_error("ERROR getting socket flags");

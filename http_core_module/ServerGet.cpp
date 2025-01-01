@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerGet.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:37:36 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:44:49 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/01 17:21:36 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,4 +35,9 @@ err_page_t					Server::get_error_page(void) const
 size_t						Server::get_client_max_body_size(void) const
 {
 	return client_max_body_size;
+}
+
+int Server::getListenFd()
+{
+	return _listenFd;
 }

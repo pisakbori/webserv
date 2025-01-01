@@ -1,7 +1,7 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
-#include "RunningServer.hpp"
+#include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 #include <fcntl.h>
@@ -10,7 +10,7 @@
 class Connection
 {
 private:
-	RunningServer *_server;
+	Server *_server;
 	Response _res;
 	int _fd;
 
@@ -20,7 +20,7 @@ public:
 	Connection();
 
 	// Parameterized constructor
-	Connection(RunningServer *rs);
+	Connection(Server *rs);
 
 	// Copy constructor
 	Connection(const Connection &);

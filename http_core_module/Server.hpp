@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:43:51 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/01 17:26:56 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 # include <sys/socket.h>
 # include <sstream>
 # include "Location.hpp"
+# include "CommonIncludes.hpp"
 
 /*
  * Server class stores information regarding server directive in the .conf
@@ -48,6 +49,8 @@ class Server
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
 		size_t						client_max_body_size;
+		struct 						sockaddr_in _serverAddr;
+		int 						_listenFd;
 
 	public:
 
@@ -68,7 +71,9 @@ class Server
 		err_page_t					get_error_page(void) const;
 		size_t						get_client_max_body_size(void) const;
 		Location					location;
-
+		void 						startListening(void);
+		void 						stopListening(void);
+		int							getListenFd();
 
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);

@@ -4,7 +4,6 @@
 #include <arpa/inet.h>
 
 #include "CommonIncludes.hpp"
-#include "RunningServer.hpp"
 #include <sys/event.h>
 #include <Kernel/sys/event.h>
 
@@ -18,9 +17,8 @@ void parse_config_1_connection_accept_1_req(void)
         if (line.find("server") == 0)
             serv.populate_server(infile);
     }
-    // RunningServer rs = RunningServer(serv);
-    RunningServer rs(serv);
 
+    serv.startListening();
     int
         kq,
         new_events;
@@ -30,11 +28,11 @@ void parse_config_1_connection_accept_1_req(void)
     kq = kqueue();
 
     // Create event 'filter', these are the events we want to monitor.
-    // Here we want to monitor: rs.getListenFd(), for the events: EVFILT_READ
+    // Here we want to monitor: serv.getListenFd(), for the events: EVFILT_READ
     // (when there is data to be read on the socket), and perform the following
     // actions on this kevent: EV_ADD and EV_ENABLE (add the event to the kqueue
     // and enable it).
-    EV_SET(change_event, rs.getListenFd(), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+    EV_SET(change_event, serv.getListenFd(), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
 
     // Register kevent with the kqueue.
     if (kevent(kq, change_event, 1, NULL, 0, NULL) == -1)
@@ -68,9 +66,9 @@ void parse_config_1_connection_accept_1_req(void)
                 close(event_fd);
             }
             // a new client wants to connect to our socket.
-            else if (event_fd == rs.getListenFd())
+            else if (event_fd == serv.getListenFd())
             {
-                Connection c = Connection(&rs);
+                Connection c = Connection(&serv);
                 connections[c.getFd()] = c;
                 std::cout << "insert " << c.getFd() << std::endl;
                 // Put this new socket connection also as a 'filter' event
