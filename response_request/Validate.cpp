@@ -59,7 +59,9 @@ std::string Validate::sanitize(std::string &str)
 	std::stringstream msg;
 
 	if (!str.empty() && str.back() == '\r')
+	{
 		str.pop_back();
+	}
 	size_t i = 0;
 	while (i < str.length())
 	{

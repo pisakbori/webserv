@@ -8,13 +8,14 @@
 Request::Request()
 {
 	std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
+	_ready = false;
 }
 
 // Copy constructor
 Request::Request(const Request &other)
 {
-	*this = other;
 	std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
+	*this = other;
 }
 
 // Destructor
@@ -29,11 +30,12 @@ Request &Request::operator=(const Request &other)
 	std::cout << "\e[2mAssign operator Request called\e[0m" << std::endl;
 	if (this != &other)
 	{
-		_stream << other._stream.str();
+		_input = other._input;
 		_header = other._header;
 		_method = other._method;
 		_protocol = other._protocol;
 		_uri = other._uri;
+		_ready = other._ready;
 	}
 	return *this;
 }
@@ -56,7 +58,10 @@ void Request::parseRequest()
 {
 	std::string line;
 	// <Method> <Request-URI> <HTTP-Version>
+	std::istringstream _stream(_input);
 	std::getline(_stream, line);
+	if (line.empty())
+		return;
 	line = Validate::sanitize(line);
 	size_t separator1 = line.find(" ");
 	_method = line.substr(0, separator1);
@@ -66,14 +71,18 @@ void Request::parseRequest()
 	_protocol = line.substr(separator2 + 1, line.length() - separator2);
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
-
 	// field-name: OWS field-value OWS
 	while (std::getline(_stream, line))
 	{
 		line = Validate::sanitize(line);
+		if (line.empty())
+		{
+			_ready = true;
+			return;
+		}
 		auto semi = std::find(line.begin(), line.end(), ':');
 		if (semi == line.end())
-			break;
+			throw HttpError("Malformed header field: missing colon separator", 400);
 		auto end = std::find_if(line.begin(), semi, [](unsigned char c)
 								{ return (c == ' ' || c == '\t'); });
 		std::string key = Validate::headerName(std::string(line.begin(), end));
@@ -92,7 +101,7 @@ void Request::parseRequest()
 
 void Request::append(std::string const &str)
 {
-	this->_stream << std::string(str);
+	_input.append(str);
 }
 
 // Getterss
@@ -116,6 +125,11 @@ std::string const &Request::getProtocol() const
 const std::map<std::string, std::string> &Request::getHeader() const
 {
 	return _header;
+}
+
+bool Request::isReady() const
+{
+	return _ready;
 }
 
 // Setters

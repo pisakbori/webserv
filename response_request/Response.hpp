@@ -9,6 +9,7 @@ private:
 	std::string _method;
 	std::string _uri;
 	std::string _protocol;
+	std::string _body;
 	std::map<std::string, std::string> _header;
 
 public:
@@ -16,6 +17,7 @@ public:
 	// Constructor
 	Response();
 	// Parameterized constructor
+	Response(std::string str);
 
 	// Copy constructor
 	Response(const Response &);
@@ -29,6 +31,7 @@ public:
 	// Member functions
 
 	// Getters
+	std::string getBody() const;
 
 	// Setters
 };

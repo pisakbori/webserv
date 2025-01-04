@@ -6,16 +6,19 @@ Connection::Connection()
 	std::cout << "\e[2mDefault constructor Connection called\e[0m" << std::endl;
 	_server = nullptr;
 	_fd = -1;
+	_state = WAITING_REQUEST;
 }
 
 // Parameterized constructor
 Connection::Connection(Server *rs)
 {
+	_state = WAITING_REQUEST;
 	_server = rs;
 	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
 	_fd = accept(_server->getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
+
 	if (_fd < 0)
 		throw std::runtime_error("ERROR on accept");
 	// TODO::forbidden flag
@@ -51,6 +54,7 @@ Connection &Connection::operator=(const Connection &other)
 		_req = other._req;
 		_res = other._res;
 		_fd = other._fd;
+		_state = other._state;
 	}
 	return *this;
 }
@@ -58,6 +62,7 @@ Connection &Connection::operator=(const Connection &other)
 // Member functions
 void Connection::append(std::string const &str)
 {
+	_state = READING_REQUEST;
 	_req.append(str);
 }
 
@@ -66,22 +71,35 @@ void Connection::process()
 	try
 	{
 		_req.parseRequest();
-		std::cout << _req;
+		if (_req.isReady())
+		{
+			_res = Response("meow");
+			_state = RESPONSE_READY;
+		}
 	}
 	catch (HttpError &e)
 	{
-		std::cerr << "Error" << '\n';
-		std::cerr << Response::statuses.at(e.code()) << '\n';
-		std::cerr << e.what() << '\n';
+		_state = RESPONSE_READY;
+		_res = Response(Response::statuses.at(e.code()));
+		std::cout << "error\n";
 	}
 }
 
 // Getters
-int Connection::getFd()
+int Connection::getFd() const
 {
 	return _fd;
 }
 
+const Response &Connection::getResponse() const
+{
+	return _res;
+}
+
+int Connection::getState() const
+{
+	return _state;
+}
 // Setters
 void Connection::setFD(int fd)
 {

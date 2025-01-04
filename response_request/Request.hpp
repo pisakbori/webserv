@@ -12,7 +12,8 @@ private:
 	std::string _uri;
 	std::string _protocol;
 	std::map<std::string, std::string> _header;
-	std::stringstream _stream;
+	std::string _input;
+	bool _ready;
 
 public:
 	// Constructor
@@ -38,7 +39,7 @@ public:
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
 	const std::map<std::string, std::string> &getHeader() const;
-
+	bool isReady() const;
 	// Setters
 };
 

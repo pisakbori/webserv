@@ -20,6 +20,7 @@ private:
 	void acceptNewConnection(Server &server);
 	void processRequest(int event_fd);
 	int readRequest(int event_fd);
+	void writeResponse(int event_fd);
 
 public:
 	// Constructor
