@@ -80,7 +80,7 @@ void Connection::process()
 	catch (HttpError &e)
 	{
 		_state = RESPONSE_READY;
-		_res = Response(Response::statuses.at(e.code()));
+		_res = Response(e);
 		std::cout << "error\n";
 	}
 }

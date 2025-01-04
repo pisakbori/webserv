@@ -105,8 +105,7 @@ void Webserv::writeResponse(int event_fd)
 		_connections[event_fd].process();
 	if (_connections[event_fd].getState() == Connection::RESPONSE_READY)
 	{
-		std::cout << "HERE\n";
-		std::string response = _connections[event_fd].getResponse().getBody();
+		std::string response = _connections[event_fd].getResponse().toString();
 		send(event_fd, response.c_str(), response.length(), 0);
 		_connections.erase(event_fd);
 		FD_CLR(event_fd, &_master);

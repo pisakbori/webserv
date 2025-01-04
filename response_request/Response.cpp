@@ -1,6 +1,6 @@
 #include "Response.hpp"
 
-const std::map<int, std::string> Response::statuses = {
+std::map<int, std::string> Response::statuses = {
     {200, "OK"},
     {303, "See Other"},
     {400, "Bad Request"},
@@ -21,7 +21,19 @@ Response::Response()
 Response::Response(std::string str)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
+    _statusCode = 200;
+    _statusText = statuses[_statusCode];
+    _header["Content-Type"] = "text/plain";
     _body = str;
+}
+
+Response::Response(const HttpError &err)
+{
+    std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
+    _statusCode = err.code();
+    _statusText = statuses[_statusCode];
+    _body = err.what();
+    _header["Content-Type"] = "text/plain";
 }
 
 // Copy constructor
@@ -44,9 +56,8 @@ Response &Response::operator=(const Response &other)
     if (this != &other)
     {
         _header = other._header;
-        _method = other._method;
-        _protocol = other._protocol;
-        _uri = other._uri;
+        _statusCode = other._statusCode;
+        _statusText = other._statusText;
         _body = other._body;
     }
     return *this;
@@ -60,4 +71,17 @@ std::string Response::getBody() const
     return _body;
 }
 
+std::string Response::toString() const
+{
+    std::stringstream content;
+    content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
+    content << "Content-Length: " << _body.size() << std::endl;
+    for (auto it = _header.begin(); it != _header.end(); ++it)
+    {
+        content << it->first << ": \"" << it->second << "\"" << std::endl;
+    }
+    content << std::endl;
+    content << _body;
+    return content.str();
+}
 // Setters
