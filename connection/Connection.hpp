@@ -23,11 +23,11 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
 public:
-	static constexpr int WAITING_REQUEST = 0;
-	static constexpr int READING_REQUEST_HEADER = 1;
-	static constexpr int READING_REQUEST_BODY = 2;
+	static constexpr int WAITING_REQ = 0;
+	static constexpr int READING_REQ_HEADER = 1;
+	static constexpr int READING_REQ_BODY = 2;
 	static constexpr int TIMEOUT = 3;
-	static constexpr int RESPONSE_READY = 4;
+	static constexpr int RES_READY = 4;
 	static constexpr int IDLE = 5;
 
 	// Constructor
@@ -47,7 +47,6 @@ public:
 
 	// Member functions
 	void process();
-	void timeout(int duration);
 	void append(std::string const &str);
 	void reset();
 	bool checkTimeout();
@@ -58,7 +57,6 @@ public:
 	const Response &getResponse() const;
 
 	// Setters
-	void setFD(int fd);
 };
 
 #endif

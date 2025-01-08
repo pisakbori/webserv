@@ -103,14 +103,14 @@ void Webserv::writeResponse(int event_fd)
 		return;
 	auto &c = it->second;
 	c->checkTimeout();
-	if (c->getState() == Connection::READING_REQUEST_HEADER)
+	if (c->getState() == Connection::READING_REQ_HEADER)
 		c->process();
-	if (c->getState() == Connection::RESPONSE_READY || c->getState() == Connection::TIMEOUT)
+	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
 	{
 		std::cout << "Sending response to " << event_fd << "\n ";
 		std::string response = c->getResponse().toString();
 		send(event_fd, response.c_str(), response.length(), 0);
-		if (c->getState() == Connection::RESPONSE_READY)
+		if (c->getState() == Connection::RES_READY)
 			c->reset();
 		else
 			removeConnection(event_fd);

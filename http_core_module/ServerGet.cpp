@@ -6,7 +6,7 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:37:36 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/01 17:21:36 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2025/01/08 15:46:33 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,14 @@ size_t						Server::get_client_max_body_size(void) const
 	return client_max_body_size;
 }
 
-int Server::getListenFd()
+int Server::getListenFd() const
 {
 	return _listenFd;
+}
+
+// TODO: match location based on uri
+const Location&				Server::get_location(std::string uri) const
+{
+	(void)uri;
+	return location;
 }

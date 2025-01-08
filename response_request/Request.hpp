@@ -1,8 +1,9 @@
-#ifndef REQUEST_HPP
-#define REQUEST_HPP
+#ifndef REQ_HPP
+#define REQ_HPP
 
 #include "HttpError.hpp"
 #include "Validate.hpp"
+#include "Server.hpp"
 #include "CommonIncludes.hpp"
 
 class Request
@@ -32,7 +33,7 @@ public:
 
 	// Member functions
 	void append(std::string const &str);
-	void parseRequest();
+	void parseRequest(const Server &serv);
 
 	// Getters
 	std::string const &getProtocol() const;

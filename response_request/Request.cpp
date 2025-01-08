@@ -53,8 +53,31 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 }
 
 // Member functions
+// TODO:move to utils
+std::string joinStrings(const std::vector<std::string> &vec, const std::string &delimiter)
+{
+	std::ostringstream oss;
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		oss << vec[i];
+		if (i != vec.size() - 1)
+			oss << delimiter;
+	}
+	return oss.str();
+}
 
-void Request::parseRequest()
+void locationAllowedMethod(std::string uri, std::string method, const Server &serv)
+{
+	auto allowed = serv.get_location(uri).get_allow();
+	if (std::find(allowed.begin(), allowed.end(), method) == allowed.end())
+	{
+		auto err = HttpError(method + " method not allowed for " + uri, 405);
+		err.setField("Allow", joinStrings(serv.get_location(uri).get_allow(), ", "));
+		throw err;
+	}
+};
+
+void Request::parseRequest(const Server &serv)
 {
 	std::string line;
 	// <Method> <Request-URI> <HTTP-Version>
@@ -71,6 +94,7 @@ void Request::parseRequest()
 	_protocol = line.substr(separator2 + 1, line.length() - separator2);
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
+	locationAllowedMethod(_uri, _method, serv);
 	// field-name: OWS field-value OWS
 	while (std::getline(_stream, line))
 	{

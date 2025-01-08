@@ -23,17 +23,21 @@ Response::Response(std::string str)
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     _statusCode = 200;
     _statusText = statuses[_statusCode];
-    _header["Content-Type"] = "text/plain";
+    _header["Content-Type"] = "text/html";
     _body = str;
+    wrapInHtml();
 }
 
 Response::Response(const HttpError &err)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
-    _statusCode = err.code();
+    _statusCode = err.getCode();
     _statusText = statuses[_statusCode];
+    _header["Content-Type"] = "text/html";
+    for (const auto &pair : err.getExtraFields())
+        _header[pair.first] = pair.second;
     _body = err.what();
-    _header["Content-Type"] = "text/plain";
+    wrapInHtml();
 }
 
 // Copy constructor
@@ -65,6 +69,30 @@ Response &Response::operator=(const Response &other)
 
 // Member functions
 
+void Response::appendToHeader(std::string key, std::string value)
+{
+    _header[key] = value;
+}
+
+void Response::wrapInHtml()
+{
+    std::stringstream htmlContent;
+    htmlContent << "<html>\n"
+                << "<head><title>"
+                << this->_statusCode << " " << this->_statusText
+                << "</title></head>\n"
+                << "<body>\n"
+                << "<h1>"
+                << this->_statusCode << " " << this->_statusText
+                << "</h1>\n"
+                << "<p>"
+                << this->_body
+                << "</p>\n"
+                << "</body>\n"
+                << "</html>";
+    _body = htmlContent.str();
+}
+
 // Getters
 std::string Response::getBody() const
 {
@@ -81,7 +109,7 @@ std::string Response::toString() const
         content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
     for (auto it = _header.begin(); it != _header.end(); ++it)
     {
-        content << it->first << ": \"" << it->second << "\"" << std::endl;
+        content << it->first << ": " << it->second << std::endl;
     }
     content << std::endl;
     content << _body << std::endl;

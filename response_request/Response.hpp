@@ -1,5 +1,5 @@
-#ifndef RESPONSE_HPP
-#define RESPONSE_HPP
+#ifndef RES_HPP
+#define RES_HPP
 
 #include "CommonIncludes.hpp"
 #include "HttpError.hpp"
@@ -11,6 +11,7 @@ private:
 	int _statusCode;
 	std::string _body;
 	std::map<std::string, std::string> _header;
+	void wrapInHtml();
 
 public:
 	static std::map<int, std::string> statuses;
@@ -30,6 +31,7 @@ public:
 	Response &operator=(const Response &);
 
 	// Member functions
+	void appendToHeader(std::string key, std::string value);
 
 	// Getters
 	std::string getBody() const;

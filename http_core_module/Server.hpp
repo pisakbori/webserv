@@ -6,7 +6,7 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/01 17:26:56 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2025/01/08 15:10:32 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,9 @@ class Server
 		Location					location;
 		void 						startListening(void);
 		void 						stopListening(void);
-		int							getListenFd();
+		int							getListenFd() const;
+		// TODO:
+		const Location&				get_location(std::string uri) const;
 
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);

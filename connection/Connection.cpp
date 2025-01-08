@@ -5,7 +5,7 @@ Connection::Connection()
 {
 	std::cout << "\e[2mDefault constructor Connection called\e[0m" << std::endl;
 	_fd = -1;
-	_state = WAITING_REQUEST;
+	_state = WAITING_REQ;
 }
 
 // Parameterized constructor
@@ -13,7 +13,7 @@ Connection::Connection(const Server &rs)
 {
 
 	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
-	_state = WAITING_REQUEST;
+	_state = WAITING_REQ;
 	_server = rs;
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
@@ -65,7 +65,7 @@ Connection &Connection::operator=(const Connection &other)
 
 void Connection::reset()
 {
-	_state = WAITING_REQUEST;
+	_state = WAITING_REQ;
 	_req = Request();
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
@@ -73,8 +73,7 @@ void Connection::reset()
 
 void Connection::append(std::string const &str)
 {
-	std::cout << "append\n";
-	_state = READING_REQUEST_HEADER;
+	_state = READING_REQ_HEADER;
 	_req.append(str);
 }
 
@@ -82,16 +81,16 @@ void Connection::process()
 {
 	try
 	{
-		_req.parseRequest();
+		_req.parseRequest(_server);
 		if (_req.isReady())
 		{
 			_res = Response("meow");
-			_state = RESPONSE_READY;
+			_state = RES_READY;
 		}
 	}
 	catch (HttpError &e)
 	{
-		_state = RESPONSE_READY;
+		_state = RES_READY;
 		_res = Response(e);
 		std::cout << "error\n";
 	}
@@ -100,7 +99,7 @@ void Connection::process()
 bool Connection::checkTimeout()
 {
 	auto now = std::chrono::steady_clock::now();
-	if ((_state == READING_REQUEST_HEADER || _state == WAITING_REQUEST) && now >= _clientHeaderTimeout)
+	if ((_state == READING_REQ_HEADER || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
 		_res = Response(HttpError("Request Header timeout", 408));
 	else if (now >= _keepAliveTimeout)
 		_res = Response(HttpError("Connection expired", 408));
@@ -126,7 +125,3 @@ int Connection::getState() const
 	return _state;
 }
 // Setters
-void Connection::setFD(int fd)
-{
-	_fd = fd;
-}
