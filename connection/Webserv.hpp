@@ -8,7 +8,7 @@
 class Webserv
 {
 private:
-	std::map<int, Connection> _connections;
+	std::map<int, Connection *> _connections;
 	fd_set _master;
 	fd_set _readfds;
 	fd_set _writefds;
@@ -21,6 +21,7 @@ private:
 	void processRequest(int event_fd);
 	int readRequest(int event_fd);
 	void writeResponse(int event_fd);
+	void removeConnection(int event_fd);
 
 public:
 	// Constructor

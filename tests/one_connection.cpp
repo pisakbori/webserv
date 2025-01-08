@@ -68,7 +68,7 @@ void parse_config_1_connection_accept_1_req(void)
             // a new client wants to connect to our socket.
             else if (event_fd == serv.getListenFd())
             {
-                Connection c = Connection(&serv);
+                Connection c = Connection(serv);
                 connections[c.getFd()] = c;
                 std::cout << "insert " << c.getFd() << std::endl;
                 // Put this new socket connection also as a 'filter' event

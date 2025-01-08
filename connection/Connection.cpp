@@ -4,20 +4,20 @@
 Connection::Connection()
 {
 	std::cout << "\e[2mDefault constructor Connection called\e[0m" << std::endl;
-	_server = nullptr;
 	_fd = -1;
 	_state = WAITING_REQUEST;
 }
 
 // Parameterized constructor
-Connection::Connection(Server *rs)
+Connection::Connection(const Server &rs)
 {
+
+	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	_state = WAITING_REQUEST;
 	_server = rs;
-	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
-	_fd = accept(_server->getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
+	_fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
 
 	if (_fd < 0)
 		throw std::runtime_error("ERROR on accept");
@@ -29,13 +29,15 @@ Connection::Connection(Server *rs)
 		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
 	std::cout << "fd is " << _fd << std::endl;
+	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
+	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 }
 
 // Copy constructor
 Connection::Connection(const Connection &other)
 {
-	*this = other;
 	std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
+	*this = other;
 }
 
 // Destructor
@@ -60,9 +62,19 @@ Connection &Connection::operator=(const Connection &other)
 }
 
 // Member functions
+
+void Connection::reset()
+{
+	_state = WAITING_REQUEST;
+	_req = Request();
+	_res = Response();
+	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+};
+
 void Connection::append(std::string const &str)
 {
-	_state = READING_REQUEST;
+	std::cout << "append\n";
+	_state = READING_REQUEST_HEADER;
 	_req.append(str);
 }
 
@@ -83,6 +95,19 @@ void Connection::process()
 		_res = Response(e);
 		std::cout << "error\n";
 	}
+}
+
+bool Connection::checkTimeout()
+{
+	auto now = std::chrono::steady_clock::now();
+	if ((_state == READING_REQUEST_HEADER || _state == WAITING_REQUEST) && now >= _clientHeaderTimeout)
+		_res = Response(HttpError("Request Header timeout", 408));
+	else if (now >= _keepAliveTimeout)
+		_res = Response(HttpError("Connection expired", 408));
+	else
+		return false;
+	_state = TIMEOUT;
+	return true;
 }
 
 // Getters

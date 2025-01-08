@@ -76,12 +76,15 @@ std::string Response::toString() const
     std::stringstream content;
     content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
     content << "Content-Length: " << _body.size() << std::endl;
+    content << "Keep-Alive: timeout=" << KEEPALIVE_TIMEOUT << "s" << std::endl;
+    if (_statusCode == 408)
+        content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
     for (auto it = _header.begin(); it != _header.end(); ++it)
     {
         content << it->first << ": \"" << it->second << "\"" << std::endl;
     }
     content << std::endl;
-    content << _body;
+    content << _body << std::endl;
     return content.str();
 }
 // Setters
