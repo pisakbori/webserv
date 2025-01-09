@@ -15,12 +15,13 @@ private:
 	fd_set _exceptfds;
 	// TODO:make it list
 	Server _server;
+	int _nReady;
 
-	void handleReadyFd(int i);
+	void onRead(int i);
 	void acceptNewConnection(const Server &server);
 	void processRequest(int event_fd);
 	int readRequest(int event_fd);
-	void writeResponse(int event_fd);
+	void onWrite(int event_fd);
 	void removeConnection(int event_fd);
 	void closeResourceFd(int i);
 
@@ -44,6 +45,7 @@ public:
 	void configure(std::string configFile);
 	void run(void);
 	void stop();
+	void closeFd(int i);
 	// Getters
 
 	// Setters

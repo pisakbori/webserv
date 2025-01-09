@@ -24,17 +24,17 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
 	void getResource(std::string path);
-
-public:
 	int _state;
 	int _resourceFd;
 
+public:
+	size_t _sentChunks;
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ_HEADER = 1;
 	static constexpr int REQ_READY = 2;
 	static constexpr int READING_RESOURCE = 3;
-	static constexpr int TIMEOUT = 4;
-	static constexpr int RES_READY = 5;
+	static constexpr int RES_READY = 4;
+	static constexpr int TIMEOUT = 5;
 
 	// Parameterized constructor
 	Connection(const Server &rs);
@@ -57,6 +57,7 @@ public:
 
 	// Getters
 	int getFd() const;
+	int getResourceFd() const;
 	int getState() const;
 	const Response &getResponse() const;
 

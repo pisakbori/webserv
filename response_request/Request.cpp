@@ -84,7 +84,7 @@ void Request::parseRequest(const Server &serv, Connection *c)
 	std::istringstream _stream(_input);
 	std::getline(_stream, line);
 	if (line.empty())
-		return;
+		throw HttpError("Bad Request", 400);
 	line = Validate::sanitize(line);
 	size_t separator1 = line.find(" ");
 	_method = line.substr(0, separator1);

@@ -59,6 +59,7 @@ void Connection::reset()
 	*_req = Request();
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	_sentChunks = 0;
 };
 
 void Connection::append(std::string const &str)
@@ -80,6 +81,8 @@ void Connection::getResource(std::string path)
 	{
 		std::cout << Colors::RED << "Open resource " << path << std::endl
 				  << Colors::RESET;
+		if (std::filesystem::is_directory(path))
+			throw std::runtime_error("It's a directory. I don't know how to autoindex yet");
 		_resourceFd = open(path.c_str(), O_RDONLY);
 	}
 	catch (const std::exception &e)
@@ -123,6 +126,11 @@ bool Connection::checkTimeout()
 int Connection::getFd() const
 {
 	return _fd;
+}
+
+int Connection::getResourceFd() const
+{
+	return _resourceFd;
 }
 
 const Response &Connection::getResponse() const

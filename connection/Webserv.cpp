@@ -11,12 +11,18 @@ Webserv::Webserv()
 	FD_ZERO(&_readfds);
 	FD_ZERO(&_writefds);
 	FD_ZERO(&_exceptfds);
+	_nReady = 0;
 }
 
 // Parameterized constructor
 Webserv::Webserv(std::string configFile)
 {
 	std::cout << "\e[2mParameterized constructor Webserv called\e[0m" << std::endl;
+	FD_ZERO(&_master);
+	FD_ZERO(&_readfds);
+	FD_ZERO(&_writefds);
+	FD_ZERO(&_exceptfds);
+	_nReady = 0;
 	this->configure(configFile);
 }
 
@@ -70,8 +76,8 @@ void Webserv::acceptNewConnection(const Server &server)
 int Webserv::readRequest(int event_fd)
 {
 	char buf[READ_BUFFER_SIZE];
-	size_t bytes_read = read(event_fd, buf, sizeof(buf));
-	if (bytes_read)
+	ssize_t bytes_read = read(event_fd, buf, sizeof(buf));
+	if (bytes_read > 0)
 	{
 		std::cout << "read " << bytes_read << " bytes from " << event_fd << std::endl;
 		std::string str(buf, bytes_read);
@@ -86,93 +92,81 @@ int Webserv::readRequest(int event_fd)
 			_connections[event_fd]->appendToResponseBody(str);
 		}
 	}
-	if (!bytes_read && _connections[event_fd]->getState() == Connection::READING_RESOURCE && _connections[event_fd]->_resourceFd == event_fd)
+	if (!bytes_read && _connections[event_fd]->getState() == Connection::READING_RESOURCE && _connections[event_fd]->getResourceFd() == event_fd)
 	{
 		_connections[event_fd]->setState(Connection::RES_READY);
 	}
 	return bytes_read;
 }
 
-void Webserv::removeConnection(int i)
+void Webserv::closeFd(int i)
 {
-
-	std::cout << Colors::RED << "Delete connection at fd " << i << std::endl
-			  << Colors::RESET;
-	delete _connections[i];
+	std::cout << "-------------------Close fd: " << i << std::endl;
 	_connections.erase(i);
 	FD_CLR(i, &_master);
 	close(i);
 }
 
-void Webserv::closeResourceFd(int i)
+void Webserv::onRead(int i)
 {
-	std::cout << Colors::RED << "Close resource fd " << i << std::endl
-			  << Colors::RESET;
-	_connections.erase(i);
-	FD_CLR(i, &_master);
-	close(i);
-}
-
-void Webserv::handleReadyFd(int i)
-{
+	_nReady--;
 	if (i == _server.getListenFd())
 		acceptNewConnection(_server);
-	else
+	else if (readRequest(i) <= 0)
 	{
-		int readBytes = readRequest(i);
-		if (readBytes)
-			return;
-		if (_connections[i]->getFd() == i && _connections[i]->getState() < Connection::READING_RESOURCE)
+		// TODO:this is confusing, sorry:(
+		if (_connections[i]->getState() < Connection::READING_RESOURCE)
 		{
-			std::cout << Colors::RED << "0 bytes read, connection interrupted, so remove " << i << std::endl
-					  << Colors::RESET;
-			removeConnection(i);
+			delete _connections[i];
+			closeFd(i);
 		}
-		else if (_connections[i]->_resourceFd == i)
-		{
-			std::cout << Colors::RED << "0 bytes read, close resource fd " << i << std::endl
-					  << Colors::RESET;
-			closeResourceFd(i);
-		}
+		else if (_connections[i]->getResourceFd() == i)
+			closeFd(i);
 	}
 }
 
-void Webserv::writeResponse(int event_fd)
+void Webserv::onWrite(int i)
 {
-	auto it = _connections.find(event_fd);
+	_nReady--;
+	auto it = _connections.find(i);
 	if (it == _connections.end())
 		return;
 	auto &c = it->second;
 	c->checkTimeout();
 	if (c->getState() == Connection::READING_REQ_HEADER)
 		c->process();
-	if (c->getState() == Connection::REQ_READY && c->_resourceFd != -1)
+	if (c->getState() == Connection::REQ_READY && c->getResourceFd() != -1)
 	{
-		_connections[c->_resourceFd] = c;
-		FD_SET(c->_resourceFd, &_master);
+		_connections[c->getResourceFd()] = c;
+		FD_SET(c->getResourceFd(), &_master);
 		c->setState(Connection::READING_RESOURCE);
-		std::cout << Colors::RED << "Add Open resource fd " << c->_resourceFd << std::endl
+		std::cout << Colors::RED << "Add Open resource fd " << c->getResourceFd() << std::endl
 				  << Colors::RESET;
 	}
 	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
 	{
 		std::cout << "Sending response to " << c->getFd() << "\n ";
 		std::string response = c->getResponse().toString();
-		send(c->getFd(), response.c_str(), response.length(), 0);
-		if (c->getState() == Connection::RES_READY)
+		if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
+		{
+			std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
+			send(c->getFd(), substring.c_str(), substring.length(), 0);
+			c->_sentChunks++;
+		}
+		else if (c->getState() == Connection::RES_READY)
 			c->reset();
 		else
 		{
-			std::cout << Colors::RED << "Timeout so remove " << event_fd << std::endl
+			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
 					  << Colors::RESET;
-			removeConnection(event_fd);
+			delete _connections[i];
+			closeFd(i);
 		}
 	}
 }
 
 void Webserv::run()
 {
-	int nready;
 	_server.startListening();
 	FD_SET(_server.getListenFd(), &_master);
 	int maxfd = _server.getListenFd();
@@ -184,25 +178,19 @@ void Webserv::run()
 		memcpy(&_writefds, &_master, sizeof(_master));
 		if (!_connections.empty())
 			maxfd = _connections.rbegin()->first;
-		if (-1 == (nready = select(maxfd + 1, &_readfds, &_writefds, &_exceptfds, &timeout)))
+		if (-1 == (_nReady = select(maxfd + 1, &_readfds, &_writefds, &_exceptfds, &timeout)))
 			throw std::runtime_error("select()");
-		for (int i = 0; i <= maxfd && nready > 0; i++)
+		for (int i = 0; i <= maxfd && _nReady > 0; i++)
 		{
 			if (FD_ISSET(i, &_readfds))
-			{
-				nready--;
-				handleReadyFd(i);
-			}
+				onRead(i);
 			if (FD_ISSET(i, &_writefds))
-			{
-				nready--;
-				writeResponse(i);
-			}
-			if (FD_ISSET(i, &_exceptfds))
-			{
-				nready--;
-				std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
-			}
+				onWrite(i);
+			// if (FD_ISSET(i, &_exceptfds))
+			// {
+			// 	_nReady--;
+			// 	std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
+			// }
 		}
 	}
 }
