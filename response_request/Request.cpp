@@ -1,14 +1,12 @@
 #include "Request.hpp"
 
-#include <iostream>
-
 // Constructor
 
 // Default constructor
 Request::Request()
 {
 	std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
-	_ready = false;
+	_input = "";
 }
 
 // Copy constructor
@@ -35,7 +33,6 @@ Request &Request::operator=(const Request &other)
 		_method = other._method;
 		_protocol = other._protocol;
 		_uri = other._uri;
-		_ready = other._ready;
 	}
 	return *this;
 }
@@ -80,7 +77,7 @@ void Request::setRoute(std::string uri, std::string method, const Server &serv)
 	std::cout << Colors::GREY << _route << Colors::RESET << std::endl;
 };
 
-void Request::parseRequest(const Server &serv)
+void Request::parseRequest(const Server &serv, Connection *c)
 {
 	std::string line;
 	// <Method> <Request-URI> <HTTP-Version>
@@ -104,7 +101,7 @@ void Request::parseRequest(const Server &serv)
 		line = Validate::sanitize(line);
 		if (line.empty())
 		{
-			_ready = true;
+			c->setState(Connection::REQ_READY);
 			return;
 		}
 		auto semi = std::find(line.begin(), line.end(), ':');
@@ -152,11 +149,6 @@ std::string const &Request::getProtocol() const
 const std::map<std::string, std::string> &Request::getHeader() const
 {
 	return _header;
-}
-
-bool Request::isReady() const
-{
-	return _ready;
 }
 
 std::string const &Request::getRoute() const

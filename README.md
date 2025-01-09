@@ -3,8 +3,8 @@ one name per server. Server config is uniquely identified by port, host, name
 TODO:Bori
 
 - how to match request uri with location?
-- always serve 1 file back instead of meow.
-- first attempt: just read file with fstream, ignore file descriptors
+- write buffersize at a time
+- include read resourceFd in select.
 
 <!-- how to use: -->
 

@@ -1,10 +1,11 @@
 #include "Connection.hpp"
 
 // Parameterized constructor
-Connection::Connection(const Server &rs) : _server(rs)
+Connection::Connection(const Server &rs) : _server(rs), _resourceFd(-1)
 {
+	_req = new Request();
 	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
-	_state = WAITING_REQ;
+	setState(WAITING_REQ);
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
 	_fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
@@ -45,7 +46,7 @@ Connection &Connection::operator=(const Connection &other)
 		_req = other._req;
 		_res = other._res;
 		_fd = other._fd;
-		_state = other._state;
+		setState(other._state);
 	}
 	return *this;
 }
@@ -54,58 +55,52 @@ Connection &Connection::operator=(const Connection &other)
 
 void Connection::reset()
 {
-	_state = WAITING_REQ;
-	_req = Request();
+	setState(WAITING_REQ);
+	*_req = Request();
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 };
 
 void Connection::append(std::string const &str)
 {
-	_state = READING_REQ_HEADER;
-	_req.append(str);
+	setState(READING_REQ_HEADER);
+	_req->append(str);
+}
+
+void Connection::appendToResponseBody(std::string const &str)
+{
+	_res.appendToBody(str);
 }
 
 void Connection::getResource(std::string path)
 {
 	if (!std::filesystem::exists(path))
-		throw HttpError("Oh no! " + _req.getUri() + " not found.", 404);
+		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 	try
 	{
+		std::cout << Colors::RED << "Open resource " << path << std::endl
+				  << Colors::RESET;
 		_resourceFd = open(path.c_str(), O_RDONLY);
-		_state = READING_RESOURCE;
-		char buf[READ_BUFFER_SIZE];
-
-		ssize_t bytesRead;
-		while ((bytesRead = read(_resourceFd, buf, READ_BUFFER_SIZE)) > 0)
-		{
-			_res.appendToBody(std::string(buf, bytesRead));
-		}
-		if (bytesRead == -1)
-			throw std::runtime_error("Error reading file");
 	}
 	catch (const std::exception &e)
 	{
 		throw HttpError(e.what(), 500);
 	}
-	close(_resourceFd);
 }
 
 void Connection::process()
 {
 	try
 	{
-		_req.parseRequest(_server);
-		if (_req.isReady())
+		_req->parseRequest(_server, this);
+		if (_state == REQ_READY)
 		{
-			getResource(_req.getRoute());
-			// _res = Response("meow");
-			_state = RES_READY;
+			getResource(_req->getRoute());
 		}
 	}
 	catch (HttpError &e)
 	{
-		_state = RES_READY;
+		setState(RES_READY);
 		_res = Response(e);
 		std::cout << "error\n";
 	}
@@ -140,3 +135,10 @@ int Connection::getState() const
 	return _state;
 }
 // Setters
+
+void Connection::setState(int s)
+{
+	std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
+			  << Colors::RESET;
+	_state = s;
+}

@@ -11,29 +11,30 @@
 #include <chrono>
 #include <memory>
 
+class Request;
+
 class Connection
 {
 private:
 	const Server &_server;
 	Response _res;
-	Request _req;
+	Request *_req;
 	int _fd;
-	int _state;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _keepAliveTimeout;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
 	void getResource(std::string path);
 
 public:
+	int _state;
 	int _resourceFd;
 
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ_HEADER = 1;
-	static constexpr int READING_REQ_BODY = 2;
-	static constexpr int TIMEOUT = 3;
-	static constexpr int RES_READY = 4;
-	static constexpr int IDLE = 5;
-	static constexpr int READING_RESOURCE = 6;
+	static constexpr int REQ_READY = 2;
+	static constexpr int READING_RESOURCE = 3;
+	static constexpr int TIMEOUT = 4;
+	static constexpr int RES_READY = 5;
 
 	// Parameterized constructor
 	Connection(const Server &rs);
@@ -50,6 +51,7 @@ public:
 	// Member functions
 	void process();
 	void append(std::string const &str);
+	void appendToResponseBody(std::string const &str);
 	void reset();
 	bool checkTimeout();
 
@@ -59,6 +61,7 @@ public:
 	const Response &getResponse() const;
 
 	// Setters
+	void setState(int s);
 };
 
 #endif

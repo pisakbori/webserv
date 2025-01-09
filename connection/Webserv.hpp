@@ -22,6 +22,7 @@ private:
 	int readRequest(int event_fd);
 	void writeResponse(int event_fd);
 	void removeConnection(int event_fd);
+	void closeResourceFd(int i);
 
 public:
 	// Constructor
