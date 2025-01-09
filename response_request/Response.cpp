@@ -15,6 +15,9 @@ std::map<int, std::string> Response::statuses = {
 Response::Response()
 {
     std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
+    _statusCode = 200;
+    _statusText = statuses[_statusCode];
+    _header["Content-Type"] = "text/html";
 }
 
 // Parameterized constructor
@@ -68,6 +71,16 @@ Response &Response::operator=(const Response &other)
 }
 
 // Member functions
+
+void Response::appendToBody(std::string const &str)
+{
+    _body.append(str);
+}
+
+void Response::setContentType(std::string const &str)
+{
+    _header["Content-Type"] = str;
+}
 
 void Response::appendToHeader(std::string key, std::string value)
 {

@@ -32,6 +32,8 @@ public:
 
 	// Member functions
 	void appendToHeader(std::string key, std::string value);
+	void appendToBody(std::string const &str);
+	void setContentType(std::string const &str);
 
 	// Getters
 	std::string getBody() const;

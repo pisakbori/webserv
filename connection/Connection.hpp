@@ -14,7 +14,7 @@
 class Connection
 {
 private:
-	Server _server;
+	const Server &_server;
 	Response _res;
 	Request _req;
 	int _fd;
@@ -34,9 +34,6 @@ public:
 	static constexpr int RES_READY = 4;
 	static constexpr int IDLE = 5;
 	static constexpr int READING_RESOURCE = 6;
-
-	// Constructor
-	Connection();
 
 	// Parameterized constructor
 	Connection(const Server &rs);

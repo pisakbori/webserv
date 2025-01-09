@@ -19,9 +19,7 @@ SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					connection/Connection.cpp \
 					connection/Webserv.cpp \
 					$(TEST_DIR)/server.cpp \
-					$(TEST_DIR)/location.cpp \
-					$(TEST_DIR)/one_connection.cpp \
-					$(TEST_DIR)/client.cpp
+					$(TEST_DIR)/location.cpp 
 OBJECTS		=		$(SOURCES:.cpp=.o)
 
 all:	$(NAME)

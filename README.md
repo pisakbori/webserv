@@ -4,6 +4,7 @@ TODO:Bori
 
 - how to match request uri with location?
 - always serve 1 file back instead of meow.
+- first attempt: just read file with fstream, ignore file descriptors
 
 <!-- how to use: -->
 

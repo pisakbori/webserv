@@ -1,20 +1,10 @@
 #include "Connection.hpp"
 
-// Constructor
-Connection::Connection()
-{
-	std::cout << "\e[2mDefault constructor Connection called\e[0m" << std::endl;
-	_fd = -1;
-	_state = WAITING_REQ;
-}
-
 // Parameterized constructor
-Connection::Connection(const Server &rs)
+Connection::Connection(const Server &rs) : _server(rs)
 {
-
 	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	_state = WAITING_REQ;
-	_server = rs;
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
 	_fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
@@ -34,7 +24,7 @@ Connection::Connection(const Server &rs)
 }
 
 // Copy constructor
-Connection::Connection(const Connection &other)
+Connection::Connection(const Connection &other) : _server(other._server)
 {
 	std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
 	*this = other;
@@ -52,7 +42,6 @@ Connection &Connection::operator=(const Connection &other)
 	std::cout << "\e[2mAssign operator Connection called\e[0m" << std::endl;
 	if (this != &other)
 	{
-		_server = other._server;
 		_req = other._req;
 		_res = other._res;
 		_fd = other._fd;
@@ -85,11 +74,21 @@ void Connection::getResource(std::string path)
 	{
 		_resourceFd = open(path.c_str(), O_RDONLY);
 		_state = READING_RESOURCE;
+		char buf[READ_BUFFER_SIZE];
+
+		ssize_t bytesRead;
+		while ((bytesRead = read(_resourceFd, buf, READ_BUFFER_SIZE)) > 0)
+		{
+			_res.appendToBody(std::string(buf, bytesRead));
+		}
+		if (bytesRead == -1)
+			throw std::runtime_error("Error reading file");
 	}
 	catch (const std::exception &e)
 	{
 		throw HttpError(e.what(), 500);
 	}
+	close(_resourceFd);
 }
 
 void Connection::process()
@@ -100,7 +99,7 @@ void Connection::process()
 		if (_req.isReady())
 		{
 			getResource(_req.getRoute());
-			_res = Response("meow");
+			// _res = Response("meow");
 			_state = RES_READY;
 		}
 	}
