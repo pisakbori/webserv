@@ -14,7 +14,10 @@ private:
 	std::string _protocol;
 	std::map<std::string, std::string> _header;
 	std::string _input;
+	std::string _route;
 	bool _ready;
+
+	void setRoute(std::string uri, std::string method, const Server &serv);
 
 public:
 	// Constructor
@@ -39,6 +42,7 @@ public:
 	std::string const &getProtocol() const;
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
+	std::string const &getRoute() const;
 	const std::map<std::string, std::string> &getHeader() const;
 	bool isReady() const;
 	// Setters

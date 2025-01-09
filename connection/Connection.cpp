@@ -77,6 +77,21 @@ void Connection::append(std::string const &str)
 	_req.append(str);
 }
 
+void Connection::getResource(std::string path)
+{
+	if (!std::filesystem::exists(path))
+		throw HttpError("Oh no! " + _req.getUri() + " not found.", 404);
+	try
+	{
+		_resourceFd = open(path.c_str(), O_RDONLY);
+		_state = READING_RESOURCE;
+	}
+	catch (const std::exception &e)
+	{
+		throw HttpError(e.what(), 500);
+	}
+}
+
 void Connection::process()
 {
 	try
@@ -84,6 +99,7 @@ void Connection::process()
 		_req.parseRequest(_server);
 		if (_req.isReady())
 		{
+			getResource(_req.getRoute());
 			_res = Response("meow");
 			_state = RES_READY;
 		}

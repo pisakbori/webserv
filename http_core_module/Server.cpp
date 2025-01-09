@@ -6,7 +6,7 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/01 18:26:34 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2025/01/08 18:27:11 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ Server::Server() : host("0.0.0.0"),
 				   error_page(),
 				   client_max_body_size(1 << 20)
 {
+	std::cout << "\e[2mServer default constructor\e[0m" << Colors::RESET << std::endl;
 }
 
 Server::Server(Server const &src) : host(src.host),
@@ -26,14 +27,17 @@ Server::Server(Server const &src) : host(src.host),
 									error_page(src.error_page),
 									client_max_body_size(src.client_max_body_size)
 {
+	std::cout << "\e[2mServer copy constructor\e[0m" << Colors::RESET << std::endl;
 }
 
 Server::~Server()
 {
+	std::cout << "\e[2mServer destructor\e[0m" << Colors::RESET << std::endl;
 }
 
 Server &Server::operator=(Server const &rhs)
 {
+	std::cout << "\e[2mServer equal operator" << Colors::RESET << std::endl;
 	if (this != &rhs)
 	{
 		this->host = rhs.host;
@@ -42,6 +46,7 @@ Server &Server::operator=(Server const &rhs)
 		this->error_page = rhs.error_page;
 		this->client_max_body_size = rhs.client_max_body_size;
 		this->_listenFd = rhs._listenFd;
+		this->location = rhs.location;
 	}
 	return *this;
 }

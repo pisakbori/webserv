@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <exception>
 #include <sstream>
+#include <Colors.h>
 
 #include <unistd.h>
 

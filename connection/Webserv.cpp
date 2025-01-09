@@ -57,7 +57,7 @@ void Webserv::configure(std::string configFile)
 	}
 }
 
-void Webserv::acceptNewConnection(Server &server)
+void Webserv::acceptNewConnection(const Server &server)
 {
 
 	std::cout << "new connection" << std::endl;
@@ -105,6 +105,10 @@ void Webserv::writeResponse(int event_fd)
 	c->checkTimeout();
 	if (c->getState() == Connection::READING_REQ_HEADER)
 		c->process();
+	if (c->getState() == Connection::READING_RESOURCE)
+	{
+		FD_SET(c->_resourceFd, &_master);
+	}
 	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
 	{
 		std::cout << "Sending response to " << event_fd << "\n ";

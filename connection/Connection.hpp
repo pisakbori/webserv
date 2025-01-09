@@ -22,13 +22,18 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> _keepAliveTimeout;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
+	void getResource(std::string path);
+
 public:
+	int _resourceFd;
+
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ_HEADER = 1;
 	static constexpr int READING_REQ_BODY = 2;
 	static constexpr int TIMEOUT = 3;
 	static constexpr int RES_READY = 4;
 	static constexpr int IDLE = 5;
+	static constexpr int READING_RESOURCE = 6;
 
 	// Constructor
 	Connection();

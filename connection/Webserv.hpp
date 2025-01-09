@@ -17,7 +17,7 @@ private:
 	Server _server;
 
 	void handleReadyFd(int i);
-	void acceptNewConnection(Server &server);
+	void acceptNewConnection(const Server &server);
 	void processRequest(int event_fd);
 	int readRequest(int event_fd);
 	void writeResponse(int event_fd);
