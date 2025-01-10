@@ -68,65 +68,75 @@ void Webserv::acceptNewConnection(const Server &server)
 
 	std::cout << "new connection" << std::endl;
 	auto c = new Connection(server);
-	int newfd = c->getFd();
+	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
 	FD_SET(newfd, &_master);
 }
 
-int Webserv::readRequest(int event_fd)
+int Webserv::readFromFd(int fd)
 {
 	char buf[READ_BUFFER_SIZE];
-	ssize_t bytes_read = read(event_fd, buf, sizeof(buf));
+	ssize_t bytes_read = read(fd, buf, sizeof(buf));
 	if (bytes_read > 0)
 	{
-		std::cout << "read " << bytes_read << " bytes from " << event_fd << std::endl;
+		std::cout << "read " << bytes_read << " bytes from " << fd << std::endl;
 		std::string str(buf, bytes_read);
-		if (event_fd == _connections[event_fd]->getFd())
+		if (isResource(fd))
 		{
-			_connections[event_fd]->append(str);
+			std::cout << Colors::RED << "Reading from resource fd " << fd << std::endl
+					  << Colors::RESET;
+			_connections[_resources[fd]]->appendToResponseBody(str);
 		}
 		else
 		{
-			std::cout << Colors::RED << "Reading from resource fd " << event_fd << std::endl
-					  << Colors::RESET;
-			_connections[event_fd]->appendToResponseBody(str);
+			_connections[fd]->append(str);
 		}
 	}
-	if (!bytes_read && _connections[event_fd]->getState() == Connection::READING_RESOURCE && _connections[event_fd]->getResourceFd() == event_fd)
+	if (!bytes_read && isResource(fd) && _connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
 	{
-		_connections[event_fd]->setState(Connection::RES_READY);
+		_connections[_resources[fd]]->setState(Connection::RES_READY);
 	}
 	return bytes_read;
 }
 
-void Webserv::closeFd(int i)
+bool Webserv::isResource(int fd)
 {
-	std::cout << "-------------------Close fd: " << i << std::endl;
-	_connections.erase(i);
-	FD_CLR(i, &_master);
-	close(i);
+	return _resources.find(fd) != _resources.end();
 }
 
-void Webserv::onRead(int i)
+void Webserv::closeFd(int fd)
+{
+	std::cout << "------------------------- Close fd: " << fd << std::endl;
+	FD_CLR(fd, &_master);
+	close(fd);
+}
+
+void Webserv::onRead(int fd)
 {
 	_nReady--;
-	if (i == _server.getListenFd())
+	if (fd == _server.getListenFd())
 		acceptNewConnection(_server);
-	else if (readRequest(i) <= 0)
+	else if (readFromFd(fd) <= 0)
 	{
-		// TODO:this is confusing, sorry:(
-		if (_connections[i]->getState() < Connection::READING_RESOURCE)
+		if (isResource(fd))
 		{
-			delete _connections[i];
-			closeFd(i);
+			closeFd(fd);
+			_resources.erase(fd);
 		}
-		else if (_connections[i]->getResourceFd() == i)
-			closeFd(i);
+		else if (_connections[fd]->getState() < Connection::READING_RESOURCE)
+		{
+			delete _connections[fd];
+			_connections.erase(fd);
+			closeFd(fd);
+			// TODO:this is confusing, sorry:(
+			// it can be 	READING_RESOURCE or RES_READY and still have read(0); I need to understand.
+		}
 	}
 }
 
 void Webserv::onWrite(int i)
 {
+	int resourceFd = -1;
 	_nReady--;
 	auto it = _connections.find(i);
 	if (it == _connections.end())
@@ -134,23 +144,23 @@ void Webserv::onWrite(int i)
 	auto &c = it->second;
 	c->checkTimeout();
 	if (c->getState() == Connection::READING_REQ_HEADER)
-		c->process();
-	if (c->getState() == Connection::REQ_READY && c->getResourceFd() != -1)
+		resourceFd = c->process();
+	if (resourceFd != -1)
 	{
-		_connections[c->getResourceFd()] = c;
-		FD_SET(c->getResourceFd(), &_master);
+		_resources[resourceFd] = i;
+		FD_SET(resourceFd, &_master);
 		c->setState(Connection::READING_RESOURCE);
-		std::cout << Colors::RED << "Add Open resource fd " << c->getResourceFd() << std::endl
+		std::cout << Colors::RED << "Add Open resource fd " << resourceFd << std::endl
 				  << Colors::RESET;
 	}
 	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
 	{
-		std::cout << "Sending response to " << c->getFd() << "\n ";
+		std::cout << "Sending response to " << i << "\n ";
 		std::string response = c->getResponse().toString();
 		if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
 		{
 			std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
-			send(c->getFd(), substring.c_str(), substring.length(), 0);
+			send(i, substring.c_str(), substring.length(), 0);
 			c->_sentChunks++;
 		}
 		else if (c->getState() == Connection::RES_READY)
@@ -160,9 +170,17 @@ void Webserv::onWrite(int i)
 			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
 					  << Colors::RESET;
 			delete _connections[i];
+			_connections.erase(i);
 			closeFd(i);
 		}
 	}
+}
+
+int Webserv::maxFd(void) const
+{
+	int maxSocketFd = _connections.rbegin()->first;
+	int maxResourceFd = _resources.empty() ? -1 : _resources.rbegin()->first;
+	return std::max(maxSocketFd, maxResourceFd);
 }
 
 void Webserv::run()
@@ -177,7 +195,7 @@ void Webserv::run()
 		memcpy(&_readfds, &_master, sizeof(_master));
 		memcpy(&_writefds, &_master, sizeof(_master));
 		if (!_connections.empty())
-			maxfd = _connections.rbegin()->first;
+			maxfd = maxFd();
 		if (-1 == (_nReady = select(maxfd + 1, &_readfds, &_writefds, &_exceptfds, &timeout)))
 			throw std::runtime_error("select()");
 		for (int i = 0; i <= maxfd && _nReady > 0; i++)
@@ -198,6 +216,10 @@ void Webserv::run()
 void Webserv::stop()
 {
 	for (auto it = _connections.begin(); it != _connections.end(); ++it)
+	{
+		close(it->first);
+	}
+	for (auto it = _resources.begin(); it != _resources.end(); ++it)
 	{
 		close(it->first);
 	}

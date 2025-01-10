@@ -1,27 +1,11 @@
 #include "Connection.hpp"
 
 // Parameterized constructor
-Connection::Connection(const Server &rs) : _server(rs), _resourceFd(-1)
+Connection::Connection(const Server &rs) : _server(rs)
 {
 	_req = new Request();
 	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
-	struct sockaddr_in cli_addr;
-	socklen_t cli_len = sizeof(cli_addr);
-	_fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
-
-	if (_fd < 0)
-		throw std::runtime_error("ERROR on accept");
-	// TODO::forbidden flag
-	int flags = fcntl(_fd, F_GETFL, 0);
-	if (flags == -1)
-		throw std::runtime_error("ERROR getting socket flags");
-	if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("ERROR setting socket to non-blocking");
-	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
-	std::cout << "fd is " << _fd << std::endl;
-	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
-	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 }
 
 // Copy constructor
@@ -45,13 +29,33 @@ Connection &Connection::operator=(const Connection &other)
 	{
 		_req = other._req;
 		_res = other._res;
-		_fd = other._fd;
 		setState(other._state);
 	}
 	return *this;
 }
 
 // Member functions
+
+int Connection::acceptConnection()
+{
+	struct sockaddr_in cli_addr;
+	socklen_t cli_len = sizeof(cli_addr);
+	int _fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
+
+	if (_fd < 0)
+		throw std::runtime_error("ERROR on accept");
+	// TODO::forbidden flag
+	int flags = fcntl(_fd, F_GETFL, 0);
+	if (flags == -1)
+		throw std::runtime_error("ERROR getting socket flags");
+	if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+		throw std::runtime_error("ERROR setting socket to non-blocking");
+	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
+	std::cout << "fd is " << _fd << std::endl;
+	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
+	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	return _fd;
+}
 
 void Connection::reset()
 {
@@ -73,8 +77,10 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
-void Connection::getResource(std::string path)
+int Connection::getResource(std::string path)
 {
+	if (path.empty())
+		return -1;
 	if (!std::filesystem::exists(path))
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 	try
@@ -83,7 +89,8 @@ void Connection::getResource(std::string path)
 				  << Colors::RESET;
 		if (std::filesystem::is_directory(path))
 			throw std::runtime_error("It's a directory. I don't know how to autoindex yet");
-		_resourceFd = open(path.c_str(), O_RDONLY);
+		int resourceFd = open(path.c_str(), O_RDONLY);
+		return resourceFd;
 	}
 	catch (const std::exception &e)
 	{
@@ -91,15 +98,13 @@ void Connection::getResource(std::string path)
 	}
 }
 
-void Connection::process()
+int Connection::process()
 {
 	try
 	{
 		_req->parseRequest(_server, this);
 		if (_state == REQ_READY)
-		{
-			getResource(_req->getRoute());
-		}
+			return getResource(_req->getRoute());
 	}
 	catch (HttpError &e)
 	{
@@ -107,6 +112,7 @@ void Connection::process()
 		_res = Response(e);
 		std::cout << "error\n";
 	}
+	return -1;
 }
 
 bool Connection::checkTimeout()
@@ -123,15 +129,6 @@ bool Connection::checkTimeout()
 }
 
 // Getters
-int Connection::getFd() const
-{
-	return _fd;
-}
-
-int Connection::getResourceFd() const
-{
-	return _resourceFd;
-}
 
 const Response &Connection::getResponse() const
 {

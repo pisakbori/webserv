@@ -9,6 +9,8 @@ class Webserv
 {
 private:
 	std::map<int, Connection *> _connections;
+	// key: resourceFd, value:socketFd
+	std::map<int, int> _resources;
 	fd_set _master;
 	fd_set _readfds;
 	fd_set _writefds;
@@ -20,10 +22,12 @@ private:
 	void onRead(int i);
 	void acceptNewConnection(const Server &server);
 	void processRequest(int event_fd);
-	int readRequest(int event_fd);
+	int readFromFd(int event_fd);
 	void onWrite(int event_fd);
 	void removeConnection(int event_fd);
 	void closeResourceFd(int i);
+	bool isResource(int i);
+	int maxFd(void) const;
 
 public:
 	// Constructor

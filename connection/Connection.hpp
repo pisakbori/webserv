@@ -19,13 +19,11 @@ private:
 	const Server &_server;
 	Response _res;
 	Request *_req;
-	int _fd;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _keepAliveTimeout;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
-	void getResource(std::string path);
+	int getResource(std::string path);
 	int _state;
-	int _resourceFd;
 
 public:
 	size_t _sentChunks;
@@ -49,15 +47,14 @@ public:
 	Connection &operator=(const Connection &);
 
 	// Member functions
-	void process();
+	int process();
 	void append(std::string const &str);
 	void appendToResponseBody(std::string const &str);
 	void reset();
 	bool checkTimeout();
+	int acceptConnection();
 
 	// Getters
-	int getFd() const;
-	int getResourceFd() const;
 	int getState() const;
 	const Response &getResponse() const;
 
