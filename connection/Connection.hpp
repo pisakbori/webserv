@@ -19,6 +19,7 @@ private:
 	const Server &_server;
 	Response _res;
 	Request *_req;
+	Location _location;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _keepAliveTimeout;
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
@@ -53,8 +54,10 @@ public:
 	void reset();
 	bool checkTimeout();
 	int acceptConnection();
+	void handleAutoIndex(std::string path);
 
 	// Getters
+	const Server &getServ() const;
 	int getState() const;
 	const Response &getResponse() const;
 

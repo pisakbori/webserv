@@ -20,15 +20,14 @@ Response::Response()
     _header["Content-Type"] = "text/html";
 }
 
-// Parameterized constructor
-Response::Response(std::string str)
+// Parameterized constructor: autoindex with directory as arg
+Response::Response(std::string dirPath, std::string url)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     _statusCode = 200;
     _statusText = statuses[_statusCode];
     _header["Content-Type"] = "text/html";
-    _body = str;
-    wrapInHtml();
+    _body = generateAutoindex(dirPath, url);
 }
 
 Response::Response(const HttpError &err)
@@ -129,3 +128,44 @@ std::string Response::toString() const
     return content.str();
 }
 // Setters
+
+std::string Response::generateAutoindex(std::string &dir, std::string &original)
+{
+    std::ostringstream html;
+
+    html
+        << "<!DOCTYPE html>\n"
+        << "<html>\n"
+        << "<head>\n"
+        << "<title>Index of " << original << "</title>\n"
+        << "</head>\n"
+        << "<body>\n"
+        << "<h1>Index of " << original << "</h1>\n"
+        << "<ul>\n";
+
+    try
+    {
+        for (const auto &entry : std::filesystem::directory_iterator(dir))
+        {
+            std::string name = entry.path().filename().string() + (entry.is_directory() ? "/" : "");
+            std::string url = entry.path();
+            url = url.substr(dir.length());
+            if (original.back() == '/' && !url.empty())
+                original.pop_back();
+            std::string combined = original + url;
+            html << "<li><a href=\"" << combined << "\">" << name << "</a></li>\n";
+            std::cout << "whole ahref=" << combined << "<<" << std::endl;
+        }
+        std::cout << Colors::RESET;
+    }
+    catch (const std::exception &e)
+    {
+        html << "<p>Error reading directory: " << e.what() << "</p>\n";
+    }
+
+    html << "</ul>\n"
+         << "</body>\n"
+         << "</html>\n";
+
+    return html.str();
+}

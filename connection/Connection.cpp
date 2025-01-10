@@ -77,8 +77,22 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
+void Connection::handleAutoIndex(std::string path)
+{
+	auto location = _req->getLocation();
+	if (!location.get_autoindex())
+		throw std::runtime_error("It's a directory. I don't know how to autoindex yet");
+	else
+	{
+		_res = Response(path, _req->getUri());
+		setState(Connection::RES_READY);
+		std::cout << Colors::GREEN << "aautoindex?" << location.get_autoindex() << " " << path << Colors::RESET << std::endl;
+	}
+}
+
 int Connection::getResource(std::string path)
 {
+	int resourceFd = -1;
 	if (path.empty())
 		return -1;
 	if (!std::filesystem::exists(path))
@@ -88,21 +102,22 @@ int Connection::getResource(std::string path)
 		std::cout << Colors::RED << "Open resource " << path << std::endl
 				  << Colors::RESET;
 		if (std::filesystem::is_directory(path))
-			throw std::runtime_error("It's a directory. I don't know how to autoindex yet");
-		int resourceFd = open(path.c_str(), O_RDONLY);
-		return resourceFd;
+			handleAutoIndex(path);
+		else
+			resourceFd = open(path.c_str(), O_RDONLY);
 	}
 	catch (const std::exception &e)
 	{
 		throw HttpError(e.what(), 500);
 	}
+	return resourceFd;
 }
 
 int Connection::process()
 {
 	try
 	{
-		_req->parseRequest(_server, this);
+		_req->parseRequest(this);
 		if (_state == REQ_READY)
 			return getResource(_req->getRoute());
 	}
@@ -138,6 +153,11 @@ const Response &Connection::getResponse() const
 int Connection::getState() const
 {
 	return _state;
+}
+
+const Server &Connection::getServ() const
+{
+	return _server;
 }
 // Setters
 

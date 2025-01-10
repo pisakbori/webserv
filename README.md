@@ -3,8 +3,8 @@ one name per server. Server config is uniquely identified by port, host, name
 TODO:Bori
 
 - how to match request uri with location?
-- write buffersize at a time
-- include read resourceFd in select.
+- autoindex
+- return default error page on 404
 
 <!-- how to use: -->
 
