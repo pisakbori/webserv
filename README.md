@@ -3,7 +3,6 @@ one name per server. Server config is uniquely identified by port, host, name
 TODO:Bori
 
 - how to match request uri with location?
-- autoindex
 - return default error page on 404
 
 <!-- how to use: -->

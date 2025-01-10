@@ -6,7 +6,7 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/08 17:44:01 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2025/01/10 21:39:35 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,7 @@ public:
 	void stopListening(void);
 	int getListenFd() const;
 	// TODO:
-	const Location &get_location(std::string uri, std::string &route) const;
+	const Location &get_location(std::string uri) const;
 };
 std::ostream &operator<<(std::ostream &os, const Server &server);
 std::string extract_parameters(const std::string &name, const std::string &directive);

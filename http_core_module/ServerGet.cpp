@@ -6,7 +6,7 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:37:36 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/09 14:18:49 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2025/01/10 21:44:10 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,14 +43,8 @@ int Server::getListenFd() const
 }
 
 // TODO: match location based on uri
-const Location &Server::get_location(std::string uri, std::string &route) const
+const Location &Server::get_location(std::string uri) const
 {
-	std::string root = location.get_root();
-	if (location.get_uri() == uri)
-		route = root;
-	else if (uri.find(location.get_uri()) == 0)
-		route = root + "/" + uri.substr(location.get_uri().length());
-	else
-		throw HttpError("Oh no! " + uri + " not found.", 404);
+	(void)uri;
 	return location;
 }

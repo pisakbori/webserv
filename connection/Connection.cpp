@@ -79,19 +79,21 @@ void Connection::appendToResponseBody(std::string const &str)
 
 void Connection::handleAutoIndex(std::string path)
 {
-	auto location = _req->getLocation();
-	if (!location.get_autoindex())
-		throw std::runtime_error("It's a directory. I don't know how to autoindex yet");
+	if (!_location.get_autoindex())
+		throw std::runtime_error("It's a directory. Should be 404");
 	else
 	{
 		_res = Response(path, _req->getUri());
 		setState(Connection::RES_READY);
-		std::cout << Colors::GREEN << "aautoindex?" << location.get_autoindex() << " " << path << Colors::RESET << std::endl;
 	}
 }
 
-int Connection::getResource(std::string path)
+int Connection::getResource(std::string uri)
 {
+	_location = _server.get_location(_req->getUri());
+	std::string path = _location.get_route(uri);
+	std::cout << Colors::RED << "Try open resource " << path << std::endl
+			  << Colors::RESET;
 	int resourceFd = -1;
 	if (path.empty())
 		return -1;
@@ -99,8 +101,6 @@ int Connection::getResource(std::string path)
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 	try
 	{
-		std::cout << Colors::RED << "Open resource " << path << std::endl
-				  << Colors::RESET;
 		if (std::filesystem::is_directory(path))
 			handleAutoIndex(path);
 		else
@@ -119,11 +119,32 @@ int Connection::process()
 	{
 		_req->parseRequest(this);
 		if (_state == REQ_READY)
-			return getResource(_req->getRoute());
+			return getResource(_req->getUri());
 	}
 	catch (HttpError &e)
 	{
 		setState(RES_READY);
+		auto v = _server.get_error_page().code;
+		if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
+		{
+			_res = Response(e);
+			_res.setBody("");
+			_res.setCode(_server.get_error_page().overwrite);
+			try
+			{
+				std::cout << Colors::RED << _server.get_error_page().uri << Colors::RESET << std::endl;
+				return getResource(_server.get_error_page().uri);
+			}
+			catch (HttpError &ex)
+			{
+				_res = Response(ex);
+
+				return -1;
+			}
+
+			// TODO:overwrite code
+		}
+
 		_res = Response(e);
 		std::cout << "error\n";
 	}

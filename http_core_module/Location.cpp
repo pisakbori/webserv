@@ -3,22 +3,21 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:36:50 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:49:04 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/10 21:38:04 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-Location::Location() :
-	uri(),
-	allow(),
-	redirect(),
-	root("html"),
-	autoindex(false),
-	index()
+Location::Location() : uri(),
+					   allow(),
+					   redirect(),
+					   root("html"),
+					   autoindex(false),
+					   index()
 {
 	allow.push_back("GET");
 	allow.push_back("HEAD");
@@ -26,13 +25,12 @@ Location::Location() :
 	index.push_back("index.html");
 }
 
-Location::Location(Location const & src) :
-	uri(src.uri),
-	allow(src.allow),
-	redirect(src.redirect),
-	root(src.root),
-	autoindex(src.autoindex),
-	index(src.index)
+Location::Location(Location const &src) : uri(src.uri),
+										  allow(src.allow),
+										  redirect(src.redirect),
+										  root(src.root),
+										  autoindex(src.autoindex),
+										  index(src.index)
 {
 }
 
@@ -40,7 +38,7 @@ Location::~Location()
 {
 }
 
-Location &	Location::operator=(Location const & rhs)
+Location &Location::operator=(Location const &rhs)
 {
 	if (this != &rhs)
 	{
@@ -54,7 +52,7 @@ Location &	Location::operator=(Location const & rhs)
 	return *this;
 }
 
-std::ostream &	operator<<(std::ostream & os, const Location & location)
+std::ostream &operator<<(std::ostream &os, const Location &location)
 {
 	os << "  uri: " << location.get_uri() << std::endl;
 	os << "  allow: ";

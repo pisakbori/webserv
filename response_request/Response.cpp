@@ -15,8 +15,7 @@ std::map<int, std::string> Response::statuses = {
 Response::Response()
 {
     std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
-    _statusCode = 200;
-    _statusText = statuses[_statusCode];
+    setCode(200);
     _header["Content-Type"] = "text/html";
 }
 
@@ -24,8 +23,7 @@ Response::Response()
 Response::Response(std::string dirPath, std::string url)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
-    _statusCode = 200;
-    _statusText = statuses[_statusCode];
+    setCode(200);
     _header["Content-Type"] = "text/html";
     _body = generateAutoindex(dirPath, url);
 }
@@ -33,8 +31,7 @@ Response::Response(std::string dirPath, std::string url)
 Response::Response(const HttpError &err)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
-    _statusCode = err.getCode();
-    _statusText = statuses[_statusCode];
+    setCode(err.getCode());
     _header["Content-Type"] = "text/html";
     for (const auto &pair : err.getExtraFields())
         _header[pair.first] = pair.second;
@@ -62,8 +59,7 @@ Response &Response::operator=(const Response &other)
     if (this != &other)
     {
         _header = other._header;
-        _statusCode = other._statusCode;
-        _statusText = other._statusText;
+        setCode(other._statusCode);
         _body = other._body;
     }
     return *this;
@@ -168,4 +164,15 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
          << "</html>\n";
 
     return html.str();
+}
+
+void Response::setBody(const std::string &str)
+{
+    _body = str;
+}
+
+void Response::setCode(int code)
+{
+    _statusCode = code;
+    _statusText = statuses[_statusCode];
 }

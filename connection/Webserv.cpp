@@ -61,6 +61,7 @@ void Webserv::configure(std::string configFile)
 		if (line.find("server") == 0)
 			_server.populate_server(infile);
 	}
+	std::cout << Colors::GREEN << this->_server << Colors::RESET << std::endl;
 }
 
 void Webserv::acceptNewConnection(const Server &server)

@@ -41,6 +41,8 @@ public:
 	std::string getBody() const;
 	std::string toString() const;
 	// Setters
+	void setBody(const std::string &str);
+	void setCode(int code);
 };
 
 #endif

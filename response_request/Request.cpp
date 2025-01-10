@@ -63,19 +63,17 @@ std::string joinStrings(const std::vector<std::string> &vec, const std::string &
 	return oss.str();
 }
 
-void Request::setRoute(std::string uri, std::string method, const Server &serv)
+void Request::validateAllowed(std::string uri, std::string method, const Server &serv)
 {
 	// TODO:where should i store location?:/
-	_location = serv.get_location(uri, _route);
-	std::cout << Colors::MAGENTA << _route << std::endl;
-	auto allowed = _location.get_allow();
+	auto location = serv.get_location(uri);
+	auto allowed = location.get_allow();
 	if (std::find(allowed.begin(), allowed.end(), method) == allowed.end())
 	{
 		auto err = HttpError(method + " method not allowed for " + uri, 405);
-		err.setField("Allow", joinStrings(_location.get_allow(), ", "));
+		err.setField("Allow", joinStrings(location.get_allow(), ", "));
 		throw err;
 	}
-	std::cout << Colors::GREY << _route << Colors::RESET << std::endl;
 };
 
 void Request::parseRequest(Connection *c)
@@ -95,7 +93,7 @@ void Request::parseRequest(Connection *c)
 	_protocol = line.substr(separator2 + 1, line.length() - separator2);
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
-	setRoute(_uri, _method, c->getServ());
+	validateAllowed(_uri, _method, c->getServ());
 	// field-name: OWS field-value OWS
 	while (std::getline(_stream, line))
 	{
@@ -152,13 +150,4 @@ const std::map<std::string, std::string> &Request::getHeader() const
 	return _header;
 }
 
-std::string const &Request::getRoute() const
-{
-	return _route;
-}
-
-const Location &Request::getLocation() const
-{
-	return _location;
-}
 // Setters
