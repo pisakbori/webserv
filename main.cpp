@@ -9,10 +9,10 @@ void	parse_config(std::string file_name, std::vector<Server> & servers)
 {
 	std::ifstream	infile(file_name);
 	std::string		line;
-	Server			serv;
 
 	while (std::getline(infile, line))
 	{
+		Server	serv;
 		if (line.find("server {") != std::string::npos)
 			serv.populate_server(infile);
 		servers.push_back(serv);
@@ -25,7 +25,8 @@ int	main(int argc, char *argv[])
 	if (argc != 2)
 		return 1;
 	parse_config(argv[1], servers);
-	std::cout << servers.at(0) << std::endl;
+	for (size_t i = 0; i < servers.size(); ++i)
+		std::cout << servers.at(i);
 	// test_parse_request_header();
 	// test_server_parsing();
 	return 0;

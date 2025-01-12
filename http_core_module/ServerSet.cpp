@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:38:59 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 16:04:04 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 16:52:19 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,8 @@ void			Server::populate_server(std::ifstream & infile)
 
 	while (std::getline(infile, line))
 	{
-		// if (line.find("}") != std::string::npos)
-		// 	return ;
+		if (line.find("}") != std::string::npos)
+			return ;
 		if (line.find("location") != std::string::npos)
 		{
 			location.populate_location(infile, line);
