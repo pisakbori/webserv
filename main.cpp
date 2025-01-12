@@ -12,7 +12,7 @@ void	parse_config(std::string file_name)
 
 	while (std::getline(infile, line))
 	{
-		if (line.find("server") == 0)
+		if (line.find("server {") != std::string::npos)
 			serv.populate_server(infile);
 	}
 	std::cout << serv << std::endl;
@@ -24,7 +24,7 @@ int	main(int argc, char *argv[])
 		return 1;
 	parse_config(argv[1]);
 
-	test_parse_request_header();
-	test_server_parsing();
+	// test_parse_request_header();
+	// test_server_parsing();
 	return 0;
 }

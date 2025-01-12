@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:36:50 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:49:04 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 14:06:36 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ Location &	Location::operator=(Location const & rhs)
 
 std::ostream &	operator<<(std::ostream & os, const Location & location)
 {
-	os << "  uri: " << location.get_uri() << std::endl;
+	os << "location uri: " << location.get_uri() << std::endl;
 	os << "  allow: ";
 	std::vector<std::string> v(location.get_allow());
 	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)

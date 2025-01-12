@@ -16,9 +16,9 @@ SOURCES     =       main.cpp \
 					$(REQ_RES_DIR)/HttpError.cpp \
 					$(REQ_RES_DIR)/Request.cpp \
 					$(REQ_RES_DIR)/Response.cpp \
-					$(TEST_DIR)/server.cpp \
-					$(TEST_DIR)/location.cpp \
-					$(TEST_DIR)/parse_request_head.cpp
+					# $(TEST_DIR)/server.cpp \
+					# $(TEST_DIR)/location.cpp \
+					# $(TEST_DIR)/parse_request_head.cpp
 OBJECTS		=		$(SOURCES:.cpp=.o)
 
 all:	$(NAME)

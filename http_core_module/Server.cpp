@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:44:19 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 14:47:01 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,19 +65,24 @@ std::ostream&	operator<<(std::ostream& os, const Server& server)
 	os << "  overwrite: " << server.get_error_page().overwrite << std::endl;
 	os << "  uri: " << server.get_error_page().uri << std::endl;
 	os << "client_max_body_size: " << server.get_client_max_body_size() << std::endl;
-	os << "location: " << std::endl << server.location;
+	std::vector<Location> l(server.location);
+	for (size_t i = 0; i < l.size(); ++i)
+  		os << l[i] << std::endl;
 	return os;
 }
 
-std::string		extract_parameters(const std::string & name, const std::string & directive)
+std::string		extract_parameters(
+	const std::string & name,
+	const std::string & directive
+	)
 {
 	std::string	arg;
-	(void)name;
-	// if (directive.find(name) != std::string::npos && directive.find(' ') != std::string::npos)
-	// {
-	arg = directive.substr(directive.find(' ') + 1);
-	arg = arg.substr(0, arg.size() - 1);
-	return arg;
-	// }
-	// return "";
+	if (directive.find(name) != std::string::npos
+		&& directive.find(' ') != std::string::npos)
+	{
+		arg = directive.substr(directive.find(' ') + 1);
+		arg = arg.substr(0, arg.size() - 1);
+		return arg;
+	}
+	return "";
 }

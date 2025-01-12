@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:31:20 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:34:15 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 14:47:56 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,13 @@ class Location
 		std::string					root;
 		bool						autoindex;
 		std::vector<std::string>	index;
+		void						set_location(std::string directive);
+		void						set_uri(std::string uri);
+		void						set_allow(std::string arg);
+		void						set_redirect(std::string arg);
+		void						set_root(std::string arg);
+		void						set_autoindex(std::string arg);
+		void						set_index(std::string arg);
 
 	public:
 
@@ -44,14 +51,7 @@ class Location
 		~Location();
 		Location &	operator=(Location const & rhs);
 		
-		void						populate_location(std::ifstream & infile);
-		void						set_location(std::string *directives, void (Location::*fnptr[])( std::string ), std::string directive);
-		void						set_uri(std::string uri);
-		void						set_allow(std::string arg);
-		void						set_redirect(std::string arg);
-		void						set_root(std::string arg);
-		void						set_autoindex(std::string arg);
-		void						set_index(std::string arg);
+		void						populate_location(std::ifstream & infile, std::string line);
 		std::string					get_uri(void) const;
 		std::vector<std::string>	get_allow(void) const;
 		std::pair<int, std::string>	get_redirect(void) const;
@@ -62,7 +62,9 @@ class Location
 
 };
 std::ostream &	operator<<(std::ostream & os, const Location & location);
-std::string		extract_parameters(const std::string & name, const std::string & directive);
-
+std::string		extract_parameters(
+	const std::string & name,
+	const std::string & directive
+	);
 
 #endif

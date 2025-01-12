@@ -6,13 +6,24 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:49:11 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/19 17:48:47 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 14:47:18 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-void			Location::populate_location(std::ifstream & infile)
+void	Location::populate_location(std::ifstream & infile, std::string line)
+{
+	this->set_uri(line);
+	while (std::getline(infile, line))
+	{
+		if (line.find("	}") != std::string::npos)
+			return ;
+		this->set_location(line);
+	}
+}
+
+void	Location::set_location(std::string directive)
 {
 	std::string		directives[] =
 	{
@@ -30,15 +41,8 @@ void			Location::populate_location(std::ifstream & infile)
 		&Location::set_autoindex,
 		&Location::set_index
 	};
-	std::string		line;
-	while (std::getline(infile, line))
-		this->set_location(directives, fnptr, line);
-}
-
-void			Location::set_location(std::string *directives, void (Location::*fnptr[])( std::string ), std::string directive)
-{
-	int	i;
-	int	N = 5;
+	int			i;
+	const int	N = sizeof(directives)/sizeof(directives[0]);
 
 	i = 0;
 	while (i < N && directive.find(directives[i]) == std::string::npos)
