@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:38:59 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 14:44:06 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 16:04:04 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@ void			Server::populate_server(std::ifstream & infile)
 
 	while (std::getline(infile, line))
 	{
+		// if (line.find("}") != std::string::npos)
+		// 	return ;
 		if (line.find("location") != std::string::npos)
 		{
 			location.populate_location(infile, line);
@@ -45,7 +47,7 @@ void			Server::set_server(std::string directive)
 		&Server::set_client_max_body_size
 	};
 	int			i;
-	const int	N = sizeof(directives)/sizeof(directives[0]);
+	const int	N = sizeof(directives) / sizeof(directives[0]);
 
 	i = 0;
 	while (i < N && directive.find(directives[i]) == std::string::npos)

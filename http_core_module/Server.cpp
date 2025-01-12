@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 14:47:01 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 16:17:32 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,8 @@ Server::Server() :
 	port(80),
 	server_name(1),
 	error_page(),
-	client_max_body_size(1 << 20)
+	client_max_body_size(1 << 20),
+	location()
 {
 }
 
@@ -26,7 +27,8 @@ Server::Server(Server const & src) :
 	port(src.port),
 	server_name(src.server_name),
 	error_page(src.error_page),
-	client_max_body_size(src.client_max_body_size)
+	client_max_body_size(src.client_max_body_size),
+	location(src.location)
 {
 }
 
@@ -43,6 +45,7 @@ Server &		Server::operator=(Server const & rhs)
 		this->server_name = rhs.server_name;
 		this->error_page = rhs.error_page;
 		this->client_max_body_size = rhs.client_max_body_size;
+		this->location = rhs.location;
 	}
 	return *this;
 }

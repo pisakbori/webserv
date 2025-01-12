@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 22:49:11 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 14:47:18 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/12 16:02:45 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ void	Location::set_location(std::string directive)
 		&Location::set_index
 	};
 	int			i;
-	const int	N = sizeof(directives)/sizeof(directives[0]);
+	const int	N = sizeof(directives) / sizeof(directives[0]);
 
 	i = 0;
 	while (i < N && directive.find(directives[i]) == std::string::npos)
