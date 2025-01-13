@@ -1,17 +1,6 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   LocationSet.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/16 22:49:11 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 16:02:45 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Location.hpp"
 
+// Member functions
 void	Location::populate_location(std::ifstream & infile, std::string line)
 {
 	this->set_uri(line);
@@ -23,6 +12,7 @@ void	Location::populate_location(std::ifstream & infile, std::string line)
 	}
 }
 
+// Setters
 void	Location::set_location(std::string directive)
 {
 	std::string		directives[] =

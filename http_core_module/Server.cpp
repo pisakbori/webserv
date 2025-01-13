@@ -1,17 +1,23 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/13 13:12:49 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
 
+std::string		extract_parameters(
+	const std::string & name,
+	const std::string & directive
+	)
+{
+	std::string	arg;
+	if (directive.find(name) != std::string::npos
+		&& directive.find(' ') != std::string::npos
+		&& directive.back() == ';')
+	{
+		arg = directive.substr(directive.find(' ') + 1);
+		arg = arg.substr(0, arg.size() - 1);
+		return arg;
+	}
+	return "";
+}
+
+// Constructor
 Server::Server() :
 	host("0.0.0.0"),
 	port(80),
@@ -22,6 +28,7 @@ Server::Server() :
 {
 }
 
+// Copy constructor
 Server::Server(Server const & src) :
 	host(src.host),
 	port(src.port),
@@ -32,10 +39,12 @@ Server::Server(Server const & src) :
 {
 }
 
+// Destructor
 Server::~Server()
 {
 }
 
+// Overloads
 Server &		Server::operator=(Server const & rhs)
 {
 	if (this != &rhs)
@@ -72,21 +81,4 @@ std::ostream&	operator<<(std::ostream& os, const Server& server)
 	for (size_t i = 0; i < l.size(); ++i)
   		os << l[i] << std::endl;
 	return os;
-}
-
-std::string		extract_parameters(
-	const std::string & name,
-	const std::string & directive
-	)
-{
-	std::string	arg;
-	if (directive.find(name) != std::string::npos
-		&& directive.find(' ') != std::string::npos
-		&& directive.back() == ';')
-	{
-		arg = directive.substr(directive.find(' ') + 1);
-		arg = arg.substr(0, arg.size() - 1);
-		return arg;
-	}
-	return "";
 }

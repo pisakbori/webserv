@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/13 13:13:11 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
@@ -38,14 +26,14 @@ typedef struct	err_page_s
 
 class Server
 {
-
 	private:
-
 		std::string					host;
 		unsigned short				port;
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
 		size_t						client_max_body_size;
+
+	// Setters
 		void						set_server(std::string directive);
 		void						parse_listen(std::string arg);
 		void						set_host(std::string arg);
@@ -55,21 +43,28 @@ class Server
 		void						set_client_max_body_size(std::string arg);
 
 	public:
-
+	// Constructor
 		Server();
+
+	// Copy constructor
 		Server(Server const & src);
+
+	// Destructor
 		~Server();
+
+	// Overloads
 		Server &	operator=(Server const & rhs);
 
+	// Member functions
 		void						populate_server(std::ifstream & infile);
+
+	// Getters
 		std::string					get_host(void) const;
 		unsigned short				get_port(void) const;
 		std::vector<std::string>	get_server_name(void) const;
 		err_page_t					get_error_page(void) const;
 		size_t						get_client_max_body_size(void) const;
 		std::vector<Location>		location;
-
-
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);
 std::string		extract_parameters(

@@ -1,17 +1,6 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ServerSet.cpp                                      :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/16 22:38:59 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/13 13:09:18 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
 
+// Member functions
 void	Server::populate_server(std::ifstream & infile)
 {
 	std::string		line;
@@ -30,6 +19,7 @@ void	Server::populate_server(std::ifstream & infile)
 	}
 }
 
+// Setters
 void	Server::set_server(std::string directive)
 {
 	std::string		directives[] =

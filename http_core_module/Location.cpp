@@ -1,17 +1,6 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Location.cpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/16 20:36:50 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 14:06:36 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Location.hpp"
 
+// Constructor
 Location::Location() :
 	uri(),
 	allow(),
@@ -26,6 +15,7 @@ Location::Location() :
 	index.push_back("index.html");
 }
 
+// Copy constructor
 Location::Location(Location const & src) :
 	uri(src.uri),
 	allow(src.allow),
@@ -36,10 +26,12 @@ Location::Location(Location const & src) :
 {
 }
 
+// Destructor
 Location::~Location()
 {
 }
 
+// Overloads
 Location &	Location::operator=(Location const & rhs)
 {
 	if (this != &rhs)

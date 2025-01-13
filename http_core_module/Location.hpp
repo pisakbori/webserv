@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Location.hpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/16 20:31:20 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 14:47:56 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
 
@@ -27,15 +15,15 @@
 
 class Location
 {
-
 	private:
-		
 		std::string					uri;
 		std::vector<std::string>	allow;
 		std::pair<int, std::string>	redirect;
 		std::string					root;
 		bool						autoindex;
 		std::vector<std::string>	index;
+
+	// Setters
 		void						set_location(std::string directive);
 		void						set_uri(std::string uri);
 		void						set_allow(std::string arg);
@@ -45,21 +33,28 @@ class Location
 		void						set_index(std::string arg);
 
 	public:
-
+	// Constructor
 		Location();
+
+	// Copy constructor
 		Location(Location const & src);
+
+	// Destructor
 		~Location();
+
+	// Overloads
 		Location &	operator=(Location const & rhs);
-		
+	
+	// Member functions
 		void						populate_location(std::ifstream & infile, std::string line);
+
+	// Getters
 		std::string					get_uri(void) const;
 		std::vector<std::string>	get_allow(void) const;
 		std::pair<int, std::string>	get_redirect(void) const;
 		std::string					get_root(void) const;
 		bool						get_autoindex(void) const;
 		std::vector<std::string>	get_index(void) const;
-
-
 };
 std::ostream &	operator<<(std::ostream & os, const Location & location);
 std::string		extract_parameters(
