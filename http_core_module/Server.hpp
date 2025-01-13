@@ -1,28 +1,32 @@
 #ifndef SERVER_HPP
-# define SERVER_HPP
+#define SERVER_HPP
 
-# include <string>
-# include <vector>
-# include <iostream>
-# include <fstream>
-# include <arpa/inet.h>
-# include <sys/socket.h>
-# include <sstream>
-# include "Location.hpp"
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sstream>
+#include "Location.hpp"
+#include "CommonIncludes.hpp"
+#include "HttpError.hpp"
 
 /*
  * Server class stores information regarding server directive in the .conf
- * It's inspired by nginx directives: 
+ * It's inspired by nginx directives:
  * https://nginx.org/en/docs/http/ngx_http_core_module.html
  * #TODO
-*/
+ * - [ ] Check if port, host, error_code is in proper before assignment
+ * - [ ] Server can have multiple locations
+ */
 
-typedef struct	err_page_s
+typedef struct err_page_s
 {
-	std::vector<int>	code;
-	int					overwrite;
-	std::string			uri;
-}	err_page_t;
+	std::vector<int> code;
+	int overwrite;
+	std::string uri;
+} err_page_t;
 
 class Server
 {
@@ -65,6 +69,10 @@ class Server
 		err_page_t					get_error_page(void) const;
 		size_t						get_client_max_body_size(void) const;
 		std::vector<Location>		location;
+		void						startListening(void);
+		void						stopListening(void);
+		int							getListenFd() const;
+		const Location &			get_location(std::string uri) const;
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);
 std::string		extract_parameters(

@@ -1,17 +1,18 @@
 #ifndef LOCATION_HPP
-# define LOCATION_HPP
+#define LOCATION_HPP
 
-# include <vector>
-# include <string>
-# include <iostream>
-# include <sstream>
-# include <fstream>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <HttpError.hpp>
 
 /*
  * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
  * #TODO
  * - [ ] Implement all CGI stuff...
-*/
+ */
 
 class Location
 {
@@ -55,6 +56,8 @@ class Location
 		std::string					get_root(void) const;
 		bool						get_autoindex(void) const;
 		std::vector<std::string>	get_index(void) const;
+		std::string					get_route(const std::string &uri);
+
 };
 std::ostream &	operator<<(std::ostream & os, const Location & location);
 std::string		extract_parameters(

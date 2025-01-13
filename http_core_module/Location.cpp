@@ -46,7 +46,7 @@ Location &	Location::operator=(Location const & rhs)
 	return *this;
 }
 
-std::ostream &	operator<<(std::ostream & os, const Location & location)
+std::ostream &operator<<(std::ostream &os, const Location &location)
 {
 	os << "location uri: " << location.get_uri() << std::endl;
 	os << "  allow: ";

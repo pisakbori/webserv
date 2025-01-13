@@ -16,12 +16,12 @@ std::vector<std::string>	Server::get_server_name(void) const
 	return server_name;
 }
 
-err_page_t					Server::get_error_page(void) const
+err_page_t 					Server::get_error_page(void) const
 {
 	return error_page;
 }
 
-size_t						Server::get_client_max_body_size(void) const
+size_t 						Server::get_client_max_body_size(void) const
 {
 	return client_max_body_size;
 }
@@ -45,6 +45,11 @@ const Location &			Server::get_location(std::string requested_uri) const
 			}
 	}
 	if (position_match == -1)
-		throw HttpError("Oh no! " + str + " not found.", 404);
+		throw HttpError("Oh no! " + requested_uri + " not found.", 404);
 	return location.at(position_match);
+}
+
+int Server::getListenFd() const
+{
+	return _listenFd;
 }

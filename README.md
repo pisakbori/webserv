@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # location - Configuration Directive
 
 ## Syntax
@@ -85,3 +86,26 @@ Given a server and a request URI, this function determines which location matche
 ### Example
 
 If the request URI is `/index.html`, the function will find the longest matching location and return the appropriate configuration, such as `location / { ... }` or `location = /index.html { ... }`.
+=======
+one name per server. Server config is uniquely identified by port, host, name
+
+TODO:Bori
+
+- send different mime types
+
+<!-- how to use: -->
+
+./webserv
+cat ./test_input/GET.txt | nc localhost 8080
+
+<!-- or line by line: -->
+
+nc localhost 8080
+GET /index.html?user=123 HTTP/1.1
+ju:hi
+
+end GET request with empty line
+
+TODO:Marian
+make sure parsing trims white spaces correctly
+>>>>>>> remotes/origin/connection

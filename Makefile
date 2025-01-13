@@ -5,8 +5,8 @@ STANDARD	=		--std=c++17
 HTTP_DIR	=		http_core_module
 REQ_RES_DIR	=		response_request
 TEST_DIR	=		tests
-SOURCES     =       main.cpp \
-					$(HTTP_DIR)/Server.cpp \
+INCLUDE		=		-I./http_core_module -I./connection -I./response_request
+SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/ServerSet.cpp \
 					$(HTTP_DIR)/ServerGet.cpp \
 					$(HTTP_DIR)/Location.cpp \
@@ -16,18 +16,22 @@ SOURCES     =       main.cpp \
 					$(REQ_RES_DIR)/HttpError.cpp \
 					$(REQ_RES_DIR)/Request.cpp \
 					$(REQ_RES_DIR)/Response.cpp \
-					# $(TEST_DIR)/server.cpp \
-					# $(TEST_DIR)/location.cpp \
-					# $(TEST_DIR)/parse_request_head.cpp
+					connection/Connection.cpp \
+					connection/Webserv.cpp \
+					$(TEST_DIR)/server.cpp \
+					$(TEST_DIR)/location.cpp 
 OBJECTS		=		$(SOURCES:.cpp=.o)
 
 all:	$(NAME)
 
 %.o: %.cpp
-	$(COMPILER) $(FLAGS) $(STANDARD) -o $@ -c $<
+	$(COMPILER) $(FLAGS) $(STANDARD) $(INCLUDE) -o $@ -c $<
 
-$(NAME): $(OBJECTS)
-	$(COMPILER) $(OBJECTS) -o $(NAME)
+$(NAME): $(OBJECTS) main.o
+	$(COMPILER) $(OBJECTS) main.o -o $(NAME)
+
+test: $(OBJECTS) test.o
+	$(COMPILER) $(OBJECTS) test.o -o test
 
 clean:
 	rm -rf $(OBJECTS)

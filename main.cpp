@@ -1,33 +1,25 @@
-#include "http_core_module/Server.hpp"
-#include "tests/tests.hpp"
-#include <string>
-#include <vector>
-#include <sstream>
-#include <fstream>
+#include "Webserv.hpp"
+#include <csignal>
 
-void	parse_config(std::string file_name, std::vector<Server> & servers)
+Webserv webserv;
+
+void stop()
 {
-	std::ifstream	infile(file_name);
-	std::string		line;
-
-	while (std::getline(infile, line))
-	{
-		Server	serv;
-		if (line.find("server {") != std::string::npos)
-			serv.populate_server(infile);
-		servers.push_back(serv);
-	}
+	std::cout << "stopping" << std::endl;
+	webserv.stop();
 }
 
-int	main(int argc, char *argv[])
+void handle_sigint(int signal)
 {
-	std::vector<Server>	servers;
-	if (argc != 2)
-		return 1;
-	parse_config(argv[1], servers);
-	for (size_t i = 0; i < servers.size(); ++i)
-		std::cout << servers.at(i) << std::endl;
-	// test_parse_request_header();
-	// test_server_parsing();
+	(void)signal;
+	webserv.stop();
+	std::exit(0);
+}
+
+int main()
+{
+	std::signal(SIGINT, handle_sigint);
+	webserv.configure("./test_input/autoindex.conf");
+	webserv.run();
 	return 0;
 }
