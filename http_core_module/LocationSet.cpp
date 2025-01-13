@@ -44,7 +44,11 @@ void	Location::set_location(std::string directive)
 
 void	Location::set_uri(std::string uri)
 {
-	this->uri = extract_parameters("location", uri);
+	std::string	result;
+
+	result = uri.substr(uri.find(' ') + 1);
+	result = result.substr(0, result.find_last_not_of("{ ") + 1);
+	this->uri = result;
 }
 
 void	Location::set_allow(std::string arg)

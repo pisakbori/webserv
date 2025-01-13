@@ -11,7 +11,7 @@ std::string		extract_parameters(
 		&& directive.back() == ';')
 	{
 		arg = directive.substr(directive.find(' ') + 1);
-		arg = arg.substr(0, arg.size() - 1);
+		arg = arg.substr(0, arg.find_last_not_of("; ") + 1);
 		return arg;
 	}
 	return "";
