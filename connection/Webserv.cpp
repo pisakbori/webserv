@@ -156,7 +156,7 @@ void Webserv::onWrite(int i)
 	}
 	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
 	{
-		std::cout << "Sending response to " << i << "\n ";
+		// std::cout << "Sending response to " << i << "\n ";
 		std::string response = c->getResponse().toString();
 		if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
 		{

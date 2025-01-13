@@ -8,15 +8,33 @@ std::map<int, std::string> Response::statuses = {
     {408, "Request Timeout"},
     {405, "Method Not Allowed"},
     {414, "URI Too Long"},
+    {415, "Unsupported Media Type"},
     {500, "Internal Server Error"},
     {505, "HTTP Version Not Supported"}};
+
+std::map<std::string, std::string> Response::mimeTypes = {
+    {"html", "text/html"},
+    {"css", "text/css"},
+    {"js", "application/javascript"},
+    {"json", "application/json"},
+    {"png", "image/png"},
+    {"jpg", "image/jpeg"},
+    {"jpeg", "image/jpeg"},
+    {"gif", "image/gif"},
+    {"svg", "image/svg+xml"},
+    {"pdf", "application/pdf"},
+    {"zip", "application/zip"},
+    {"txt", "text/plain"},
+    {"xml", "application/xml"},
+    {"xml", "text/xml"} // ???? TODO:which one is good for xml?
+};
 
 // Constructor
 Response::Response()
 {
     std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
     setCode(200);
-    _header["Content-Type"] = "text/html";
+    setContentType("html");
 }
 
 // Parameterized constructor: autoindex with directory as arg
@@ -24,7 +42,7 @@ Response::Response(std::string dirPath, std::string url)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(200);
-    _header["Content-Type"] = "text/html";
+    setContentType("html");
     _body = generateAutoindex(dirPath, url);
 }
 
@@ -32,7 +50,7 @@ Response::Response(const HttpError &err)
 {
     std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(err.getCode());
-    _header["Content-Type"] = "text/html";
+    setContentType("html");
     for (const auto &pair : err.getExtraFields())
         _header[pair.first] = pair.second;
     _body = err.what();
@@ -74,7 +92,15 @@ void Response::appendToBody(std::string const &str)
 
 void Response::setContentType(std::string const &str)
 {
-    _header["Content-Type"] = str;
+    if (mimeTypes.find(str) != mimeTypes.end())
+    {
+        _header["Content-Type"] = mimeTypes[str];
+        std::cout << "content type " << mimeTypes[str] << std::endl;
+    }
+    else if (str.empty())
+        _header["Content-Type"] = "application/octet-stream";
+    else
+        throw HttpError("Unsupported Media Type " + str, 415);
 }
 
 void Response::appendToHeader(std::string key, std::string value)

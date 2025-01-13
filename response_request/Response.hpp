@@ -16,6 +16,8 @@ private:
 
 public:
 	static std::map<int, std::string> statuses;
+	static std::map<std::string, std::string> mimeTypes;
+
 	// Constructor
 	Response();
 	// Parameterized constructor

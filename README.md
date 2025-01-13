@@ -2,8 +2,7 @@ one name per server. Server config is uniquely identified by port, host, name
 
 TODO:Bori
 
-- how to match request uri with location?
-- return default error page on 404
+- send different mime types
 
 <!-- how to use: -->
 

@@ -104,7 +104,14 @@ int Connection::getResource(std::string uri)
 		if (std::filesystem::is_directory(path))
 			handleAutoIndex(path);
 		else
+		{
 			resourceFd = open(path.c_str(), O_RDONLY);
+			size_t pos = uri.rfind('.');
+			if (pos != std::string::npos)
+				_res.setContentType(uri.substr(pos + 1));
+			else
+				_res.setContentType("");
+		}
 	}
 	catch (const std::exception &e)
 	{
