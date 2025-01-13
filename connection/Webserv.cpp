@@ -51,24 +51,35 @@ Webserv &Webserv::operator=(const Webserv &other)
 }
 
 // Member functions
+void parse_config(std::string file_name, std::vector<Server> &servers)
+{
+	std::ifstream infile(file_name);
+	std::string line;
+
+	while (std::getline(infile, line))
+	{
+		Server serv;
+		if (line.find("server {") != std::string::npos)
+			serv.populate_server(infile);
+		servers.push_back(serv);
+	}
+}
 
 void Webserv::configure(std::string configFile)
 {
 	std::ifstream infile(configFile);
 	std::string line;
-	while (std::getline(infile, line))
-	{
-		if (line.find("server") == 0)
-			_server.populate_server(infile);
-	}
-	std::cout << Colors::GREEN << this->_server << Colors::RESET << std::endl;
+	parse_config(configFile, _servers);
+	std::cout << Colors::GREEN;
+	for (size_t i = 0; i < _servers.size(); ++i)
+		std::cout << _servers.at(i) << std::endl;
+	std::cout << Colors::RESET << std::endl;
 }
 
-void Webserv::acceptNewConnection(const Server &server)
+void Webserv::acceptNewConnection(int fd)
 {
-
 	std::cout << "new connection" << std::endl;
-	auto c = new Connection(server);
+	auto c = new Connection(_servers[_listenFdLookup[fd]]);
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
 	FD_SET(newfd, &_master);
@@ -115,8 +126,9 @@ void Webserv::closeFd(int fd)
 void Webserv::onRead(int fd)
 {
 	_nReady--;
-	if (fd == _server.getListenFd())
-		acceptNewConnection(_server);
+	if (_listenFdLookup.find(fd) != _listenFdLookup.end())
+		acceptNewConnection(fd);
+
 	else if (readFromFd(fd) <= 0)
 	{
 		if (isResource(fd))
@@ -186,9 +198,16 @@ int Webserv::maxFd(void) const
 
 void Webserv::run()
 {
-	_server.startListening();
-	FD_SET(_server.getListenFd(), &_master);
-	int maxfd = _server.getListenFd();
+	int maxfd = -1;
+	for (size_t i = 0; i < _servers.size(); i++)
+	{
+		_servers[i].startListening();
+		FD_SET(_servers[i].getListenFd(), &_master);
+		int max_i = _servers[i].getListenFd();
+		if (max_i > maxfd)
+			maxfd = max_i;
+		_listenFdLookup[_servers[i].getListenFd()] = i;
+	}
 
 	struct timeval timeout = {0, 0};
 	while (1)
@@ -224,9 +243,12 @@ void Webserv::stop()
 	{
 		close(it->first);
 	}
-	std::cout << std::endl
-			  << _server.getListenFd() << " fd closed" << std::endl;
-	close(_server.getListenFd());
+	for (size_t i = 0; i < _servers.size(); i++)
+	{
+		std::cout << std::endl
+				  << _servers[i].getListenFd() << " fd closed" << std::endl;
+		close(_servers[i].getListenFd());
+	}
 }
 
 // Getters
