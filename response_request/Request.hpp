@@ -13,6 +13,7 @@ private:
 	std::string _method;
 	std::string _uri;
 	std::string _protocol;
+	std::string _body;
 	std::map<std::string, std::string> _header;
 	std::string _input;
 
@@ -42,6 +43,7 @@ public:
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
 	const std::map<std::string, std::string> &getHeader() const;
+	std::string const &getBody() const;
 	// Setters
 };
 

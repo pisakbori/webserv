@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>POST and DELETE</title>
+    <script>
+      function deleteUser() {
+        fetch("https://reqres.in/api/users/2", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: "userId", optional: "blablalbla" }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              alert("User deleted successfully!");
+            } else {
+              alert("Error deleting user!");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Request failed!");
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Send POST Request</h1>
+    <form action="https://reqres.in/api/users" method="POST">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required /><br /><br />
+      <label for="name">Job:</label>
+      <input type="text" id="job" name="job" required /><br /><br />
+      <input type="submit" value="Submit" />
+    </form>
+  </body>
+
+  <p>Send a DELETE request to</p>
+  <button title="Delete User" onclick="deleteUser()">Delete User</button>
+</html>

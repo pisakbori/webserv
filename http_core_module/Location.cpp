@@ -6,7 +6,7 @@
 /*   By: bpisak-l <bpisak-l@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 20:36:50 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/10 21:38:04 by bpisak-l         ###   ########.fr       */
+/*   Updated: 2025/01/13 16:16:11 by bpisak-l         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ Location::Location() : uri(),
 	allow.push_back("GET");
 	allow.push_back("HEAD");
 	allow.push_back("POST");
+	allow.push_back("DELETE");
 	index.push_back("index.html");
 }
 

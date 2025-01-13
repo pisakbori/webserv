@@ -8,6 +8,7 @@ std::map<int, std::string> Response::statuses = {
     {408, "Request Timeout"},
     {405, "Method Not Allowed"},
     {414, "URI Too Long"},
+    {413, "Payload Too Large"},
     {415, "Unsupported Media Type"},
     {500, "Internal Server Error"},
     {505, "HTTP Version Not Supported"}};
