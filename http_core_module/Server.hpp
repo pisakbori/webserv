@@ -36,6 +36,8 @@ class Server
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
 		size_t						client_max_body_size;
+		struct sockaddr_in			_serverAddr;
+		int							_listenFd;
 
 	// Setters
 		void						set_server(std::string directive);

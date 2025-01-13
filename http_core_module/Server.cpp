@@ -109,4 +109,3 @@ void Server::stopListening(void)
 {
 	close(_listenFd);
 }
->>>>>>> remotes/origin/connection
