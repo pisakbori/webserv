@@ -91,6 +91,13 @@ void Connection::handleAutoIndex(std::string path)
 int Connection::getResource(std::string uri)
 {
 	_location = _server.get_location(_req->getUri());
+	if (_server.get_location(_req->getUri()).get_redirect().first)
+	{
+		_res.setCode(_server.get_location(_req->getUri()).get_redirect().first);
+		_res.appendToHeader("Location", _server.get_location(_req->getUri()).get_redirect().second);
+		_state = RES_READY;
+		return -1;
+	}
 	std::string path = _location.get_route(uri);
 	std::cout << Colors::RED << "Try open resource " << path << std::endl
 			  << Colors::RESET;
@@ -126,7 +133,11 @@ int Connection::process()
 	{
 		_req->parseRequest(this);
 		if (_state == REQ_READY)
+		{
+			// std::cout << *_req << std::endl;
+
 			return getResource(_req->getUri());
+		}
 	}
 	catch (HttpError &e)
 	{

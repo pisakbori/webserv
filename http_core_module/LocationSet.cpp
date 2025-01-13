@@ -42,7 +42,7 @@ void	Location::set_location(std::string directive)
 		(this->*fnptr[i])(arg);
 }
 
-void	Location::set_uri(std::string uri)
+void Location::set_uri(std::string uri)
 {
 	std::string	result;
 
@@ -51,28 +51,28 @@ void	Location::set_uri(std::string uri)
 	this->uri = result;
 }
 
-void	Location::set_allow(std::string arg)
+void Location::set_allow(std::string arg)
 {
-	std::istringstream	iss(arg);
+	std::istringstream iss(arg);
 	allow.clear();
 	for (std::string token; std::getline(iss, token, ' ');)
 	{
-		if (token == "HEAD" || token == "GET" || token == "POST")
+		if (token == "HEAD" || token == "GET" || token == "POST" || token == "DELETE")
 			allow.push_back(token);
 	}
 }
 
-void	Location::set_redirect(std::string arg)
+void Location::set_redirect(std::string arg)
 {
-	std::istringstream	iss(arg);
-	std::string	token;
+	std::istringstream iss(arg);
+	std::string token;
 	if (std::getline(iss, token, ' '))
 	{
 		try
 		{
 			redirect.first = std::stoi(token);
 		}
-		catch(const std::invalid_argument&)
+		catch (const std::invalid_argument &)
 		{
 			redirect.first = 0;
 			redirect.second = token;
@@ -83,12 +83,12 @@ void	Location::set_redirect(std::string arg)
 	}
 }
 
-void	Location::set_root(std::string arg)
+void Location::set_root(std::string arg)
 {
 	root = arg;
 }
 
-void	Location::set_autoindex(std::string arg)
+void Location::set_autoindex(std::string arg)
 {
 	if (arg == "on")
 		autoindex = true;
@@ -96,10 +96,10 @@ void	Location::set_autoindex(std::string arg)
 		autoindex = false;
 }
 
-void	Location::set_index(std::string arg)
+void Location::set_index(std::string arg)
 {
 	index.pop_back();
-	std::istringstream	iss(arg);
+	std::istringstream iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
-        index.push_back(std::move(token));
+		index.push_back(std::move(token));
 }

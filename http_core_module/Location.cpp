@@ -12,6 +12,7 @@ Location::Location() :
 	allow.push_back("GET");
 	allow.push_back("HEAD");
 	allow.push_back("POST");
+	allow.push_back("DELETE");
 	index.push_back("index.html");
 }
 

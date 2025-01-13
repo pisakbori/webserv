@@ -33,6 +33,7 @@ Request &Request::operator=(const Request &other)
 		_method = other._method;
 		_protocol = other._protocol;
 		_uri = other._uri;
+		_body = other._body;
 	}
 	return *this;
 }
@@ -46,6 +47,7 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 	{
 		std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
 	}
+	std::cout << "Body: " << req.getBody() << std::endl;
 	return os;
 }
 
@@ -80,8 +82,8 @@ void Request::parseRequest(Connection *c)
 {
 	std::string line;
 	// <Method> <Request-URI> <HTTP-Version>
-	std::istringstream _stream(_input);
-	std::getline(_stream, line);
+	std::istringstream stream(_input);
+	std::getline(stream, line);
 	if (line.empty())
 		throw HttpError("Bad Request", 400);
 	line = Validate::sanitize(line);
@@ -95,14 +97,11 @@ void Request::parseRequest(Connection *c)
 		throw HttpError(_protocol + " protocol not supported", 505);
 	validateAllowed(_uri, _method, c->getServ());
 	// field-name: OWS field-value OWS
-	while (std::getline(_stream, line))
+	while (std::getline(stream, line))
 	{
 		line = Validate::sanitize(line);
 		if (line.empty())
-		{
-			c->setState(Connection::REQ_READY);
-			return;
-		}
+			break;
 		auto semi = std::find(line.begin(), line.end(), ':');
 		if (semi == line.end())
 			throw HttpError("Malformed header field: missing colon separator", 400);
@@ -120,6 +119,20 @@ void Request::parseRequest(Connection *c)
 		_header.insert(_header.begin(),
 					   std::pair<std::string, std::string>(key, value));
 	}
+	if (_header.find("CONTENT-LENGTH") != _header.end())
+	{
+		ssize_t size = std::stoll(_header["CONTENT-LENGTH"]);
+		// TODO: throw 413 error if body too large
+		char ch;
+		while (size > 0 && stream.get(ch) && size > 0)
+		{
+			_body.push_back(ch);
+			size--;
+		}
+		if (size != 0)
+			throw HttpError("Invalid content length", 400);
+	}
+	c->setState(Connection::REQ_READY);
 }
 
 void Request::append(std::string const &str)
@@ -143,6 +156,11 @@ std::string const &Request::getUri() const
 std::string const &Request::getProtocol() const
 {
 	return _protocol;
+}
+
+std::string const &Request::getBody() const
+{
+	return _body;
 }
 
 const std::map<std::string, std::string> &Request::getHeader() const
