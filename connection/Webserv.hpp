@@ -11,16 +11,18 @@ private:
 	std::map<int, Connection *> _connections;
 	// key: resourceFd, value:socketFd
 	std::map<int, int> _resources;
+	// key: listeningFd, value:serverIndex
+	std::map<int, int> _listenFdLookup;
 	fd_set _master;
 	fd_set _readfds;
 	fd_set _writefds;
 	fd_set _exceptfds;
 	// TODO:make it list
-	Server _server;
+	std::vector<Server> _servers;
 	int _nReady;
 
 	void onRead(int i);
-	void acceptNewConnection(const Server &server);
+	void acceptNewConnection(int fd);
 	void processRequest(int event_fd);
 	int readFromFd(int event_fd);
 	void onWrite(int event_fd);
