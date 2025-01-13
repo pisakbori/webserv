@@ -26,7 +26,7 @@ int	main(int argc, char *argv[])
 		return 1;
 	parse_config(argv[1], servers);
 	for (size_t i = 0; i < servers.size(); ++i)
-		std::cout << servers.at(i);
+		std::cout << servers.at(i) << std::endl;
 	// test_parse_request_header();
 	// test_server_parsing();
 	return 0;

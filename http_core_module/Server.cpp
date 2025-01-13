@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 16:17:32 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/13 13:12:49 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,8 @@ std::string		extract_parameters(
 {
 	std::string	arg;
 	if (directive.find(name) != std::string::npos
-		&& directive.find(' ') != std::string::npos)
+		&& directive.find(' ') != std::string::npos
+		&& directive.back() == ';')
 	{
 		arg = directive.substr(directive.find(' ') + 1);
 		arg = arg.substr(0, arg.size() - 1);

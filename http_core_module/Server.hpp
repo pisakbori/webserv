@@ -6,7 +6,7 @@
 /*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/14 15:02:07 by mkijewsk          #+#    #+#             */
-/*   Updated: 2025/01/12 14:46:47 by mkijewsk         ###   ########.fr       */
+/*   Updated: 2025/01/13 13:13:11 by mkijewsk         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@
  * It's inspired by nginx directives: 
  * https://nginx.org/en/docs/http/ngx_http_core_module.html
  * #TODO
- * - [ ] Check if port, host, error_code is in proper before assignment
 */
 
 typedef struct	err_page_s
@@ -49,6 +48,8 @@ class Server
 		size_t						client_max_body_size;
 		void						set_server(std::string directive);
 		void						parse_listen(std::string arg);
+		void						set_host(std::string arg);
+		void						set_port(std::string arg);
 		void						set_server_name(std::string arg);
 		void						set_error_page(std::string arg);
 		void						set_client_max_body_size(std::string arg);
