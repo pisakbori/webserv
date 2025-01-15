@@ -103,6 +103,7 @@ void Request::parseRequest(Connection *c)
 		if (line.empty())
 			break;
 		auto semi = std::find(line.begin(), line.end(), ':');
+		// M question why not just line.find(":")?
 		if (semi == line.end())
 			throw HttpError("Malformed header field: missing colon separator", 400);
 		auto end = std::find_if(line.begin(), semi, [](unsigned char c)
@@ -111,8 +112,11 @@ void Request::parseRequest(Connection *c)
 		std::transform(key.begin(), key.end(), key.begin(),
 					   [](unsigned char c)
 					   { return std::toupper(c); });
+		// M question counldnt it just be "std::toupper" as the last parameter?
 		auto start = std::find_if_not(semi + 1, line.end(), [](unsigned char c)
 									  { return (c == ' ' || c == '\t'); });
+		// M question maybe below is beter?									  
+		// auto start = line.find_first_not_of(" \t", line.find(":"));
 		end = std::find_if(start, line.end(), [](unsigned char c)
 						   { return (c == ' ' || c == '\t'); });
 		std::string value = std::string(start, end);
@@ -124,6 +128,7 @@ void Request::parseRequest(Connection *c)
 		ssize_t size = std::stoll(_header["CONTENT-LENGTH"]);
 		// TODO: throw 413 error if body too large
 		char ch;
+		// M observation size has to be bigger than 0
 		while (size > 0 && stream.get(ch) && size > 0)
 		{
 			_body.push_back(ch);
