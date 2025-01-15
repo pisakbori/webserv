@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # location - Configuration Directive
 
 ## Syntax
@@ -6,7 +5,6 @@
 ```
 location [ = ] uri { ... }
 ```
-
 
 ## Description
 
@@ -85,13 +83,18 @@ Given a server and a request URI, this function determines which location matche
 
 ### Example
 
-If the request URI is `/index.html`, the function will find the longest matching location and return the appropriate configuration, such as `location / { ... }` or `location = /index.html { ... }`.
-=======
+# If the request URI is `/index.html`, the function will find the longest matching location and return the appropriate configuration, such as `location / { ... }` or `location = /index.html { ... }`.
+
 one name per server. Server config is uniquely identified by port, host, name
 
 TODO:Bori
 
-- send different mime types
+# execve a program and read from the programs std output
+
+The read must go through select
+If someone requests mock.py
+then fork execve python3 mock.py
+And read from the std out
 
 <!-- how to use: -->
 
@@ -108,4 +111,3 @@ end GET request with empty line
 
 TODO:Marian
 make sure parsing trims white spaces correctly
->>>>>>> remotes/origin/connection

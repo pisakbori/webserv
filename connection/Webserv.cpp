@@ -78,11 +78,16 @@ void Webserv::configure(std::string configFile)
 
 void Webserv::acceptNewConnection(int fd)
 {
-	std::cout << "new connection" << std::endl;
+	std::cout << "new connection on listening fd " << fd << std::endl;
 	auto c = new Connection(_servers[_listenFdLookup[fd]]);
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
+	_cgiFds[c->_pipefd[0]] = newfd;
+	_cgiFds[c->_pipefd[1]] = newfd;
 	FD_SET(newfd, &_master);
+	FD_SET(c->_pipefd[0], &_master);
+	printOpenFds();
+	// FD_SET(c->_pipefd[1], &_master);
 }
 
 int Webserv::readFromFd(int fd)
@@ -99,16 +104,25 @@ int Webserv::readFromFd(int fd)
 					  << Colors::RESET;
 			_connections[_resources[fd]]->appendToResponseBody(str);
 		}
+		else if (isCGI(fd))
+			_connections[_cgiFds[fd]]->appendToCGIResult(str);
 		else
-		{
 			_connections[fd]->append(str);
-		}
 	}
 	if (!bytes_read && isResource(fd) && _connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
 	{
 		_connections[_resources[fd]]->setState(Connection::RES_READY);
 	}
+	if (!bytes_read && isCGI(fd) && _connections[_cgiFds[fd]]->getState() == Connection::REQ_READY)
+	{
+		_connections[_cgiFds[fd]]->setState(Connection::CGI_OUTPUT_READY);
+	}
 	return bytes_read;
+}
+
+bool Webserv::isConnection(int fd)
+{
+	return _connections.find(fd) != _connections.end();
 }
 
 bool Webserv::isResource(int fd)
@@ -116,11 +130,29 @@ bool Webserv::isResource(int fd)
 	return _resources.find(fd) != _resources.end();
 }
 
+bool Webserv::isCGI(int fd)
+{
+	return _cgiFds.find(fd) != _cgiFds.end();
+}
+
+void Webserv::printOpenFds() const
+{
+	std::cout << "Open fds: " << Colors::RED;
+	for (int fd = 0; fd < 100; fd++)
+	{
+		if (FD_ISSET(fd, &_master))
+			std::cout << fd << " ";
+	}
+	std::cout << std::endl
+			  << Colors::RESET;
+}
+
 void Webserv::closeFd(int fd)
 {
 	std::cout << "------------------------- Close fd: " << fd << std::endl;
 	FD_CLR(fd, &_master);
 	close(fd);
+	printOpenFds();
 }
 
 void Webserv::onRead(int fd)
@@ -128,29 +160,57 @@ void Webserv::onRead(int fd)
 	_nReady--;
 	if (_listenFdLookup.find(fd) != _listenFdLookup.end())
 		acceptNewConnection(fd);
-
 	else if (readFromFd(fd) <= 0)
 	{
-		if (isResource(fd))
+		if (isCGI(fd))
+		{
+			FD_CLR(fd, &_master);
+			// closeFd(fd);
+			// _cgiFds.erase(fd);
+		}
+		else if (isResource(fd))
 		{
 			closeFd(fd);
 			_resources.erase(fd);
 		}
-		else if (_connections[fd]->getState() < Connection::READING_RESOURCE)
+		else if (isConnection(fd) && _connections[fd]->getState() < Connection::READING_RESOURCE)
 		{
-			delete _connections[fd];
-			_connections.erase(fd);
-			closeFd(fd);
 			// TODO:this is confusing, sorry:(
 			// it can be 	READING_RESOURCE or RES_READY and still have read(0); I need to understand.
+			removeConnection(fd);
 		}
+		else if (!isConnection(fd))
+			std::cout << "BIIIIIG PROBLEM  " << fd << std::endl;
 	}
+}
+
+void Webserv::removeConnection(int i)
+{
+	std::cout << "close pipe" << std::endl;
+	closeFd(_connections[i]->_pipefd[0]);
+	closeFd(_connections[i]->_pipefd[1]);
+	_cgiFds.erase(_connections[i]->_pipefd[0]);
+	_cgiFds.erase(_connections[i]->_pipefd[1]);
+	std::cout << "delete connection" << std::endl;
+	delete _connections[i];
+	_connections.erase(i);
+	closeFd(i);
+	std::cout << "all closed" << std::endl;
 }
 
 void Webserv::onWrite(int i)
 {
 	int resourceFd = -1;
 	_nReady--;
+	if (isCGI(i))
+	{
+		if (_connections[_cgiFds[i]]->getState() == Connection::CGI_OUTPUT_READY)
+		{
+			_connections[_cgiFds[i]]->parseCGIOutput();
+			_connections[_cgiFds[i]]->setState(Connection::RES_READY);
+		}
+		return;
+	}
 	auto it = _connections.find(i);
 	if (it == _connections.end())
 		return;
@@ -162,6 +222,7 @@ void Webserv::onWrite(int i)
 	{
 		_resources[resourceFd] = i;
 		FD_SET(resourceFd, &_master);
+		printOpenFds();
 		c->setState(Connection::READING_RESOURCE);
 		std::cout << Colors::RED << "Add Open resource fd " << resourceFd << std::endl
 				  << Colors::RESET;
@@ -182,9 +243,7 @@ void Webserv::onWrite(int i)
 		{
 			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
 					  << Colors::RESET;
-			delete _connections[i];
-			_connections.erase(i);
-			closeFd(i);
+			removeConnection(i);
 		}
 	}
 }
@@ -193,7 +252,9 @@ int Webserv::maxFd(void) const
 {
 	int maxSocketFd = _connections.rbegin()->first;
 	int maxResourceFd = _resources.empty() ? -1 : _resources.rbegin()->first;
-	return std::max(maxSocketFd, maxResourceFd);
+	int maxCGIFd = _cgiFds.empty() ? -1 : _cgiFds.rbegin()->first;
+	int max = std::max(maxSocketFd, maxResourceFd);
+	return std::max(max, maxCGIFd);
 }
 
 void Webserv::run()
@@ -203,10 +264,12 @@ void Webserv::run()
 	{
 		_servers[i].startListening();
 		FD_SET(_servers[i].getListenFd(), &_master);
+		printOpenFds();
 		int max_i = _servers[i].getListenFd();
 		if (max_i > maxfd)
 			maxfd = max_i;
 		_listenFdLookup[_servers[i].getListenFd()] = i;
+		std::cout << "server index " << i << " is listening on " << _servers[i].getListenFd() << std::endl;
 	}
 
 	struct timeval timeout = {0, 0};
@@ -217,18 +280,18 @@ void Webserv::run()
 		if (!_connections.empty())
 			maxfd = maxFd();
 		if (-1 == (_nReady = select(maxfd + 1, &_readfds, &_writefds, &_exceptfds, &timeout)))
-			throw std::runtime_error("select()");
+			throw std::runtime_error(strerror(errno));
 		for (int i = 0; i <= maxfd && _nReady > 0; i++)
 		{
 			if (FD_ISSET(i, &_readfds))
 				onRead(i);
 			if (FD_ISSET(i, &_writefds))
 				onWrite(i);
-			// if (FD_ISSET(i, &_exceptfds))
-			// {
-			// 	_nReady--;
-			// 	std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
-			// }
+			if (FD_ISSET(i, &_exceptfds))
+			{
+				_nReady--;
+				std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
+			}
 		}
 	}
 }
@@ -240,6 +303,10 @@ void Webserv::stop()
 		close(it->first);
 	}
 	for (auto it = _resources.begin(); it != _resources.end(); ++it)
+	{
+		close(it->first);
+	}
+	for (auto it = _cgiFds.begin(); it != _cgiFds.end(); ++it)
 	{
 		close(it->first);
 	}

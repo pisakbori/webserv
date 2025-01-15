@@ -19,7 +19,7 @@ void handle_sigint(int signal)
 int main()
 {
 	std::signal(SIGINT, handle_sigint);
-	webserv.configure("./test_input/autoindex.conf");
+	webserv.configure("./test_input/mockcgi.conf");
 	webserv.run();
 	return 0;
 }
