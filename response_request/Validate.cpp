@@ -67,7 +67,7 @@ std::string Validate::sanitize(std::string &str)
 	{
 		if ((i < str.length() - 1) && (str[i] == '\r' && str[i + 1] == '\n'))
 			i++;
-		else if ((str[i] <= 31 && str[i] >= 0) || str[i] == 127)
+		else if (std::iscntrl(str[i]))
 		{
 			msg << "Bad Request: Control character found at position " << i
 				<< " " << static_cast<int>(str[i]);
@@ -82,7 +82,7 @@ std::string Validate::headerName(std::string str)
 {
 	size_t i = 0;
 
-	if (!str.length())
+	if (str.empty())
 		throw HttpError("Bad Request: Empty header name", 400);
 	while (i < str.length())
 	{
