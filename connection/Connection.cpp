@@ -54,6 +54,13 @@ int Connection::acceptConnection()
 	std::cout << "fd is " << _fd << std::endl;
 	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	if (pipe(_pipefd) == -1)
+	{
+		throw std::runtime_error("Pipe failed");
+	}
+	std::cout << "pipe1 " << _pipefd[1] << std::endl;
+	std::cout << "pipe0 " << _pipefd[0] << std::endl;
+
 	return _fd;
 }
 
@@ -64,6 +71,13 @@ void Connection::reset()
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	_sentChunks = 0;
+	_cgiResult = "";
+	if (pipe(_pipefd) == -1)
+	{
+		throw std::runtime_error("Pipe failed");
+	}
+	std::cout << Colors::YELLOW << "new fds in pipe are " << _pipefd[0] << " " << _pipefd[1] << std::endl
+			  << Colors::RESET;
 };
 
 void Connection::append(std::string const &str)
@@ -77,6 +91,15 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
+void Connection::appendToCGIResult(std::string const &str)
+{
+	_cgiResult.append(str);
+	std::cout << Colors::GREEN << "read from CGI!" << std::endl
+			  << Colors::RESET;
+	std::cout << Colors::GREEN << str << std::endl
+			  << Colors::RESET;
+}
+
 void Connection::handleAutoIndex(std::string path)
 {
 	if (!_location.get_autoindex())
@@ -88,19 +111,78 @@ void Connection::handleAutoIndex(std::string path)
 	}
 }
 
+void Connection::parseCGIOutput()
+{
+	_res.appendToBody(_cgiResult);
+}
+
+void Connection::executeCGI(std::string path)
+{
+	std::string python_path = "/usr/bin/python3";
+	std::vector<char *> env;
+	for (auto it = _req->getHeader().begin(); it != _req->getHeader().end(); ++it)
+	{
+		std::string value = it->first + "=" + it->second;
+		env.push_back(const_cast<char *>(value.c_str()));
+	}
+	// TODO: set REQUEST_METHOD, QUERY_STRING
+	// pass the body to the CGI script via stdin
+
+	env.push_back(nullptr);
+
+	pid_t pid = fork();
+
+	if (pid == 0)
+	{
+		// TODO: do i need to add more stuff to args??
+		std::vector<char *> args;
+		args.push_back(const_cast<char *>(python_path.c_str()));
+		args.push_back(const_cast<char *>(path.c_str()));
+		args.push_back(nullptr);
+		std::cout << python_path << std::endl;
+		std::cout << path << std::endl;
+
+		close(_pipefd[0]);
+		dup2(_pipefd[1], STDOUT_FILENO);
+
+		execve(python_path.c_str(), args.data(), env.data());
+		perror("execve failed");
+	}
+	else if (pid > 0)
+	{
+		// 	// In the parent process
+		std::cout << "Close from parent fd " << _pipefd[1] << std::endl;
+		close(_pipefd[1]);
+		// 	int status;
+		// 	waitpid(pid, &status, 0); // Wait for the child process to finish
+		// 	std::cout << "Child process has finished executing." << std::endl;
+	}
+	else
+	{
+		// Fork failed
+		perror("fork failed");
+	}
+}
+
 int Connection::getResource(std::string uri)
 {
 	_location = _server.get_location(_req->getUri());
-	if (_server.get_location(_req->getUri()).get_redirect().first)
+	if (_location.get_redirect().first)
 	{
-		_res.setCode(_server.get_location(_req->getUri()).get_redirect().first);
-		_res.appendToHeader("Location", _server.get_location(_req->getUri()).get_redirect().second);
+		_res.setCode(_location.get_redirect().first);
+		_res.appendToHeader("Location", _location.get_redirect().second);
 		_state = RES_READY;
 		return -1;
 	}
 	std::string path = _location.get_route(uri);
 	std::cout << Colors::RED << "Try open resource " << path << std::endl
 			  << Colors::RESET;
+	// TODO: use the real confiured cgi
+	if (_req->getUri() == "/mock.py")
+	{
+		executeCGI(path);
+		return -1;
+	}
 	int resourceFd = -1;
 	if (path.empty())
 		return -1;
@@ -135,7 +217,6 @@ int Connection::process()
 		if (_state == REQ_READY)
 		{
 			// std::cout << *_req << std::endl;
-
 			return getResource(_req->getUri());
 		}
 	}
@@ -156,7 +237,6 @@ int Connection::process()
 			catch (HttpError &ex)
 			{
 				_res = Response(ex);
-
 				return -1;
 			}
 
