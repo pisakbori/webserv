@@ -214,6 +214,7 @@ void Webserv::run()
 	{
 		memcpy(&_readfds, &_master, sizeof(_master));
 		memcpy(&_writefds, &_master, sizeof(_master));
+		memcpy(&_exceptfds, &_master, sizeof(_master));
 		if (!_connections.empty())
 			maxfd = maxFd();
 		if (-1 == (_nReady = select(maxfd + 1, &_readfds, &_writefds, &_exceptfds, &timeout)))
@@ -224,11 +225,11 @@ void Webserv::run()
 				onRead(i);
 			if (FD_ISSET(i, &_writefds))
 				onWrite(i);
-			// if (FD_ISSET(i, &_exceptfds))
-			// {
-			// 	_nReady--;
-			// 	std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
-			// }
+			if (FD_ISSET(i, &_exceptfds))
+			{
+				_nReady--;
+				std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
+			}
 		}
 	}
 }

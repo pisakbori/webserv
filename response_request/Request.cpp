@@ -81,6 +81,7 @@ void Request::validateAllowed(std::string uri, std::string method, const Server 
 void Request::parseRequest(Connection *c)
 {
 	std::string line;
+	bool headerRead = false;
 	// <Method> <Request-URI> <HTTP-Version>
 	std::istringstream stream(_input);
 	std::getline(stream, line);
@@ -101,7 +102,10 @@ void Request::parseRequest(Connection *c)
 	{
 		line = Validate::sanitize(line);
 		if (line.empty())
+		{
+			headerRead = true;
 			break;
+		}
 		auto semi = std::find(line.begin(), line.end(), ':');
 		// M question why not just line.find(":")?
 		if (semi == line.end())
@@ -115,7 +119,7 @@ void Request::parseRequest(Connection *c)
 		// M question counldnt it just be "std::toupper" as the last parameter?
 		auto start = std::find_if_not(semi + 1, line.end(), [](unsigned char c)
 									  { return (c == ' ' || c == '\t'); });
-		// M question maybe below is beter?									  
+		// M question maybe below is beter?
 		// auto start = line.find_first_not_of(" \t", line.find(":"));
 		end = std::find_if(start, line.end(), [](unsigned char c)
 						   { return (c == ' ' || c == '\t'); });
@@ -123,21 +127,29 @@ void Request::parseRequest(Connection *c)
 		_header.insert(_header.begin(),
 					   std::pair<std::string, std::string>(key, value));
 	}
+	if (!headerRead)
+		return;
 	if (_header.find("CONTENT-LENGTH") != _header.end())
 	{
 		ssize_t size = std::stoll(_header["CONTENT-LENGTH"]);
 		// TODO: throw 413 error if body too large
 		char ch;
 		// M observation size has to be bigger than 0
-		while (size > 0 && stream.get(ch) && size > 0)
+		while (size > 0 && stream.get(ch))
 		{
 			_body.push_back(ch);
 			size--;
 		}
 		if (size != 0)
 			throw HttpError("Invalid content length", 400);
+		c->setState(Connection::REQ_READY);
 	}
-	c->setState(Connection::REQ_READY);
+	else if (_method == "POST" || _method == "DELETE")
+	{
+		throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);
+	}
+	else
+		c->setState(Connection::REQ_READY);
 }
 
 void Request::append(std::string const &str)

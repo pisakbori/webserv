@@ -5,10 +5,11 @@ std::map<int, std::string> Response::statuses = {
     {303, "See Other"},
     {400, "Bad Request"},
     {404, "Not Found"},
-    {408, "Request Timeout"},
     {405, "Method Not Allowed"},
-    {414, "URI Too Long"},
+    {411, "Length Required"},
+    {408, "Request Timeout"},
     {413, "Payload Too Large"},
+    {414, "URI Too Long"},
     {415, "Unsupported Media Type"},
     {500, "Internal Server Error"},
     {505, "HTTP Version Not Supported"}};
@@ -16,6 +17,7 @@ std::map<int, std::string> Response::statuses = {
 std::map<std::string, std::string> Response::mimeTypes = {
     {"html", "text/html"},
     {"css", "text/css"},
+    {"ico", "image/vnd.microsoft.icon"},
     {"js", "application/javascript"},
     {"json", "application/json"},
     {"png", "image/png"},
@@ -96,7 +98,6 @@ void Response::setContentType(std::string const &str)
     if (mimeTypes.find(str) != mimeTypes.end())
     {
         _header["Content-Type"] = mimeTypes[str];
-        std::cout << "content type " << mimeTypes[str] << std::endl;
     }
     else if (str.empty())
         _header["Content-Type"] = "application/octet-stream";
