@@ -129,23 +129,28 @@ void Request::parseRequest(Connection *c)
 	}
 	if (!headerRead)
 		return;
+	if (_header.find("HOST") == _header.end())
+		throw HttpError("Missing Host", 400);
 	if (_header.find("CONTENT-LENGTH") != _header.end())
 	{
 		ssize_t size = std::stoll(_header["CONTENT-LENGTH"]);
+		if (size < 0)
+			throw HttpError("Invalid content length", 400);
 		// TODO: throw 413 error if body too large
 		char ch;
-		// M observation size has to be bigger than 0
 		while (size > 0 && stream.get(ch))
 		{
 			_body.push_back(ch);
 			size--;
 		}
-		if (size != 0)
-			throw HttpError("Invalid content length", 400);
+		if (size > 0)
+			return;
 		c->setState(Connection::REQ_READY);
+		// we don't care about leftovers, even Chrome gave up HTTP pipelining.
 	}
 	else if (_method == "POST" || _method == "DELETE")
 	{
+		// TODO: Chunked transfer encoding?
 		throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);
 	}
 	else

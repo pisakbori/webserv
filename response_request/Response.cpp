@@ -174,11 +174,10 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
             std::string name = entry.path().filename().string() + (entry.is_directory() ? "/" : "");
             std::string url = entry.path();
             url = url.substr(dir.length());
-            if (original.back() == '/' && !url.empty())
+            if (original.back() == '/' && !url.empty() && url.front() == '/')
                 original.pop_back();
             std::string combined = original + url;
             html << "<li><a href=\"" << combined << "\">" << name << "</a></li>\n";
-            std::cout << "whole ahref=" << combined << "<<" << std::endl;
         }
         std::cout << Colors::RESET;
     }
