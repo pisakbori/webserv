@@ -4,27 +4,27 @@
 Connection::Connection(const Server &rs) : _server(rs)
 {
 	_req = new Request();
-	std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
+	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
 }
 
 // Copy constructor
 Connection::Connection(const Connection &other) : _server(other._server)
 {
-	std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
+	// std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
 	*this = other;
 }
 
 // Destructor
 Connection::~Connection()
 {
-	std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
+	// std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
 }
 
 // Overloads
 Connection &Connection::operator=(const Connection &other)
 {
-	std::cout << "\e[2mAssign operator Connection called\e[0m" << std::endl;
+	// std::cout << "\e[2mAssign operator Connection called\e[0m" << std::endl;
 	if (this != &other)
 	{
 		_req = other._req;
@@ -112,7 +112,7 @@ int Connection::getResource(std::string uri)
 			handleAutoIndex(path);
 		else
 		{
-			resourceFd = open(path.c_str(), O_RDONLY);
+			resourceFd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
 			size_t pos = uri.rfind('.');
 			if (pos != std::string::npos)
 				_res.setContentType(uri.substr(pos + 1));

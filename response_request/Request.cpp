@@ -5,27 +5,27 @@
 // Default constructor
 Request::Request()
 {
-	std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
+	// std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
 	_input = "";
 }
 
 // Copy constructor
 Request::Request(const Request &other)
 {
-	std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
+	// std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
 	*this = other;
 }
 
 // Destructor
 Request::~Request()
 {
-	// std::cout << "\e[2mDestructor Request called\e[0m" << std::endl;
+	// // std::cout << "\e[2mDestructor Request called\e[0m" << std::endl;
 }
 
 // Overloads
 Request &Request::operator=(const Request &other)
 {
-	std::cout << "\e[2mAssign operator Request called\e[0m" << std::endl;
+	// std::cout << "\e[2mAssign operator Request called\e[0m" << std::endl;
 	if (this != &other)
 	{
 		_input = other._input;

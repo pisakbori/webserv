@@ -6,7 +6,7 @@
 Webserv::Webserv()
 {
 	// TODO:
-	std::cout << "\e[2mDefault constructor Webserv called\e[0m" << std::endl;
+	// std::cout << "\e[2mDefault constructor Webserv called\e[0m" << std::endl;
 	FD_ZERO(&_master);
 	FD_ZERO(&_readfds);
 	FD_ZERO(&_writefds);
@@ -17,7 +17,7 @@ Webserv::Webserv()
 // Parameterized constructor
 Webserv::Webserv(std::string configFile)
 {
-	std::cout << "\e[2mParameterized constructor Webserv called\e[0m" << std::endl;
+	// std::cout << "\e[2mParameterized constructor Webserv called\e[0m" << std::endl;
 	FD_ZERO(&_master);
 	FD_ZERO(&_readfds);
 	FD_ZERO(&_writefds);
@@ -31,20 +31,20 @@ Webserv::Webserv(const Webserv &other)
 {
 	(void)other;
 	// TODO:
-	std::cout << "\e[2mCopy constructor Webserv called\e[0m" << std::endl;
+	// std::cout << "\e[2mCopy constructor Webserv called\e[0m" << std::endl;
 }
 
 // Destructor
 Webserv::~Webserv()
 {
 	// TODO:
-	std::cout << "\e[2mDestructor Webserv called\e[0m" << std::endl;
+	// std::cout << "\e[2mDestructor Webserv called\e[0m" << std::endl;
 }
 
 // Overloads
 Webserv &Webserv::operator=(const Webserv &other)
 {
-	std::cout << "\e[2mAssign operator Webserv called\e[0m" << std::endl;
+	// std::cout << "\e[2mAssign operator Webserv called\e[0m" << std::endl;
 	// TODO:
 	(void)other;
 	return (*this);
@@ -78,7 +78,6 @@ void Webserv::configure(std::string configFile)
 
 void Webserv::acceptNewConnection(int fd)
 {
-	std::cout << "new connection" << std::endl;
 	auto c = new Connection(_servers[_listenFdLookup[fd]]);
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
@@ -136,6 +135,14 @@ void Webserv::closeConnectionResource(int fd)
 	}
 }
 
+void Webserv::closeConnection(int fd)
+{
+	closeConnectionResource(fd);
+	delete _connections[fd];
+	_connections.erase(fd);
+	closeFd(fd);
+}
+
 void Webserv::onRead(int fd)
 {
 	_nReady--;
@@ -147,7 +154,7 @@ void Webserv::onRead(int fd)
 	if (isResource(fd))
 	{
 		int bytesRead = readFromFd(fd);
-		std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
+		// std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
 		if (bytesRead == 0)
 		{
 			if (_connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
@@ -164,13 +171,8 @@ void Webserv::onRead(int fd)
 		{
 			std::cerr << "Client closed the connection." << std::endl;
 			if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
-			{
 				return;
-			}
-			closeConnectionResource(fd);
-			delete _connections[fd];
-			_connections.erase(fd);
-			closeFd(fd);
+			closeConnection(fd);
 		}
 		else if (bytesRead > 0)
 			readFromFd(fd);
@@ -202,8 +204,16 @@ void Webserv::onWrite(int i)
 		if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
 		{
 			std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
-			send(i, substring.c_str(), substring.length(), 0);
+			int bytesSent = send(i, substring.c_str(), substring.length(), 0);
 			c->_sentChunks++;
+
+			if (bytesSent == -1)
+			{
+				std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
+				closeConnection(i);
+			}
+			else
+				std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
 		}
 		else if (c->getState() == Connection::RES_READY)
 		{
@@ -220,9 +230,7 @@ void Webserv::onWrite(int i)
 		{
 			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
 					  << Colors::RESET;
-			delete _connections[i];
-			_connections.erase(i);
-			closeFd(i);
+			closeConnection(i);
 		}
 	}
 }

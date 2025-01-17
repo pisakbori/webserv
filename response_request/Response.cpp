@@ -17,7 +17,6 @@ std::map<int, std::string> Response::statuses = {
 std::map<std::string, std::string> Response::mimeTypes = {
     {"html", "text/html"},
     {"css", "text/css"},
-    {"ico", "image/vnd.microsoft.icon"},
     {"js", "application/javascript"},
     {"json", "application/json"},
     {"png", "image/png"},
@@ -25,17 +24,31 @@ std::map<std::string, std::string> Response::mimeTypes = {
     {"jpeg", "image/jpeg"},
     {"gif", "image/gif"},
     {"svg", "image/svg+xml"},
+    {"ico", "image/vnd.microsoft.icon"},
     {"pdf", "application/pdf"},
     {"zip", "application/zip"},
     {"txt", "text/plain"},
     {"xml", "application/xml"},
-    {"xml", "text/xml"} // ???? TODO:which one is good for xml?
+    {"mp4", "video/mp4"},
+    {"webm", "video/webm"},
+    {"ogg", "video/ogg"},
+    {"mp3", "audio/mpeg"},
+    {"wav", "audio/wav"},
+    {"flac", "audio/flac"},
+    {"aac", "audio/aac"},
+    {"m4a", "audio/mp4"},
+    {"woff", "font/woff"},
+    {"woff2", "font/woff2"},
+    {"ttf", "font/ttf"},
+    {"otf", "font/otf"},
+    {"eot", "application/vnd.ms-fontobject"},
+    {"wasm", "application/wasm"} // WebAssembly
 };
 
 // Constructor
 Response::Response()
 {
-    std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
     setCode(200);
     setContentType("html");
 }
@@ -43,7 +56,7 @@ Response::Response()
 // Parameterized constructor: autoindex with directory as arg
 Response::Response(std::string dirPath, std::string url)
 {
-    std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(200);
     setContentType("html");
     _body = generateAutoindex(dirPath, url);
@@ -51,7 +64,7 @@ Response::Response(std::string dirPath, std::string url)
 
 Response::Response(const HttpError &err)
 {
-    std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(err.getCode());
     setContentType("html");
     for (const auto &pair : err.getExtraFields())
@@ -64,19 +77,19 @@ Response::Response(const HttpError &err)
 Response::Response(const Response &other)
 {
     *this = other;
-    std::cout << "\e[2mCopy constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mCopy constructor Response called\e[0m" << std::endl;
 }
 
 // Destructor
 Response::~Response()
 {
-    std::cout << "\e[2mDestructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mDestructor Response called\e[0m" << std::endl;
 }
 
 // Overloads
 Response &Response::operator=(const Response &other)
 {
-    std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
     if (this != &other)
     {
         _header = other._header;

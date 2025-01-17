@@ -31,6 +31,7 @@ private:
 	bool isResource(int i);
 	bool isConnection(int i);
 	int maxFd(void) const;
+	void closeConnection(int fd);
 
 public:
 	// Constructor
