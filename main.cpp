@@ -25,8 +25,7 @@ void sigpipe_handler(int sig)
 int main()
 {
 	std::signal(SIGINT, handle_sigint);
-	signal(SIGPIPE, sigpipe_handler);
-	webserv.configure("./test_input/1server.conf");
+	webserv.configure("./test_input/mockcgi.conf");
 	webserv.run();
 	return 0;
 }
