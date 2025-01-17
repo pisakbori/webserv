@@ -29,6 +29,7 @@ private:
 	void removeConnection(int event_fd);
 	void closeResourceFd(int i);
 	bool isResource(int i);
+	bool isConnection(int i);
 	int maxFd(void) const;
 
 public:
@@ -52,6 +53,7 @@ public:
 	void run(void);
 	void stop();
 	void closeFd(int i);
+	void printOpenFds() const;
 	// Getters
 
 	// Setters

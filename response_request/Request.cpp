@@ -131,7 +131,11 @@ void Request::parseRequest(Connection *c)
 		return;
 	if (_header.find("HOST") == _header.end())
 		throw HttpError("Missing Host", 400);
-	if (_header.find("CONTENT-LENGTH") != _header.end())
+	if (_method == "GET" || _method == "HEAD")
+	{
+		c->setState(Connection::REQ_READY);
+	}
+	else if (_header.find("CONTENT-LENGTH") != _header.end())
 	{
 		ssize_t size = std::stoll(_header["CONTENT-LENGTH"]);
 		if (size < 0)

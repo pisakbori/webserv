@@ -83,6 +83,7 @@ void Webserv::acceptNewConnection(int fd)
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
 	FD_SET(newfd, &_master);
+	printOpenFds();
 }
 
 int Webserv::readFromFd(int fd)
@@ -91,23 +92,14 @@ int Webserv::readFromFd(int fd)
 	ssize_t bytes_read = read(fd, buf, sizeof(buf));
 	if (bytes_read > 0)
 	{
-		std::cout << "read " << bytes_read << " bytes from " << fd << std::endl;
 		std::string str(buf, bytes_read);
 		if (isResource(fd))
-		{
-			std::cout << Colors::RED << "Reading from resource fd " << fd << std::endl
-					  << Colors::RESET;
 			_connections[_resources[fd]]->appendToResponseBody(str);
-		}
 		else
-		{
 			_connections[fd]->append(str);
-		}
 	}
-	if (!bytes_read && isResource(fd) && _connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
-	{
-		_connections[_resources[fd]]->setState(Connection::RES_READY);
-	}
+	if (bytes_read < 0)
+		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
 	return bytes_read;
 }
 
@@ -116,34 +108,64 @@ bool Webserv::isResource(int fd)
 	return _resources.find(fd) != _resources.end();
 }
 
+bool Webserv::isConnection(int fd)
+{
+	return _connections.find(fd) != _connections.end();
+}
+
 void Webserv::closeFd(int fd)
 {
 	std::cout << "------------------------- Close fd: " << fd << std::endl;
-	FD_CLR(fd, &_master);
 	close(fd);
+	FD_CLR(fd, &_master);
+	printOpenFds();
 }
 
 void Webserv::onRead(int fd)
 {
 	_nReady--;
 	if (_listenFdLookup.find(fd) != _listenFdLookup.end())
-		acceptNewConnection(fd);
-
-	else if (readFromFd(fd) <= 0)
 	{
-		if (isResource(fd))
+		acceptNewConnection(fd);
+		return;
+	}
+	if (isResource(fd))
+	{
+		int bytesRead = readFromFd(fd);
+		std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
+		if (bytesRead == 0)
 		{
+			if (_connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
+				_connections[_resources[fd]]->setState(Connection::RES_READY);
 			closeFd(fd);
 			_resources.erase(fd);
 		}
-		else if (_connections[fd]->getState() < Connection::READING_RESOURCE)
+	}
+	else if (isConnection(fd))
+	{
+		char buf[READ_BUFFER_SIZE];
+		ssize_t bytesRead = recv(fd, buf, sizeof(buf), MSG_PEEK);
+		if (bytesRead == 0)
 		{
+			std::cerr << "Client closed the connection." << std::endl;
+			// close open resource fds as well
+			auto it = std::find_if(_resources.begin(), _resources.end(),
+								   [fd](const std::pair<int, int> &element)
+								   {
+									   return element.second == fd;
+								   });
+			if (it != _resources.end())
+			{
+				std::cout << "key, i.e. resource fd: " << it->first << " value, i.e. socket fd: " << it->second << std::endl;
+				closeFd(it->first);
+				_resources.erase(it->first);
+			}
 			delete _connections[fd];
 			_connections.erase(fd);
 			closeFd(fd);
-			// TODO:this is confusing, sorry:(
-			// it can be 	READING_RESOURCE or RES_READY and still have read(0); I need to understand.
 		}
+		else if (bytesRead > 0)
+			readFromFd(fd);
 	}
 }
 
@@ -162,6 +184,7 @@ void Webserv::onWrite(int i)
 	{
 		_resources[resourceFd] = i;
 		FD_SET(resourceFd, &_master);
+		printOpenFds();
 		c->setState(Connection::READING_RESOURCE);
 		std::cout << Colors::RED << "Add Open resource fd " << resourceFd << std::endl
 				  << Colors::RESET;
@@ -177,7 +200,11 @@ void Webserv::onWrite(int i)
 			c->_sentChunks++;
 		}
 		else if (c->getState() == Connection::RES_READY)
+		{
 			c->reset();
+			FD_SET(i, &_master);
+			printOpenFds();
+		}
 		else
 		{
 			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
@@ -203,6 +230,7 @@ void Webserv::run()
 	{
 		_servers[i].startListening();
 		FD_SET(_servers[i].getListenFd(), &_master);
+		printOpenFds();
 		int max_i = _servers[i].getListenFd();
 		if (max_i > maxfd)
 			maxfd = max_i;
@@ -228,7 +256,16 @@ void Webserv::run()
 			if (FD_ISSET(i, &_exceptfds))
 			{
 				_nReady--;
-				std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
+				// std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
+				// int err = 0;
+				// socklen_t len = sizeof(err);
+				// if (isConnection(i) && getsockopt(i, SOL_SOCKET, SO_ERROR, &err, &len) == 0)
+				// {
+				// 	if (err != 0)
+				// 	{
+				// 		std::cerr << "Socket error on FD " << i << ": " << strerror(err) << std::endl;
+				// 	}
+				// }
 			}
 		}
 	}
@@ -250,6 +287,18 @@ void Webserv::stop()
 				  << _servers[i].getListenFd() << " fd closed" << std::endl;
 		close(_servers[i].getListenFd());
 	}
+}
+
+void Webserv::printOpenFds() const
+{
+	std::cout << "Open fds: " << Colors::RED;
+	for (int fd = 0; fd < 100; fd++)
+	{
+		if (FD_ISSET(fd, &_master))
+			std::cout << fd << " ";
+	}
+	std::cout << std::endl
+			  << Colors::RESET;
 }
 
 // Getters
