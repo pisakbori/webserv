@@ -121,6 +121,21 @@ void Webserv::closeFd(int fd)
 	printOpenFds();
 }
 
+// should i do this inside Connection..?
+void Webserv::closeConnectionResource(int fd)
+{
+	auto it = std::find_if(_resources.begin(), _resources.end(),
+						   [fd](const std::pair<int, int> &element)
+						   {
+							   return element.second == fd;
+						   });
+	if (it != _resources.end())
+	{
+		closeFd(it->first);
+		_resources.erase(it->first);
+	}
+}
+
 void Webserv::onRead(int fd)
 {
 	_nReady--;
@@ -148,18 +163,7 @@ void Webserv::onRead(int fd)
 		if (bytesRead == 0)
 		{
 			std::cerr << "Client closed the connection." << std::endl;
-			// close open resource fds as well
-			auto it = std::find_if(_resources.begin(), _resources.end(),
-								   [fd](const std::pair<int, int> &element)
-								   {
-									   return element.second == fd;
-								   });
-			if (it != _resources.end())
-			{
-				std::cout << "key, i.e. resource fd: " << it->first << " value, i.e. socket fd: " << it->second << std::endl;
-				closeFd(it->first);
-				_resources.erase(it->first);
-			}
+			closeConnectionResource(fd);
 			delete _connections[fd];
 			_connections.erase(fd);
 			closeFd(fd);
@@ -186,8 +190,6 @@ void Webserv::onWrite(int i)
 		FD_SET(resourceFd, &_master);
 		printOpenFds();
 		c->setState(Connection::READING_RESOURCE);
-		std::cout << Colors::RED << "Add Open resource fd " << resourceFd << std::endl
-				  << Colors::RESET;
 	}
 	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
 	{

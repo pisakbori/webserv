@@ -54,6 +54,7 @@ public:
 	void stop();
 	void closeFd(int i);
 	void printOpenFds() const;
+	void closeConnectionResource(int fd);
 	// Getters
 
 	// Setters
