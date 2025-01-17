@@ -163,6 +163,10 @@ void Webserv::onRead(int fd)
 		if (bytesRead == 0)
 		{
 			std::cerr << "Client closed the connection." << std::endl;
+			if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
+			{
+				return;
+			}
 			closeConnectionResource(fd);
 			delete _connections[fd];
 			_connections.erase(fd);
@@ -202,6 +206,11 @@ void Webserv::onWrite(int i)
 			c->_sentChunks++;
 		}
 		else if (c->getState() == Connection::RES_READY)
+		{
+			c->setState(Connection::RES_SENT);
+			return;
+		}
+		else if (c->getState() == Connection::RES_SENT)
 		{
 			c->reset();
 			FD_SET(i, &_master);
