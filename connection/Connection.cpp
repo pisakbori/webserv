@@ -41,15 +41,8 @@ int Connection::acceptConnection()
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
 	int _fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
-
 	if (_fd < 0)
 		throw std::runtime_error("ERROR on accept");
-	// TODO::forbidden flag
-	int flags = fcntl(_fd, F_GETFL, 0);
-	if (flags == -1)
-		throw std::runtime_error("ERROR getting socket flags");
-	if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
 	std::cout << "fd is " << _fd << std::endl;
 	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);

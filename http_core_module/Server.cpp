@@ -93,6 +93,9 @@ void Server::startListening(void)
 	_listenFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_listenFd == -1)
 		throw std::runtime_error("Error creating listening socket");
+	// TODO: is setting to non-blocking really necessary if we are using select?
+	if (fcntl(_listenFd, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("ERROR setting socket to non-blocking");
 	struct sockaddr_in serverAddr;
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = inet_addr(host.c_str());

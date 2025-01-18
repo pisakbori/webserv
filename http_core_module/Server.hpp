@@ -7,6 +7,7 @@
 #include <fstream>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <sstream>
 #include "Location.hpp"
 #include "CommonIncludes.hpp"

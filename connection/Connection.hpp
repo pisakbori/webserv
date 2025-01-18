@@ -4,7 +4,6 @@
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
-#include <fcntl.h>
 #include <iostream>
 #include <thread>
 #include <atomic>

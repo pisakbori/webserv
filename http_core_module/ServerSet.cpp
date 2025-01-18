@@ -66,7 +66,7 @@ void	Server::parse_listen(std::string arg)
 
 void	Server::set_host(std::string arg)
 {
-	char	sa_data[16];
+	char	sa_data[INET_ADDRSTRLEN];
 
 	host = arg;
 	if (arg.front() == '[')
