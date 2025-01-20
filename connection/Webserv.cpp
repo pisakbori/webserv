@@ -169,9 +169,11 @@ void Webserv::onRead(int fd)
 		ssize_t bytesRead = recv(fd, buf, sizeof(buf), MSG_PEEK);
 		if (bytesRead == 0)
 		{
-			std::cerr << "Client closed the connection." << std::endl;
 			if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
+			{
+				std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
 				return;
+			}
 			closeConnection(fd);
 		}
 		else if (bytesRead > 0)
@@ -197,7 +199,7 @@ void Webserv::onWrite(int i)
 		printOpenFds();
 		c->setState(Connection::READING_RESOURCE);
 	}
-	if (c->getState() == Connection::RES_READY || c->getState() == Connection::TIMEOUT)
+	if (c->getState() == Connection::RES_READY)
 	{
 		// std::cout << "Sending response to " << i << "\n ";
 		std::string response = c->getResponse().toString();
@@ -206,31 +208,31 @@ void Webserv::onWrite(int i)
 			std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
 			int bytesSent = send(i, substring.c_str(), substring.length(), 0);
 			c->_sentChunks++;
-
 			if (bytesSent == -1)
 			{
 				std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
 				closeConnection(i);
+				return;
 			}
 			else
 				std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
 		}
-		else if (c->getState() == Connection::RES_READY)
-		{
-			c->setState(Connection::RES_SENT);
-			return;
-		}
-		else if (c->getState() == Connection::RES_SENT)
-		{
-			c->reset();
-			FD_SET(i, &_master);
-			printOpenFds();
-		}
 		else
+			c->setState(Connection::RES_SENT);
+		if (c->getState() == Connection::RES_SENT)
 		{
-			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
-					  << Colors::RESET;
-			closeConnection(i);
+			if (c->_hasTimeout)
+			{
+				std::cout << Colors::RED << "Timeout so remove " << i << std::endl
+						  << Colors::RESET;
+				closeConnection(i);
+			}
+			else
+			{
+				c->reset();
+				FD_SET(i, &_master);
+				printOpenFds();
+			}
 		}
 	}
 }

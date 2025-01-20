@@ -4,6 +4,7 @@
 Connection::Connection(const Server &rs) : _server(rs)
 {
 	_req = new Request();
+	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
 }
@@ -29,6 +30,7 @@ Connection &Connection::operator=(const Connection &other)
 	{
 		_req = other._req;
 		_res = other._res;
+		_hasTimeout = other._hasTimeout;
 		setState(other._state);
 	}
 	return *this;
@@ -59,6 +61,7 @@ int Connection::acceptConnection()
 
 void Connection::reset()
 {
+	_hasTimeout = false;
 	setState(WAITING_REQ);
 	*_req = Request();
 	_res = Response();
@@ -169,17 +172,22 @@ int Connection::process()
 	return -1;
 }
 
-bool Connection::checkTimeout()
+void Connection::checkTimeout()
 {
-	auto now = std::chrono::steady_clock::now();
-	if ((_state == READING_REQ_HEADER || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
-		_res = Response(HttpError("Request Header timeout", 408));
-	else if (now >= _keepAliveTimeout)
-		_res = Response(HttpError("Connection expired", 408));
-	else
-		return false;
-	_state = TIMEOUT;
-	return true;
+	try
+	{
+		auto now = std::chrono::steady_clock::now();
+		if ((_state == READING_REQ_HEADER || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
+			throw HttpError("Request Header timeout", 408);
+		else if (now >= _keepAliveTimeout)
+			throw HttpError("Connection expired", 408);
+	}
+	catch (const HttpError &e)
+	{
+		_res = Response(e);
+		_state = RES_READY;
+		_hasTimeout = true;
+	}
 }
 
 // Getters

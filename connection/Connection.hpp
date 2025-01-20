@@ -28,13 +28,13 @@ private:
 
 public:
 	size_t _sentChunks;
+	bool _hasTimeout;
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ_HEADER = 1;
 	static constexpr int REQ_READY = 2;
 	static constexpr int READING_RESOURCE = 3;
 	static constexpr int RES_READY = 4;
 	static constexpr int RES_SENT = 5;
-	static constexpr int TIMEOUT = 6;
 
 	// Parameterized constructor
 	Connection(const Server &rs);
@@ -53,7 +53,7 @@ public:
 	void append(std::string const &str);
 	void appendToResponseBody(std::string const &str);
 	void reset();
-	bool checkTimeout();
+	void checkTimeout();
 	int acceptConnection();
 	void handleAutoIndex(std::string path);
 

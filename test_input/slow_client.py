@@ -18,12 +18,12 @@ data += extra
 # data += "b"
 
 # chunk_size = 100000
-chunk_size = 1000
+chunk_size = 10
 for i in range(0, len(data), chunk_size):
     chunk = data[i:i+chunk_size]
     client_socket.send(chunk.encode())
     print("send "+ str(i))
-    time.sleep(0.1)  # Delay between each byte
+    time.sleep(0.4) 
 print("sent all")
 
 # for char in data:
@@ -33,7 +33,7 @@ print("sent all")
 # Receive and print the response one character at a time
 while True:
     response = client_socket.recv(1)  # Receive one byte (character)
-    # time.sleep(0.1)  # Delay between each byte
+    # time.sleep(0.1)  
     if not response:
         break  # No more data, exit the loop
     print(response.decode(), end="")
