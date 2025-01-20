@@ -202,7 +202,8 @@ const Server &Connection::getServ() const
 
 void Connection::setState(int s)
 {
-	std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
-			  << Colors::RESET;
+	if (_state != s)
+		std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
+				  << Colors::RESET;
 	_state = s;
 }

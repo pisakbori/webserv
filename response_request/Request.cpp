@@ -84,6 +84,8 @@ void Request::parseRequest(Connection *c)
 	bool headerRead = false;
 	// <Method> <Request-URI> <HTTP-Version>
 	std::istringstream stream(_input);
+	if (_input.find("\n") == std::string::npos)
+		return; // Return when EOF is encountered without a newline
 	std::getline(stream, line);
 	if (line.empty())
 		throw HttpError("Bad Request", 400);
@@ -106,6 +108,8 @@ void Request::parseRequest(Connection *c)
 			headerRead = true;
 			break;
 		}
+		else if (stream.eof())
+			return;
 		auto semi = std::find(line.begin(), line.end(), ':');
 		// M question why not just line.find(":")?
 		if (semi == line.end())
@@ -137,7 +141,15 @@ void Request::parseRequest(Connection *c)
 	}
 	else if (_header.find("CONTENT-LENGTH") != _header.end())
 	{
-		ssize_t size = std::stoll(_header["CONTENT-LENGTH"]);
+		ssize_t size;
+		try
+		{
+			size = std::stoll(_header["CONTENT-LENGTH"]);
+		}
+		catch (const std::exception &e)
+		{
+			throw HttpError("Invalid content length", 400);
+		}
 		if (size < 0)
 			throw HttpError("Invalid content length", 400);
 		// TODO: throw 413 error if body too large
