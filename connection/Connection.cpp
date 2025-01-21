@@ -229,15 +229,12 @@ int Connection::process()
 			catch (HttpError &ex)
 			{
 				_res = Response(ex);
-
 				return -1;
 			}
 
 			// TODO:overwrite code
 		}
-
 		_res = Response(e);
-		std::cout << "error\n";
 	}
 	return -1;
 }

@@ -159,16 +159,15 @@ void Webserv::closeConnection(int fd)
 void Webserv::readFromResource(int fd)
 {
 	int bytesRead = readFromFd(fd);
-	std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
 	if (bytesRead == 0)
 	{
-		if (_connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
-		{
-			_connections[_resources[fd]]->setState(Connection::RES_READY);
-			closeFd(fd);
-			_resources.erase(fd);
-		}
+		std::cout << "\e[2mFinished reading resource " << fd << "\e[0m" << std::endl;
+		_connections[_resources[fd]]->setState(Connection::RES_READY);
+		closeFd(fd);
+		_resources.erase(fd);
 	}
+	else
+		std::cout << "\e[2mRead " << bytesRead << " bytes from resource " << fd << "\e[0m" << std::endl;
 }
 
 void Webserv::readFromSocket(int fd)
@@ -189,6 +188,11 @@ void Webserv::readFromSocket(int fd)
 	{
 		readFromFd(fd);
 	}
+	else
+	{
+		std::cerr << "Client closed the connection" << std::endl;
+		closeConnection(fd);
+	}
 }
 
 void Webserv::writeToResourceFd(int i)
@@ -203,9 +207,6 @@ void Webserv::writeToResourceFd(int i)
 		int uploadedBytes = write(i, substring.c_str(), WRITE_BUFFER_SIZE);
 		if (uploadedBytes == -1)
 		{
-			// std::cerr << "Error writing data: ";
-			// perror("");
-			std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
 			closeConnection(_resources[i]);
 			return;
 		}
@@ -281,7 +282,7 @@ void Webserv::onRead(int fd)
 	_nReady--;
 	if (_listenFdLookup.find(fd) != _listenFdLookup.end())
 		acceptNewConnection(fd);
-	else if (isResource(fd) && _connections[_resources[fd]]->getState() != Connection::WRITING_RESOURCE)
+	else if (isResource(fd) && _connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
 		readFromResource(fd);
 	else if (isConnection(fd))
 		readFromSocket(fd);
