@@ -181,88 +181,95 @@ void Webserv::onRead(int fd)
 	}
 }
 
+void Webserv::writeToResourceFd(int i)
+{
+	auto c = _connections[_resources[i]];
+	size_t size = c->getRequest()->_bodySize;
+	if (size <= 0)
+		return;
+	if (c->_uploadedBytes < size)
+	{
+		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
+		int uploadedBytes = write(i, substring.c_str(), substring.length());
+		if (uploadedBytes == -1)
+		{
+			std::cerr << "Error writing data: ";
+			perror("");
+			std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
+			closeConnection(i);
+			return;
+		}
+		else
+			std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
+		c->_uploadedBytes += uploadedBytes;
+	}
+	else
+	{
+		c->setState(Connection::RES_READY);
+		closeFd(i);
+		_resources.erase(i);
+	}
+}
+
+void Webserv::sendResponseChunk(Connection *c, int i)
+{
+	// std::cout << "Sending response to " << i << "\n ";
+	std::string response = c->getResponse().toString();
+	if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
+	{
+		std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
+		int bytesSent = send(i, substring.c_str(), substring.length(), 0);
+		c->_sentChunks++;
+		if (bytesSent == -1)
+		{
+			std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
+			closeConnection(i);
+			return;
+		}
+		else
+			std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+	}
+	else
+		c->setState(Connection::RES_SENT);
+	if (c->getState() == Connection::RES_SENT)
+	{
+		if (c->_hasTimeout)
+		{
+			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
+					  << Colors::RESET;
+			closeConnection(i);
+		}
+		else
+		{
+			c->reset();
+			FD_SET(i, &_master);
+			printOpenFds();
+		}
+	}
+}
+
 void Webserv::onWrite(int i)
 {
 
 	if (isResource(i))
 	{
-		auto c = _connections[_resources[i]];
-		size_t size = c->getRequest()->_bodySize;
-		if (size <= 0)
-			return;
-		if (c->_uploadedBytes < size)
-		{
-			std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
-			int uploadedBytes = write(i, substring.c_str(), substring.length());
-			if (uploadedBytes == -1)
-			{
-				std::cerr << "Error writing data: ";
-				perror("");
-				std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
-				closeConnection(i);
-				return;
-			}
-			else
-				std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
-			c->_uploadedBytes += uploadedBytes;
-		}
-		else
-		{
-			c->setState(Connection::RES_READY);
-			closeFd(i);
-			_resources.erase(i);
-		}
-		return;
+		writeToResourceFd(i);
 	}
-
-	int resourceFd = -1;
-	if (!isConnection(i))
-		return;
-	auto c = _connections[i];
-	c->checkTimeout();
-	if (c->getState() == Connection::READING_REQ)
-		resourceFd = c->process();
-	if (resourceFd != -1)
+	else if (isConnection(i))
 	{
-		_resources[resourceFd] = i;
-		FD_SET(resourceFd, &_master);
-		printOpenFds();
-	}
-	if (c->getState() == Connection::RES_READY)
-	{
-		// std::cout << "Sending response to " << i << "\n ";
-		std::string response = c->getResponse().toString();
-		if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
+		int resourceFd = -1;
+		auto c = _connections[i];
+		c->checkTimeout();
+		if (c->getState() == Connection::READING_REQ)
+			resourceFd = c->process();
+		if (resourceFd != -1)
 		{
-			std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
-			int bytesSent = send(i, substring.c_str(), substring.length(), 0);
-			c->_sentChunks++;
-			if (bytesSent == -1)
-			{
-				std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
-				closeConnection(i);
-				return;
-			}
-			else
-				std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+			_resources[resourceFd] = i;
+			FD_SET(resourceFd, &_master);
+			printOpenFds();
 		}
-		else
-			c->setState(Connection::RES_SENT);
-		if (c->getState() == Connection::RES_SENT)
-		{
-			if (c->_hasTimeout)
-			{
-				std::cout << Colors::RED << "Timeout so remove " << i << std::endl
-						  << Colors::RESET;
-				closeConnection(i);
-			}
-			else
-			{
-				c->reset();
-				FD_SET(i, &_master);
-				printOpenFds();
-			}
-		}
+		if (c->getState() == Connection::RES_READY)
+			sendResponseChunk(c, i);
 	}
 }
 

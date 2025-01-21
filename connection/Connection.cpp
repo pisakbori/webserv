@@ -77,7 +77,7 @@ void Connection::append(std::string const &str)
 
 void Connection::appendToResponseBody(std::string const &str)
 {
-	std::cout << "append to response body " << str << std::endl;
+	// std::cout << "append to response body " << str << std::endl;
 	_res.appendToBody(str);
 }
 
