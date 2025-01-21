@@ -71,12 +71,13 @@ void Connection::reset()
 
 void Connection::append(std::string const &str)
 {
-	setState(READING_REQ_HEADER);
+	setState(READING_REQ);
 	_req->append(str);
 }
 
 void Connection::appendToResponseBody(std::string const &str)
 {
+	std::cout << "append to response body " << str << std::endl;
 	_res.appendToBody(str);
 }
 
@@ -91,22 +92,34 @@ void Connection::handleAutoIndex(std::string path)
 	}
 }
 
+int Connection::openResource(std::string path)
+{
+	int resourceFd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+	setState(Connection::READING_RESOURCE);
+	size_t pos = path.rfind('.');
+	if (pos != std::string::npos)
+		_res.setContentType(path.substr(pos + 1));
+	else
+		_res.setContentType("");
+	return resourceFd;
+}
+
+int Connection::redirect()
+{
+	_res.setCode(_location.get_redirect().first);
+	_res.appendToHeader("Location", _location.get_redirect().second);
+	_state = RES_READY;
+	return -1;
+}
+
 int Connection::getResource(std::string uri)
 {
 	_location = _server.get_location(_req->getUri());
-	if (_server.get_location(_req->getUri()).get_redirect().first)
-	{
-		_res.setCode(_server.get_location(_req->getUri()).get_redirect().first);
-		_res.appendToHeader("Location", _server.get_location(_req->getUri()).get_redirect().second);
-		_state = RES_READY;
-		return -1;
-	}
+	if (_location.get_redirect().first)
+		return redirect();
 	std::string path = _location.get_route(uri);
 	std::cout << Colors::RED << "Try open resource " << path << std::endl
 			  << Colors::RESET;
-	int resourceFd = -1;
-	if (path.empty())
-		return -1;
 	if (!std::filesystem::exists(path))
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 	try
@@ -114,20 +127,70 @@ int Connection::getResource(std::string uri)
 		if (std::filesystem::is_directory(path))
 			handleAutoIndex(path);
 		else
-		{
-			resourceFd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
-			size_t pos = uri.rfind('.');
-			if (pos != std::string::npos)
-				_res.setContentType(uri.substr(pos + 1));
-			else
-				_res.setContentType("");
-		}
+			return openResource(path);
 	}
 	catch (const std::exception &e)
 	{
 		throw HttpError(e.what(), 500);
 	}
-	return resourceFd;
+	return -1;
+}
+
+int Connection::postResource(std::string uri)
+{
+	// how should this work??? if i send a post request to any endpoint, it will upload to a default directory?
+	// only if it doesn't exist? if it exists, act like GET
+	_location = _server.get_location(_req->getUri());
+	if (_location.get_redirect().first)
+		return redirect();
+	std::string path = _location.get_route(uri);
+	if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
+		return openResource(path);
+
+	// set up a basic success response ? ? ? what should be in it ? if ruined, error will show.
+	path = _location.get_root();
+	try
+	{
+		std::filesystem::path filePath = uri;
+		std::string filename = filePath.filename().string();
+		_res.setCode(201);
+		_res.setContentType("json");
+		std::filesystem::path accessLocation = _location.get_uri();
+		std::filesystem::path uploadLocation = path;
+		accessLocation /= filename;
+		uploadLocation /= filename;
+		if (std::filesystem::exists(uploadLocation))
+			throw HttpError(filename + " already exists.", 409);
+		_res.appendToHeader("Location", accessLocation.string() + "   and upladloc:" + uploadLocation.string());
+		_res.appendToBody("{\"message\": \"Resource successfully processed.\"}");
+		// TODO:do the uploading etc.
+		int resourceFd = open(uploadLocation.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
+		std::cout << "opened " << uploadLocation << std::endl;
+		setState(Connection::WRITING_RESOURCE);
+		if (resourceFd == -1)
+		{
+			throw std::runtime_error("Error uploading file");
+			perror(""); // This will print the error message associated with `errno`
+		}
+		else
+		{
+			std::cout << "opened " << uploadLocation << std::endl;
+			setState(Connection::WRITING_RESOURCE);
+			std::cout << "return  " << resourceFd << std::endl;
+		}
+		return resourceFd;
+		// open a new file
+	}
+	catch (const HttpError &e)
+	{
+		throw e;
+	}
+	catch (const std::exception &e)
+	{
+		throw HttpError(e.what(), 500);
+	}
+
+	return -1;
 }
 
 int Connection::process()
@@ -138,8 +201,10 @@ int Connection::process()
 		if (_state == REQ_READY)
 		{
 			// std::cout << *_req << std::endl;
-
-			return getResource(_req->getUri());
+			if (_req->getMethod() == "GET")
+				return getResource(_req->getUri());
+			else if (_req->getMethod() == "POST")
+				return postResource(_req->getUri());
 		}
 	}
 	catch (HttpError &e)
@@ -177,7 +242,7 @@ void Connection::checkTimeout()
 	try
 	{
 		auto now = std::chrono::steady_clock::now();
-		if ((_state == READING_REQ_HEADER || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
+		if ((_state == READING_REQ || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
 			throw HttpError("Request Header timeout", 408);
 		else if (now >= _keepAliveTimeout)
 			throw HttpError("Connection expired", 408);
@@ -195,6 +260,11 @@ void Connection::checkTimeout()
 const Response &Connection::getResponse() const
 {
 	return _res;
+}
+
+const Request *Connection::getRequest() const
+{
+	return _req;
 }
 
 int Connection::getState() const

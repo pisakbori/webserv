@@ -20,6 +20,7 @@ private:
 	void validateAllowed(std::string uri, std::string method, const Server &serv);
 
 public:
+	size_t _bodySize;
 	// Constructor
 	Request();
 

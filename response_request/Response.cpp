@@ -2,12 +2,14 @@
 
 std::map<int, std::string> Response::statuses = {
     {200, "OK"},
+    {201, "Created"},
     {303, "See Other"},
     {400, "Bad Request"},
     {404, "Not Found"},
     {405, "Method Not Allowed"},
     {411, "Length Required"},
     {408, "Request Timeout"},
+    {409, "Conflict"},
     {413, "Payload Too Large"},
     {414, "URI Too Long"},
     {415, "Unsupported Media Type"},
