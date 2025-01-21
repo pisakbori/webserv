@@ -25,7 +25,10 @@ private:
 	void acceptNewConnection(int fd);
 	void processRequest(int fd);
 	int readFromFd(int fd);
+	void readFromResource(int fd);
+	void readFromSocket(int fd);
 	void writeToResourceFd(int i);
+	void sendOneChunk(std::string response, Connection *c, int i);
 	void onWrite(int fd);
 	void removeConnection(int fd);
 	void closeResourceFd(int i);
@@ -33,7 +36,7 @@ private:
 	bool isConnection(int i);
 	int maxFd(void) const;
 	void closeConnection(int fd);
-	void sendResponseChunk(Connection *c, int i);
+	void writeToSocket(Connection *c, int i);
 
 public:
 	// Constructor

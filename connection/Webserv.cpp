@@ -156,47 +156,38 @@ void Webserv::closeConnection(int fd)
 	closeFd(fd);
 }
 
-void Webserv::onRead(int fd)
+void Webserv::readFromResource(int fd)
 {
-	_nReady--;
-	if (_listenFdLookup.find(fd) != _listenFdLookup.end())
+	int bytesRead = readFromFd(fd);
+	std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
+	if (bytesRead == 0)
 	{
-		acceptNewConnection(fd);
-		return;
-	}
-	if (isResource(fd) && _connections[_resources[fd]]->getState() != Connection::WRITING_RESOURCE)
-	{
-		int bytesRead = readFromFd(fd);
-		std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
-		if (bytesRead == 0)
+		if (_connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
 		{
-			if (_connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
-			{
-				std::cout << "in onread\n";
-				_connections[_resources[fd]]->setState(Connection::RES_READY);
-				closeFd(fd);
-				_resources.erase(fd);
-			}
+			_connections[_resources[fd]]->setState(Connection::RES_READY);
+			closeFd(fd);
+			_resources.erase(fd);
 		}
 	}
-	else if (isConnection(fd))
+}
+
+void Webserv::readFromSocket(int fd)
+{
+	char buf[READ_BUFFER_SIZE];
+	ssize_t bytesRead = recv(fd, buf, sizeof(buf), MSG_PEEK);
+	if (bytesRead == 0)
 	{
-		char buf[READ_BUFFER_SIZE];
-		ssize_t bytesRead = recv(fd, buf, sizeof(buf), MSG_PEEK);
-		if (bytesRead == 0)
+		if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
 		{
-			if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
-			{
-				// std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
-				return;
-			}
-			std::cout << "Close connection" << std::endl;
-			closeConnection(fd);
+			// std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
+			return;
 		}
-		else if (bytesRead > 0)
-		{
-			readFromFd(fd);
-		}
+		std::cout << "Close connection" << std::endl;
+		closeConnection(fd);
+	}
+	else if (bytesRead > 0)
+	{
+		readFromFd(fd);
 	}
 }
 
@@ -232,24 +223,26 @@ void Webserv::writeToResourceFd(int i)
 	}
 }
 
-void Webserv::sendResponseChunk(Connection *c, int i)
+void Webserv::sendOneChunk(std::string response, Connection *c, int i)
+{
+	std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
+	int bytesSent = send(i, substring.c_str(), substring.length(), 0);
+	c->_sentChunks++;
+	if (bytesSent == -1)
+	{
+		std::cout << Colors::RED << "Error sending response." << Colors::RESET << std::endl;
+		closeConnection(i);
+	}
+	else
+		std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+}
+
+void Webserv::writeToSocket(Connection *c, int i)
 {
 	// std::cout << "Sending response to " << i << "\n ";
 	std::string response = c->getResponse().toString();
 	if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
-	{
-		std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
-		int bytesSent = send(i, substring.c_str(), substring.length(), 0);
-		c->_sentChunks++;
-		if (bytesSent == -1)
-		{
-			std::cout << Colors::RED << "Error sending response. Client not interested anymore" << Colors::RESET << std::endl;
-			closeConnection(i);
-			return;
-		}
-		else
-			std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
-	}
+		sendOneChunk(response, c, i);
 	else
 		c->setState(Connection::RES_SENT);
 	if (c->getState() == Connection::RES_SENT)
@@ -271,19 +264,27 @@ void Webserv::sendResponseChunk(Connection *c, int i)
 
 void Webserv::onWrite(int i)
 {
-
+	_nReady--;
 	if (isResource(i) && _connections[_resources[i]]->getState() == Connection::WRITING_RESOURCE)
-	{
 		writeToResourceFd(i);
-	}
 	else if (isConnection(i))
 	{
 		auto c = _connections[i];
 		c->checkTimeout();
-
 		if (c->getState() == Connection::RES_READY)
-			sendResponseChunk(c, i);
+			writeToSocket(c, i);
 	}
+}
+
+void Webserv::onRead(int fd)
+{
+	_nReady--;
+	if (_listenFdLookup.find(fd) != _listenFdLookup.end())
+		acceptNewConnection(fd);
+	else if (isResource(fd) && _connections[_resources[fd]]->getState() != Connection::WRITING_RESOURCE)
+		readFromResource(fd);
+	else if (isConnection(fd))
+		readFromSocket(fd);
 }
 
 int Webserv::maxFd(void) const
