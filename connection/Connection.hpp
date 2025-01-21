@@ -17,6 +17,7 @@ class Connection
 {
 private:
 	const Server &_server;
+	const Server &_default_server;
 	Response _res;
 	Request *_req;
 	Location _location;
@@ -29,6 +30,7 @@ private:
 public:
 	size_t _sentChunks;
 	bool _hasTimeout;
+	bool _getProcessedByDefault;
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ_HEADER = 1;
 	static constexpr int REQ_READY = 2;
@@ -37,7 +39,7 @@ public:
 	static constexpr int RES_SENT = 5;
 
 	// Parameterized constructor
-	Connection(const Server &rs);
+	Connection(const Server &rs, const Server &def_rs);
 
 	// Copy constructor
 	Connection(const Connection &);

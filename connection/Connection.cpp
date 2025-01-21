@@ -1,16 +1,17 @@
 #include "Connection.hpp"
 
 // Parameterized constructor
-Connection::Connection(const Server &rs) : _server(rs)
+Connection::Connection(const Server &rs, const Server &def_rs) : _server(rs), _default_server(def_rs)
 {
 	_req = new Request();
 	_hasTimeout = false;
+	_getProcessedByDefault = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
 }
 
 // Copy constructor
-Connection::Connection(const Connection &other) : _server(other._server)
+Connection::Connection(const Connection &other) : _server(other._server), _default_server(other._default_server)
 {
 	// std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
 	*this = other;
@@ -31,6 +32,7 @@ Connection &Connection::operator=(const Connection &other)
 		_req = other._req;
 		_res = other._res;
 		_hasTimeout = other._hasTimeout;
+		_getProcessedByDefault = other._getProcessedByDefault;
 		setState(other._state);
 	}
 	return *this;
@@ -93,11 +95,16 @@ void Connection::handleAutoIndex(std::string path)
 
 int Connection::getResource(std::string uri)
 {
-	_location = _server.get_location(_req->getUri());
-	if (_server.get_location(_req->getUri()).get_redirect().first)
+	Server server;
+
+	server = _server;
+	if (_getProcessedByDefault)
+		server = _default_server;
+	_location = server.get_location(_req->getUri());
+	if (server.get_location(_req->getUri()).get_redirect().first)
 	{
-		_res.setCode(_server.get_location(_req->getUri()).get_redirect().first);
-		_res.appendToHeader("Location", _server.get_location(_req->getUri()).get_redirect().second);
+		_res.setCode(server.get_location(_req->getUri()).get_redirect().first);
+		_res.appendToHeader("Location", server.get_location(_req->getUri()).get_redirect().second);
 		_state = RES_READY;
 		return -1;
 	}
