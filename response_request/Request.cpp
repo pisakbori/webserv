@@ -158,6 +158,8 @@ void Request::parseRequest(Connection *c)
 		}
 		char ch;
 		auto size = _bodySize;
+		// TODO: if header read, only append to body would be ideal..
+		_body = "";
 		while (size > 0 && stream.get(ch))
 		{
 			_body.push_back(ch);

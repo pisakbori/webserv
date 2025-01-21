@@ -7,6 +7,8 @@ Connection::Connection(const Server &rs) : _server(rs)
 	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
+	_sentChunks = 0;
+	_uploadedBytes = 0;
 }
 
 // Copy constructor
@@ -30,6 +32,8 @@ Connection &Connection::operator=(const Connection &other)
 	{
 		_req = other._req;
 		_res = other._res;
+		_sentChunks = other._sentChunks;
+		_uploadedBytes = other._uploadedBytes;
 		_hasTimeout = other._hasTimeout;
 		setState(other._state);
 	}
@@ -67,6 +71,7 @@ void Connection::reset()
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	_sentChunks = 0;
+	_uploadedBytes = 0;
 };
 
 void Connection::append(std::string const &str)

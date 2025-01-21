@@ -95,7 +95,20 @@ int Webserv::readFromFd(int fd)
 		if (isResource(fd))
 			_connections[_resources[fd]]->appendToResponseBody(str);
 		else
+		{
+			// std::cout << "appending " << str << std::endl;
 			_connections[fd]->append(str);
+			if (_connections[fd]->getState() == Connection::READING_REQ)
+			{
+				int resourceFd = _connections[fd]->process();
+				if (resourceFd != -1)
+				{
+					_resources[resourceFd] = fd;
+					FD_SET(resourceFd, &_master);
+					printOpenFds();
+				}
+			}
+		}
 	}
 	if (bytes_read < 0)
 		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
@@ -154,13 +167,16 @@ void Webserv::onRead(int fd)
 	if (isResource(fd) && _connections[_resources[fd]]->getState() != Connection::WRITING_RESOURCE)
 	{
 		int bytesRead = readFromFd(fd);
-		// std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
+		std::cout << "read " << bytesRead << " bytes from resource " << fd << std::endl;
 		if (bytesRead == 0)
 		{
 			if (_connections[_resources[fd]]->getState() == Connection::READING_RESOURCE)
+			{
+				std::cout << "in onread\n";
 				_connections[_resources[fd]]->setState(Connection::RES_READY);
-			closeFd(fd);
-			_resources.erase(fd);
+				closeFd(fd);
+				_resources.erase(fd);
+			}
 		}
 	}
 	else if (isConnection(fd))
@@ -171,13 +187,16 @@ void Webserv::onRead(int fd)
 		{
 			if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
 			{
-				std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
+				// std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
 				return;
 			}
+			std::cout << "Close connection" << std::endl;
 			closeConnection(fd);
 		}
 		else if (bytesRead > 0)
+		{
 			readFromFd(fd);
+		}
 	}
 }
 
@@ -190,18 +209,20 @@ void Webserv::writeToResourceFd(int i)
 	if (c->_uploadedBytes < size)
 	{
 		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
-		int uploadedBytes = write(i, substring.c_str(), substring.length());
+		int uploadedBytes = write(i, substring.c_str(), WRITE_BUFFER_SIZE);
 		if (uploadedBytes == -1)
 		{
-			std::cerr << "Error writing data: ";
-			perror("");
+			// std::cerr << "Error writing data: ";
+			// perror("");
 			std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
-			closeConnection(i);
+			closeConnection(_resources[i]);
 			return;
 		}
 		else
+		{
 			std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
-		c->_uploadedBytes += uploadedBytes;
+			c->_uploadedBytes += uploadedBytes;
+		}
 	}
 	else
 	{
@@ -222,7 +243,7 @@ void Webserv::sendResponseChunk(Connection *c, int i)
 		c->_sentChunks++;
 		if (bytesSent == -1)
 		{
-			std::cout << Colors::RED << "Client not interested anymore" << Colors::RESET << std::endl;
+			std::cout << Colors::RED << "Error sending response. Client not interested anymore" << Colors::RESET << std::endl;
 			closeConnection(i);
 			return;
 		}
@@ -251,23 +272,15 @@ void Webserv::sendResponseChunk(Connection *c, int i)
 void Webserv::onWrite(int i)
 {
 
-	if (isResource(i))
+	if (isResource(i) && _connections[_resources[i]]->getState() == Connection::WRITING_RESOURCE)
 	{
 		writeToResourceFd(i);
 	}
 	else if (isConnection(i))
 	{
-		int resourceFd = -1;
 		auto c = _connections[i];
 		c->checkTimeout();
-		if (c->getState() == Connection::READING_REQ)
-			resourceFd = c->process();
-		if (resourceFd != -1)
-		{
-			_resources[resourceFd] = i;
-			FD_SET(resourceFd, &_master);
-			printOpenFds();
-		}
+
 		if (c->getState() == Connection::RES_READY)
 			sendResponseChunk(c, i);
 	}
