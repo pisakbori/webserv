@@ -178,10 +178,10 @@ void Webserv::readFromSocket(int fd)
 	{
 		if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
 		{
-			// std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
+			std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
 			return;
 		}
-		std::cout << "Close connection" << std::endl;
+		std::cout << "Close connection.." << std::endl;
 		closeConnection(fd);
 	}
 	else if (bytesRead > 0)
@@ -199,12 +199,13 @@ void Webserv::writeToResourceFd(int i)
 {
 	auto c = _connections[_resources[i]];
 	size_t size = c->getRequest()->_bodySize;
+	std::cout << "size: " << size << std::endl;
 	if (size <= 0)
 		return;
 	if (c->_uploadedBytes < size)
 	{
 		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
-		int uploadedBytes = write(i, substring.c_str(), WRITE_BUFFER_SIZE);
+		int uploadedBytes = write(i, substring.c_str(), substring.size());
 		if (uploadedBytes == -1)
 		{
 			closeConnection(_resources[i]);
