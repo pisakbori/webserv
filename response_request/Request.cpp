@@ -78,6 +78,17 @@ void Request::validateAllowed(std::string uri, std::string method, const Server 
 	}
 };
 
+void Request::matchHost(Connection *c)
+{
+	std::string host = _header["HOST"];
+	std::vector<std::string> server_names = c->getServ().get_server_name();
+
+	if (std::find(server_names.begin(), server_names.end(), host) == server_names.end())
+		c->_getProcessedByDefault = true;
+	else
+		c->_getProcessedByDefault = false;
+}
+
 void Request::parseRequest(Connection *c)
 {
 	std::string line;
@@ -135,6 +146,8 @@ void Request::parseRequest(Connection *c)
 		return;
 	if (_header.find("HOST") == _header.end())
 		throw HttpError("Missing Host", 400);
+	else
+		matchHost(c);
 	if (_method == "GET" || _method == "HEAD")
 	{
 		c->setState(Connection::REQ_READY);
