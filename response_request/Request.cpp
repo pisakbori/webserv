@@ -81,6 +81,17 @@ void Request::validateAllowed(std::string uri, std::string method, const Server 
 	}
 };
 
+void Request::matchHost(Connection *c)
+{
+	std::string host = _header["HOST"];
+	std::vector<std::string> server_names = c->getServ().get_server_name();
+
+	if (std::find(server_names.begin(), server_names.end(), host) == server_names.end())
+		c->_getProcessedByDefault = true;
+	else
+		c->_getProcessedByDefault = false;
+}
+
 void Request::parseRequest(Connection *c)
 {
 	std::string line;
@@ -102,6 +113,9 @@ void Request::parseRequest(Connection *c)
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
 	validateAllowed(_uri, _method, c->getServ());
+	// if (_input.find("\n\n") == std::string::npos ||
+	// 	_input.find("\r\n\r\n") == std::string::npos)
+	// 	return; // Return when EOF is encountered without a newline
 	// field-name: OWS field-value OWS
 	while (std::getline(stream, line))
 	{
@@ -138,6 +152,8 @@ void Request::parseRequest(Connection *c)
 		return;
 	if (_header.find("HOST") == _header.end())
 		throw HttpError("Missing Host", 400);
+	else
+		matchHost(c);
 	if (_method == "GET" || _method == "HEAD")
 	{
 		c->setState(Connection::REQ_READY);

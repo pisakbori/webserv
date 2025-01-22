@@ -78,7 +78,7 @@ void Webserv::configure(std::string configFile)
 
 void Webserv::acceptNewConnection(int fd)
 {
-	auto c = new Connection(_servers[_listenFdLookup[fd]]);
+	auto c = new Connection(_servers[_listenFdLookup[fd]], _servers[0]);
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
 	FD_SET(newfd, &_master);

@@ -37,6 +37,7 @@ public:
 
 	// Member functions
 	void append(std::string const &str);
+	void matchHost(Connection *c);
 	void parseRequest(Connection *c);
 
 	// Getters
