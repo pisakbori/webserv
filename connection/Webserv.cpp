@@ -85,36 +85,6 @@ void Webserv::acceptNewConnection(int fd)
 	printOpenFds();
 }
 
-int Webserv::readFromFd(int fd)
-{
-	char buf[READ_BUFFER_SIZE];
-	ssize_t bytes_read = read(fd, buf, sizeof(buf));
-	if (bytes_read > 0)
-	{
-		std::string str(buf, bytes_read);
-		if (isResource(fd))
-			_connections[_resources[fd]]->appendToResponseBody(str);
-		else
-		{
-			// std::cout << "appending " << str << std::endl;
-			_connections[fd]->append(str);
-			if (_connections[fd]->getState() == Connection::READING_REQ)
-			{
-				int resourceFd = _connections[fd]->process();
-				if (resourceFd != -1)
-				{
-					_resources[resourceFd] = fd;
-					FD_SET(resourceFd, &_master);
-					printOpenFds();
-				}
-			}
-		}
-	}
-	if (bytes_read < 0)
-		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
-	return bytes_read;
-}
-
 bool Webserv::isResource(int fd)
 {
 	return _resources.find(fd) != _resources.end();
@@ -158,39 +128,59 @@ void Webserv::closeConnection(int fd)
 
 void Webserv::readFromResource(int fd)
 {
-	int bytesRead = readFromFd(fd);
-	if (bytesRead == 0)
+	char buf[READ_BUFFER_SIZE];
+	ssize_t bytesRead = read(fd, buf, sizeof(buf));
+	if (bytesRead > 0)
+	{
+		std::cout << "\e[2mRead " << bytesRead << " bytes from resource " << fd << "\e[0m" << std::endl;
+		std::string str(buf, bytesRead);
+		_connections[_resources[fd]]->appendToResponseBody(str);
+	}
+	else if (bytesRead < 0)
+		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
+	else if (bytesRead == 0)
 	{
 		std::cout << "\e[2mFinished reading resource " << fd << "\e[0m" << std::endl;
 		_connections[_resources[fd]]->setState(Connection::RES_READY);
 		closeFd(fd);
 		_resources.erase(fd);
 	}
-	else
-		std::cout << "\e[2mRead " << bytesRead << " bytes from resource " << fd << "\e[0m" << std::endl;
 }
 
 void Webserv::readFromSocket(int fd)
 {
 	char buf[READ_BUFFER_SIZE];
-	ssize_t bytesRead = recv(fd, buf, sizeof(buf), MSG_PEEK);
-	if (bytesRead == 0)
+	ssize_t bytesRead = read(fd, buf, sizeof(buf));
+	if (bytesRead > 0)
 	{
+		std::string str(buf, bytesRead);
+		std::cout << "read " << bytesRead << " from socket" << std::endl;
+		_connections[fd]->append(str);
+		if (_connections[fd]->getState() == Connection::READING_REQ)
+		{
+			int resourceFd = _connections[fd]->process();
+			if (resourceFd != -1)
+			{
+				_resources[resourceFd] = fd;
+				FD_SET(resourceFd, &_master);
+				printOpenFds();
+			}
+		}
+	}
+	else if (bytesRead < 0)
+	{
+		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
+		closeConnection(fd);
+	}
+	else if (bytesRead == 0)
+	{
+		std::cout << Colors::RED << "bytesRead 0 " << fd << Colors::RESET << std::endl;
 		if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
 		{
 			std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
 			return;
 		}
-		std::cout << "Close connection.." << std::endl;
-		closeConnection(fd);
-	}
-	else if (bytesRead > 0)
-	{
-		readFromFd(fd);
-	}
-	else
-	{
-		std::cerr << "Client closed the connection" << std::endl;
+		std::cout << "==========================================Close connection" << std::endl;
 		closeConnection(fd);
 	}
 }
@@ -199,7 +189,6 @@ void Webserv::writeToResourceFd(int i)
 {
 	auto c = _connections[_resources[i]];
 	size_t size = c->getRequest()->_bodySize;
-	std::cout << "size: " << size << std::endl;
 	if (size <= 0)
 		return;
 	if (c->_uploadedBytes < size)
