@@ -1,8 +1,8 @@
-GET /html/meow.html HTTP/1.1
-Host    : example.com
+GET /images/dd HTTP/1.1
+Host: localhost
 User-Agent: curl/7.68.0
 Content-length:182
-try   :      
+try:      
 bla:blablablalbalbalbalbalblablalbalblablalblablablalblablablalblablalblablalblablablalbla
 bla:blablablalbalbalbalbalblablalbalblablalblablablalblablablalblablalblablalblablablalbla
 

@@ -88,15 +88,33 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
-void Connection::handleAutoIndex(std::string path)
+int Connection::getDirectory(std::string dirPath, std::string uri)
 {
-	if (!_location.get_autoindex())
-		throw std::runtime_error("It's a directory. Should be 404");
+	if (_location.get_autoindex())
+	{
+		_res = Response(dirPath, _req->getUri());
+		setState(Connection::RES_READY);
+		return -1;
+	}
 	else
 	{
-		_res = Response(path, _req->getUri());
-		setState(Connection::RES_READY);
+		if (!_location.get_index().size())
+			throw HttpError("Forbidden", 403);
+		for (size_t i = 0; i < _location.get_index().size(); i++)
+		{
+			std::filesystem::path indexFile = _location.get_index()[i];
+			std::cout << "indexfile:>" << indexFile << "<" << std::endl;
+			std::filesystem::path path = dirPath / indexFile;
+			std::filesystem::path route = uri / indexFile;
+			if (std::filesystem::exists(path.string()))
+			{
+				std::cout << Colors::RED << "Try open resource " << path.string() << std::endl
+						  << Colors::RESET;
+				return getResource(route.string());
+			}
+		}
 	}
+	throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 }
 
 int Connection::openResource(std::string path)
@@ -105,7 +123,7 @@ int Connection::openResource(std::string path)
 	setState(Connection::READING_RESOURCE);
 	if (resourceFd == -1)
 	{
-		throw std::runtime_error("Error opening resource");
+		throw HttpError("Forbidden, not possible to open resource", 403);
 	}
 	size_t pos = path.rfind('.');
 	if (pos != std::string::npos)
@@ -129,16 +147,14 @@ int Connection::getResource(std::string uri)
 	if (_location.get_redirect().first)
 		return redirect();
 	std::string path = _location.get_route(uri);
-	std::cout << Colors::RED << "Try open resource " << path << std::endl
+	std::cout << Colors::RED << "GetResource " << path << std::endl
 			  << Colors::RESET;
 	if (!std::filesystem::exists(path))
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
-	if (std::filesystem::is_directory(path))
-		handleAutoIndex(path);
+	else if (std::filesystem::is_directory(path))
+		return getDirectory(path, uri);
 	else
 		return openResource(path);
-
-	return -1;
 }
 
 int Connection::postResource(std::string uri)
@@ -164,10 +180,9 @@ int Connection::postResource(std::string uri)
 	uploadLocation /= filename;
 	if (std::filesystem::exists(uploadLocation))
 		throw HttpError(filename + " already exists.", 409);
-	_res.appendToHeader("Location", accessLocation.string() + "   and upladloc:" + uploadLocation.string());
+	_res.appendToHeader("Location", accessLocation.string());
 	_res.appendToBody("{\"message\": \"Resource successfully processed.\"}");
 	int resourceFd = open(uploadLocation.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
-	std::cout << "opened " << uploadLocation << std::endl;
 	setState(Connection::WRITING_RESOURCE);
 	if (resourceFd == -1)
 		throw std::runtime_error("Error uploading file");

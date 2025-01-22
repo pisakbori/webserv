@@ -62,7 +62,7 @@ public:
 	void reset();
 	void checkTimeout();
 	int acceptConnection();
-	void handleAutoIndex(std::string path);
+	int getDirectory(std::string path, std::string uri);
 
 	// Getters
 	const Server &getServ() const;

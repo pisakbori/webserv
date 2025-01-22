@@ -172,6 +172,8 @@ void Request::parseRequest(Connection *c)
 		}
 		if (size > 0)
 			return;
+		else if (stream.get(ch))
+			throw HttpError("Request body is greater than Content-length", 400);
 		c->setState(Connection::REQ_READY);
 		// we don't care about leftovers, even Chrome gave up HTTP pipelining.
 	}
