@@ -19,8 +19,7 @@ std::string		extract_parameters(
 
 // Constructor
 Server::Server() :
-	host("0.0.0.0"),
-	port(80),
+	listen(),
 	server_name(1),
 	error_page(),
 	client_max_body_size(1 << 20),
@@ -31,8 +30,7 @@ Server::Server() :
 
 // Copy constructor
 Server::Server(Server const & src) :
-	host(src.host),
-	port(src.port),
+	listen(src.listen),
 	server_name(src.server_name),
 	error_page(src.error_page),
 	client_max_body_size(src.client_max_body_size),
@@ -53,12 +51,10 @@ Server &		Server::operator=(Server const & rhs)
 	std::cout << "\e[2mServer equal operator" << Colors::RESET << std::endl;
 	if (this != &rhs)
 	{
-		this->host = rhs.host;
-		this->port = rhs.port;
+		this->listen = rhs.listen;
 		this->server_name = rhs.server_name;
 		this->error_page = rhs.error_page;
 		this->client_max_body_size = rhs.client_max_body_size;
-		this->_listenFd = rhs._listenFd;
 		this->location = rhs.location;
 	}
 	return *this;
@@ -66,8 +62,7 @@ Server &		Server::operator=(Server const & rhs)
 
 std::ostream &operator<<(std::ostream &os, const Server &server)
 {
-	os << "host: " << server.get_host() << std::endl;
-	os << "port: " << server.get_port() << std::endl;
+	// os << server.get_listen();
 	os << "server_name: ";
 	std::vector<std::string> v(server.get_server_name());
 	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
@@ -90,22 +85,10 @@ std::ostream &operator<<(std::ostream &os, const Server &server)
 
 void Server::startListening(void)
 {
-	_listenFd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_listenFd == -1)
-		throw std::runtime_error("Error creating listening socket");
-	struct sockaddr_in serverAddr;
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
-	serverAddr.sin_port = htons(port);
-	int opt = 1;
-	setsockopt(_listenFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	if (bind(_listenFd, (struct sockaddr *)(&serverAddr), sizeof(serverAddr)) == -1)
-		throw std::runtime_error("Could not bind socket to port " + std::to_string(serverAddr.sin_port));
-	listen(_listenFd, MAX_QUEUED);
-	std::cout << "server: listening on port " << port << std::endl;
+	listen.startListening();
 };
 
 void Server::stopListening(void)
 {
-	close(_listenFd);
+	listen.stopListening();
 }

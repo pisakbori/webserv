@@ -84,12 +84,15 @@ void Request::validateAllowed(std::string uri, std::string method, const Server 
 void Request::matchHost(Connection *c)
 {
 	std::string host = _header["HOST"];
-	std::vector<std::string> server_names = c->getServ().get_server_name();
 
-	if (std::find(server_names.begin(), server_names.end(), host) == server_names.end())
-		c->_getProcessedByDefault = true;
-	else
-		c->_getProcessedByDefault = false;
+	std::cout << c->_responsible_server << std::endl;
+	for (const int& i : c->_valid_servers)
+	{
+		std::vector<std::string> server_names = c->getServ().at(i).get_server_name();
+		if (std::find(server_names.begin(), server_names.end(), host) != server_names.end())
+			c->_responsible_server = i;
+	}
+	std::cout << c->_responsible_server << std::endl;
 }
 
 void Request::parseRequest(Connection *c)
@@ -112,7 +115,7 @@ void Request::parseRequest(Connection *c)
 	_protocol = line.substr(separator2 + 1, line.length() - separator2);
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
-	validateAllowed(_uri, _method, c->getServ());
+	// validateAllowed(_uri, _method, c->getServ());
 	// if (_input.find("\n\n") == std::string::npos ||
 	// 	_input.find("\r\n\r\n") == std::string::npos)
 	// 	return; // Return when EOF is encountered without a newline

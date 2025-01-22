@@ -16,8 +16,8 @@ class Request;
 class Connection
 {
 private:
-	const Server &_server;
-	const Server &_default_server;
+	const std::vector<Server>& _servers;
+	int _fd;
 	Response _res;
 	Request *_req;
 	Location _location;
@@ -31,10 +31,11 @@ private:
 	int _state;
 
 public:
+	const std::vector<int>& _valid_servers;
 	size_t _sentChunks;
 	size_t _uploadedBytes;
+	int _responsible_server;
 	bool _hasTimeout;
-	bool _getProcessedByDefault;
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ = 1;
 	static constexpr int REQ_READY = 2;
@@ -44,7 +45,7 @@ public:
 	static constexpr int RES_SENT = 6;
 
 	// Parameterized constructor
-	Connection(const Server &rs, const Server &def_rs);
+	Connection(const std::vector<Server>&, const std::vector<int>&, int);
 
 	// Copy constructor
 	Connection(const Connection &);
@@ -65,7 +66,7 @@ public:
 	void handleAutoIndex(std::string path);
 
 	// Getters
-	const Server &getServ() const;
+	const std::vector<Server>& getServ() const;
 	int getState() const;
 	const Response &getResponse() const;
 	const Request *getRequest() const;

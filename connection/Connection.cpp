@@ -1,19 +1,25 @@
 #include "Connection.hpp"
 
 // Parameterized constructor
-Connection::Connection(const Server &rs, const Server &def_rs) : _server(rs), _default_server(def_rs)
+Connection::Connection(const std::vector<Server>& servers, const std::vector<int>& valid_idx, int fd) :
+	_servers(servers),
+	_fd(fd),
+	_valid_servers(valid_idx)
 {
 	_req = new Request();
 	_hasTimeout = false;
-	_getProcessedByDefault = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
 	_sentChunks = 0;
 	_uploadedBytes = 0;
+	_responsible_server = 0;
 }
 
 // Copy constructor
-Connection::Connection(const Connection &other) : _server(other._server), _default_server(other._default_server)
+Connection::Connection(const Connection &other) :
+	_servers(other._servers),
+	_fd(other._fd),
+	_valid_servers(other._valid_servers)
 {
 	// std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
 	*this = other;
@@ -31,12 +37,12 @@ Connection &Connection::operator=(const Connection &other)
 	// std::cout << "\e[2mAssign operator Connection called\e[0m" << std::endl;
 	if (this != &other)
 	{
+		_fd = other._fd;
 		_req = other._req;
 		_res = other._res;
 		_sentChunks = other._sentChunks;
 		_uploadedBytes = other._uploadedBytes;
 		_hasTimeout = other._hasTimeout;
-		_getProcessedByDefault = other._getProcessedByDefault;
 		setState(other._state);
 	}
 	return *this;
@@ -48,21 +54,21 @@ int Connection::acceptConnection()
 {
 	struct sockaddr_in cli_addr;
 	socklen_t cli_len = sizeof(cli_addr);
-	int _fd = accept(_server.getListenFd(), (struct sockaddr *)(&cli_addr), &cli_len);
+	int fd = accept(_fd, (struct sockaddr *)(&cli_addr), &cli_len);
 
-	if (_fd < 0)
+	if (fd < 0)
 		throw std::runtime_error("ERROR on accept");
 	// TODO::forbidden flag
-	int flags = fcntl(_fd, F_GETFL, 0);
+	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1)
 		throw std::runtime_error("ERROR getting socket flags");
-	if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
-	std::cout << "fd is " << _fd << std::endl;
+	std::cout << "fd is " << fd << std::endl;
 	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
-	return _fd;
+	return fd;
 }
 
 void Connection::reset()
@@ -123,9 +129,7 @@ int Connection::getResource(std::string uri)
 {
 	Server server;
 
-	server = _server;
-	if (_getProcessedByDefault)
-		server = _default_server;
+	server = _servers.at(_responsible_server);
 	_location = server.get_location(_req->getUri());
 	if (server.get_location(_req->getUri()).get_redirect().first)
 	{
@@ -157,7 +161,10 @@ int Connection::postResource(std::string uri)
 {
 	// how should this work??? if i send a post request to any endpoint, it will upload to a default directory?
 	// only if it doesn't exist? if it exists, act like GET
-	_location = _server.get_location(_req->getUri());
+	Server server;
+
+	server = _servers.at(_responsible_server);
+	_location = server.get_location(_req->getUri());
 	if (_location.get_redirect().first)
 		return redirect();
 	std::string path = _location.get_route(uri);
@@ -227,16 +234,16 @@ int Connection::process()
 	catch (HttpError &e)
 	{
 		setState(RES_READY);
-		auto v = _server.get_error_page().code;
+		auto v = _servers.at(0).get_error_page().code;
 		if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
 		{
 			_res = Response(e);
 			_res.setBody("");
-			_res.setCode(_server.get_error_page().overwrite);
+			_res.setCode(_servers.at(0).get_error_page().overwrite);
 			try
 			{
-				std::cout << Colors::RED << _server.get_error_page().uri << Colors::RESET << std::endl;
-				return getResource(_server.get_error_page().uri);
+				std::cout << Colors::RED << _servers.at(0).get_error_page().uri << Colors::RESET << std::endl;
+				return getResource(_servers.at(0).get_error_page().uri);
 			}
 			catch (HttpError &ex)
 			{
@@ -286,9 +293,9 @@ int Connection::getState() const
 	return _state;
 }
 
-const Server &Connection::getServ() const
+const std::vector<Server> &Connection::getServ() const
 {
-	return _server;
+	return _servers;
 }
 // Setters
 

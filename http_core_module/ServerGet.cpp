@@ -1,14 +1,9 @@
 #include "Server.hpp"
 
 // Getters
-std::string					Server::get_host(void) const
+Listen &					Server::get_listen(void)
 {
-	return host;
-}
-
-unsigned short				Server::get_port(void) const
-{
-	return port;
+	return listen;
 }
 
 std::vector<std::string>	Server::get_server_name(void) const
@@ -51,5 +46,5 @@ const Location &			Server::get_location(std::string requested_uri) const
 
 int Server::getListenFd() const
 {
-	return _listenFd;
+	return listen.getFd();
 }

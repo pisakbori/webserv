@@ -2,6 +2,7 @@
 #define WEBSERV_HPP
 
 #include "Connection.hpp"
+#include <set>
 #include <sys/types.h>
 #include <sys/select.h>
 
@@ -11,8 +12,8 @@ private:
 	std::map<int, Connection *> _connections;
 	// key: resourceFd, value:socketFd
 	std::map<int, int> _resources;
-	// key: listeningFd, value:serverIndex
-	std::map<int, int> _listenFdLookup;
+	// key: listeningFd, value: servers index
+	std::map<int, std::vector<int>> _listenFdLookup;
 	fd_set _master;
 	fd_set _readfds;
 	fd_set _writefds;

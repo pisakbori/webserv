@@ -78,7 +78,7 @@ void Webserv::configure(std::string configFile)
 
 void Webserv::acceptNewConnection(int fd)
 {
-	auto c = new Connection(_servers[_listenFdLookup[fd]], _servers[0]);
+	auto c = new Connection(_servers, _listenFdLookup[fd], fd);
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
 	FD_SET(newfd, &_master);
@@ -298,16 +298,22 @@ int Webserv::maxFd(void) const
 
 void Webserv::run()
 {
+	std::map<Listen, int> listenFdMap;
 	int maxfd = -1;
+
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
-		_servers[i].startListening();
-		FD_SET(_servers[i].getListenFd(), &_master);
-		printOpenFds();
-		int max_i = _servers[i].getListenFd();
-		if (max_i > maxfd)
-			maxfd = max_i;
-		_listenFdLookup[_servers[i].getListenFd()] = i;
+		Listen& listen = _servers[i].get_listen();
+		if (listenFdMap.find(listen) == listenFdMap.end())
+		{
+			listen.startListening();
+			listenFdMap[listen] = listen.getFd();
+			FD_SET(listen.getFd(), &_master);
+			maxfd = std::max(maxfd, listen.getFd());
+		}
+		else
+			listen.setFd(listenFdMap[listen]);
+		_listenFdLookup[listen.getFd()].push_back(i);
 	}
 
 	struct timeval timeout = {0, 0};

@@ -49,45 +49,7 @@ void	Server::set_server(std::string directive)
 
 void	Server::parse_listen(std::string arg)
 {
-	const size_t	colon_pos = arg.rfind(':');
-
-	if (colon_pos != std::string::npos &&
-		(arg.find(']') < colon_pos ||
-		arg.find(']') == std::string::npos))
-	{
-		set_host(arg.substr(0, colon_pos));
-		set_port(arg.substr(colon_pos + 1));
-	}
-	else if (arg.find_first_not_of("0123456789") == std::string::npos)
-		set_port(arg);
-	else
-		set_host(arg);
-}
-
-void	Server::set_host(std::string arg)
-{
-	char	sa_data[16];
-
-	host = arg;
-	if (arg.front() == '[')
-	{
-		if (inet_pton(AF_INET6, arg.substr(1, arg.size() - 2).c_str(), sa_data) == 1)
-			return ; // IPv6
-	}
-	else if (arg.find_first_not_of("0123456789."))
-	{
-		if (inet_pton(AF_INET, arg.c_str(), sa_data) == 1)
-			return ; // IPv4
-	}
-	else
-		return ; // hostname
-}
-
-void	Server::set_port(std::string arg)
-{
-	if (arg.find_first_not_of("0123456789") == std::string::npos &&
-		std::stoi(arg) > 0 && std::stoi(arg) < 65536)
-		port = std::stoi(arg);
+	listen.parse_listen(arg);
 }
 
 void	Server::set_server_name(std::string arg)

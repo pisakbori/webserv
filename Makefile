@@ -9,6 +9,7 @@ INCLUDE		=		-I./http_core_module -I./connection -I./response_request
 SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/ServerSet.cpp \
 					$(HTTP_DIR)/ServerGet.cpp \
+					$(HTTP_DIR)/Listen.cpp \
 					$(HTTP_DIR)/Location.cpp \
 					$(HTTP_DIR)/LocationSet.cpp \
 					$(HTTP_DIR)/LocationGet.cpp \
