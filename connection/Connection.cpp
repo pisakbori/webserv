@@ -103,6 +103,10 @@ int Connection::openResource(std::string path)
 {
 	int resourceFd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
 	setState(Connection::READING_RESOURCE);
+	if (resourceFd == -1)
+	{
+		throw std::runtime_error("Error opening resource");
+	}
 	size_t pos = path.rfind('.');
 	if (pos != std::string::npos)
 		_res.setContentType(path.substr(pos + 1));
@@ -129,17 +133,11 @@ int Connection::getResource(std::string uri)
 			  << Colors::RESET;
 	if (!std::filesystem::exists(path))
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
-	try
-	{
-		if (std::filesystem::is_directory(path))
-			handleAutoIndex(path);
-		else
-			return openResource(path);
-	}
-	catch (const std::exception &e)
-	{
-		throw HttpError(e.what(), 500);
-	}
+	if (std::filesystem::is_directory(path))
+		handleAutoIndex(path);
+	else
+		return openResource(path);
+
 	return -1;
 }
 
@@ -154,49 +152,57 @@ int Connection::postResource(std::string uri)
 	if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
 		return openResource(path);
 
-	// set up a basic success response ? ? ? what should be in it ? if ruined, error will show.
 	path = _location.get_root();
-	try
-	{
-		std::filesystem::path filePath = uri;
-		std::string filename = filePath.filename().string();
-		_res.setCode(201);
-		_res.setContentType("json");
-		std::filesystem::path accessLocation = _location.get_uri();
-		std::filesystem::path uploadLocation = path;
-		accessLocation /= filename;
-		uploadLocation /= filename;
-		if (std::filesystem::exists(uploadLocation))
-			throw HttpError(filename + " already exists.", 409);
-		_res.appendToHeader("Location", accessLocation.string() + "   and upladloc:" + uploadLocation.string());
-		_res.appendToBody("{\"message\": \"Resource successfully processed.\"}");
-		// TODO:do the uploading etc.
-		int resourceFd = open(uploadLocation.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
-		std::cout << "opened " << uploadLocation << std::endl;
-		setState(Connection::WRITING_RESOURCE);
-		if (resourceFd == -1)
-		{
-			throw std::runtime_error("Error uploading file");
-			perror(""); // This will print the error message associated with `errno`
-		}
-		else
-		{
-			std::cout << "opened " << uploadLocation << std::endl;
-			setState(Connection::WRITING_RESOURCE);
-			std::cout << "return  " << resourceFd << std::endl;
-		}
-		return resourceFd;
-		// open a new file
-	}
-	catch (const HttpError &e)
-	{
-		throw e;
-	}
-	catch (const std::exception &e)
-	{
-		throw HttpError(e.what(), 500);
-	}
 
+	std::filesystem::path filePath = uri;
+	std::string filename = filePath.filename().string();
+	_res.setCode(201);
+	_res.setContentType("json");
+	std::filesystem::path accessLocation = _location.get_uri();
+	std::filesystem::path uploadLocation = path;
+	accessLocation /= filename;
+	uploadLocation /= filename;
+	if (std::filesystem::exists(uploadLocation))
+		throw HttpError(filename + " already exists.", 409);
+	_res.appendToHeader("Location", accessLocation.string() + "   and upladloc:" + uploadLocation.string());
+	_res.appendToBody("{\"message\": \"Resource successfully processed.\"}");
+	int resourceFd = open(uploadLocation.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
+	std::cout << "opened " << uploadLocation << std::endl;
+	setState(Connection::WRITING_RESOURCE);
+	if (resourceFd == -1)
+		throw std::runtime_error("Error uploading file");
+	std::cout << "opened " << uploadLocation << std::endl;
+	setState(Connection::WRITING_RESOURCE);
+	return resourceFd;
+}
+
+int Connection::setErrorResponse(const HttpError &e)
+{
+	setState(RES_READY);
+	auto v = _server.get_error_page().code;
+	if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
+	{
+		_res = Response(e);
+		_res.setBody("");
+		if (_server.get_error_page().overwrite)
+			_res.setCode(_server.get_error_page().overwrite);
+		try
+		{
+			std::cout << Colors::RED << _server.get_error_page().uri << Colors::RESET << std::endl;
+			return getResource(_server.get_error_page().uri);
+		}
+		catch (HttpError &ex)
+		{
+			_res = Response(ex);
+		}
+		catch (const std::exception &e)
+		{
+			_res = Response(HttpError(e.what(), 500));
+		}
+	}
+	else
+		_res = Response(e);
+	setState(Connection::RES_READY);
 	return -1;
 }
 
@@ -221,27 +227,11 @@ int Connection::process()
 	}
 	catch (HttpError &e)
 	{
-		setState(RES_READY);
-		auto v = _server.get_error_page().code;
-		if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
-		{
-			_res = Response(e);
-			_res.setBody("");
-			_res.setCode(_server.get_error_page().overwrite);
-			try
-			{
-				std::cout << Colors::RED << _server.get_error_page().uri << Colors::RESET << std::endl;
-				return getResource(_server.get_error_page().uri);
-			}
-			catch (HttpError &ex)
-			{
-				_res = Response(ex);
-				return -1;
-			}
-
-			// TODO:overwrite code
-		}
-		_res = Response(e);
+		return setErrorResponse(e);
+	}
+	catch (const std::exception &e)
+	{
+		return setErrorResponse(HttpError(e.what(), 500));
 	}
 	return -1;
 }

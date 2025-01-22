@@ -27,6 +27,7 @@ private:
 	int openResource(std::string path);
 	int postResource(std::string path);
 	int redirect();
+	int setErrorResponse(const HttpError &e);
 	int _state;
 	bool _close;
 
