@@ -28,6 +28,7 @@ private:
 	int postResource(std::string path);
 	int redirect();
 	int _state;
+	bool _close;
 
 public:
 	size_t _sentChunks;
@@ -67,6 +68,7 @@ public:
 	int getState() const;
 	const Response &getResponse() const;
 	const Request *getRequest() const;
+	bool hasConnectionClose() const;
 
 	// Setters
 	void setState(int s);

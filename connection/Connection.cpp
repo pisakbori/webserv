@@ -9,6 +9,7 @@ Connection::Connection(const Server &rs) : _server(rs)
 	setState(WAITING_REQ);
 	_sentChunks = 0;
 	_uploadedBytes = 0;
+	_close = false;
 }
 
 // Copy constructor
@@ -72,6 +73,7 @@ void Connection::reset()
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	_sentChunks = 0;
 	_uploadedBytes = 0;
+	_close = false;
 };
 
 void Connection::append(std::string const &str)
@@ -206,6 +208,11 @@ int Connection::process()
 		if (_state == REQ_READY)
 		{
 			// std::cout << *_req << std::endl;
+			if (_req->hasConnectionClose())
+			{
+				_res.appendToHeader("Connection", "close");
+				_close = true;
+			}
 			if (_req->getMethod() == "GET")
 				return getResource(_req->getUri());
 			else if (_req->getMethod() == "POST")
@@ -278,6 +285,12 @@ const Server &Connection::getServ() const
 {
 	return _server;
 }
+
+bool Connection::hasConnectionClose() const
+{
+	return _close;
+}
+
 // Setters
 
 void Connection::setState(int s)

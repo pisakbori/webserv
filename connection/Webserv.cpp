@@ -244,10 +244,15 @@ void Webserv::writeToSocket(Connection *c, int i)
 					  << Colors::RESET;
 			closeConnection(i);
 		}
+		else if (c->hasConnectionClose())
+		{
+			std::cout << Colors::RED << "Request had Connection Close so remove " << i << std::endl
+					  << Colors::RESET;
+			closeConnection(i);
+		}
 		else
 		{
 			c->reset();
-			FD_SET(i, &_master);
 			printOpenFds();
 		}
 	}

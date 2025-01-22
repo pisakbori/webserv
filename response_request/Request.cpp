@@ -81,6 +81,13 @@ void Request::validateAllowed(std::string uri, std::string method, const Server 
 	}
 };
 
+void toUpperCase(std::string &str)
+{
+	std::transform(str.begin(), str.end(), str.begin(),
+				   [](unsigned char c)
+				   { return std::toupper(c); });
+}
+
 void Request::parseRequest(Connection *c)
 {
 	std::string line;
@@ -120,9 +127,7 @@ void Request::parseRequest(Connection *c)
 		auto end = std::find_if(line.begin(), semi, [](unsigned char c)
 								{ return (c == ' ' || c == '\t'); });
 		std::string key = Validate::headerName(std::string(line.begin(), end));
-		std::transform(key.begin(), key.end(), key.begin(),
-					   [](unsigned char c)
-					   { return std::toupper(c); });
+		toUpperCase(key);
 		// M question counldnt it just be "std::toupper" as the last parameter?
 		auto start = std::find_if_not(semi + 1, line.end(), [](unsigned char c)
 									  { return (c == ' ' || c == '\t'); });
@@ -205,6 +210,16 @@ std::string const &Request::getProtocol() const
 std::string const &Request::getBody() const
 {
 	return _body;
+}
+
+bool Request::hasConnectionClose() const
+{
+	auto it = _header.find("CONNECTION");
+	std::string key = "";
+	if (it != _header.end())
+		key = it->second;
+	toUpperCase(key);
+	return (key == "CLOSE");
 }
 
 const std::map<std::string, std::string> &Request::getHeader() const
