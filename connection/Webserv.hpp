@@ -23,15 +23,20 @@ private:
 
 	void onRead(int i);
 	void acceptNewConnection(int fd);
-	void processRequest(int event_fd);
-	int readFromFd(int event_fd);
-	void onWrite(int event_fd);
-	void removeConnection(int event_fd);
+	void processRequest(int fd);
+	int readFromFd(int fd);
+	void readFromResource(int fd);
+	void readFromSocket(int fd);
+	void writeToResourceFd(int i);
+	void sendOneChunk(std::string response, Connection *c, int i);
+	void onWrite(int fd);
+	void removeConnection(int fd);
 	void closeResourceFd(int i);
 	bool isResource(int i);
 	bool isConnection(int i);
 	int maxFd(void) const;
 	void closeConnection(int fd);
+	void writeToSocket(Connection *c, int i);
 
 public:
 	// Constructor

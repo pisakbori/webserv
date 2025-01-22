@@ -25,18 +25,23 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
 
 	int getResource(std::string path);
+	int openResource(std::string path);
+	int postResource(std::string path);
+	int redirect();
 	int _state;
 
 public:
 	size_t _sentChunks;
+	size_t _uploadedBytes;
 	bool _hasTimeout;
 	bool _getProcessedByDefault;
 	static constexpr int WAITING_REQ = 0;
-	static constexpr int READING_REQ_HEADER = 1;
+	static constexpr int READING_REQ = 1;
 	static constexpr int REQ_READY = 2;
 	static constexpr int READING_RESOURCE = 3;
-	static constexpr int RES_READY = 4;
-	static constexpr int RES_SENT = 5;
+	static constexpr int WRITING_RESOURCE = 4;
+	static constexpr int RES_READY = 5;
+	static constexpr int RES_SENT = 6;
 
 	// Parameterized constructor
 	Connection(const Server &rs, const Server &def_rs);
@@ -63,6 +68,7 @@ public:
 	const Server &getServ() const;
 	int getState() const;
 	const Response &getResponse() const;
+	const Request *getRequest() const;
 
 	// Setters
 	void setState(int s);

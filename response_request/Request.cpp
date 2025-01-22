@@ -7,6 +7,7 @@ Request::Request()
 {
 	// std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
 	_input = "";
+	_bodySize = 0;
 }
 
 // Copy constructor
@@ -34,6 +35,7 @@ Request &Request::operator=(const Request &other)
 		_protocol = other._protocol;
 		_uri = other._uri;
 		_body = other._body;
+		_bodySize = other._bodySize;
 	}
 	return *this;
 }
@@ -48,6 +50,7 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 		std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
 	}
 	std::cout << "Body: " << req.getBody() << std::endl;
+	std::cout << "BodySize: " << req._bodySize << std::endl;
 	return os;
 }
 
@@ -110,6 +113,9 @@ void Request::parseRequest(Connection *c)
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
 	validateAllowed(_uri, _method, c->getServ());
+	// if (_input.find("\n\n") == std::string::npos ||
+	// 	_input.find("\r\n\r\n") == std::string::npos)
+	// 	return; // Return when EOF is encountered without a newline
 	// field-name: OWS field-value OWS
 	while (std::getline(stream, line))
 	{
@@ -154,19 +160,22 @@ void Request::parseRequest(Connection *c)
 	}
 	else if (_header.find("CONTENT-LENGTH") != _header.end())
 	{
-		ssize_t size;
 		try
 		{
-			size = std::stoll(_header["CONTENT-LENGTH"]);
+			auto size = std::stoll(_header["CONTENT-LENGTH"]);
+			if (size < 0)
+				throw HttpError("Invalid content length", 400);
+			// TODO: throw 413 error if body too large
+			_bodySize = size;
 		}
 		catch (const std::exception &e)
 		{
 			throw HttpError("Invalid content length", 400);
 		}
-		if (size < 0)
-			throw HttpError("Invalid content length", 400);
-		// TODO: throw 413 error if body too large
 		char ch;
+		auto size = _bodySize;
+		// TODO: if header read, only append to body would be ideal..
+		_body = "";
 		while (size > 0 && stream.get(ch))
 		{
 			_body.push_back(ch);
