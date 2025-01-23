@@ -306,10 +306,22 @@ void Webserv::run()
 		Listen& listen = _servers[i].get_listen();
 		if (listenFdMap.find(listen) == listenFdMap.end())
 		{
-			listen.startListening();
-			listenFdMap[listen] = listen.getFd();
-			FD_SET(listen.getFd(), &_master);
-			maxfd = std::max(maxfd, listen.getFd());
+			try
+			{
+				listen.startListening();
+				listenFdMap[listen] = listen.getFd();
+				FD_SET(listen.getFd(), &_master);
+				maxfd = std::max(maxfd, listen.getFd());
+			}
+			catch (const std::runtime_error & e)
+			{
+				std::cerr << e.what() << std::endl;
+				// close current fd
+				listen.stopListening();
+				// close all previous fds
+				for (const auto & [listen, fd] : listenFdMap)
+					close(fd);
+			}
 		}
 		else
 			listen.setFd(listenFdMap[listen]);

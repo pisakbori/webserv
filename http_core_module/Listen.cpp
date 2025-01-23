@@ -57,7 +57,8 @@ void Listen::startListening(void)
 	setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	if (bind(_fd, (struct sockaddr *)(&serverAddr), sizeof(serverAddr)) == -1)
 		throw std::runtime_error("Could not bind socket to port " + std::to_string(serverAddr.sin_port));
-	listen(_fd, MAX_QUEUED);
+	if (listen(_fd, MAX_QUEUED) == -1)
+		throw std::runtime_error("Could not listen on: " + std::to_string(_fd));
 	std::cout << "server: listening on port " << port << std::endl;
 };
 
