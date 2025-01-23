@@ -38,6 +38,9 @@ public:
 	// Member functions
 	void append(std::string const &str);
 	void matchHost(Connection *c);
+	void parseRequestLine(std::string &line);
+	void parseFieldLine(std::string &line);
+	void parseContentLength(Connection *c, std::istringstream &stream);
 	void parseRequest(Connection *c);
 
 	// Getters
