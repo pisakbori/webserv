@@ -234,16 +234,17 @@ int Connection::process()
 	catch (HttpError &e)
 	{
 		setState(RES_READY);
-		auto v = _servers.at(0).get_error_page().code;
+		err_page_t error_page = _servers.at(_responsible_server).get_error_page();
+		auto v = error_page.code;
 		if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
 		{
 			_res = Response(e);
 			_res.setBody("");
-			_res.setCode(_servers.at(0).get_error_page().overwrite);
+			_res.setCode(error_page.overwrite);
 			try
 			{
-				std::cout << Colors::RED << _servers.at(0).get_error_page().uri << Colors::RESET << std::endl;
-				return getResource(_servers.at(0).get_error_page().uri);
+				std::cout << Colors::RED << error_page.uri << Colors::RESET << std::endl;
+				return getResource(error_page.uri);
 			}
 			catch (HttpError &ex)
 			{
