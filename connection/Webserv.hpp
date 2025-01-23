@@ -25,7 +25,6 @@ private:
 	void onRead(int i);
 	void acceptNewConnection(int fd);
 	void processRequest(int fd);
-	int readFromFd(int fd);
 	void readFromResource(int fd);
 	void readFromSocket(int fd);
 	void writeToResourceFd(int i);

@@ -120,7 +120,6 @@ void Request::parseFieldLine(std::string &line, bool *headerRead)
 	line = Validate::sanitize(line);
 	if (line.empty())
 	{
-		std::cout << "kurwa jestem tu" << std::endl;
 		*headerRead = true;
 		return;
 	}
@@ -162,9 +161,9 @@ void Request::parseContentLength(Connection *c, std::istringstream &stream)
 	}
 	if (size > 0)
 		return;
-		// throw HttpError("Bad Request", 400);
+	else if (stream.get(ch))
+		throw HttpError("Request body is greater than Content-length", 400);
 	c->setState(Connection::REQ_READY);
-	// we don't care about leftovers, even Chrome gave up HTTP pipelining.
 }
 
 void Request::parseRequest(Connection *c)
@@ -224,6 +223,16 @@ std::string const &Request::getProtocol() const
 std::string const &Request::getBody() const
 {
 	return _body;
+}
+
+bool Request::hasConnectionClose() const
+{
+	auto it = _header.find("CONNECTION");
+	std::string key = "";
+	if (it != _header.end())
+		key = it->second;
+	std::transform(key.begin(), key.end(), key.begin(), ::toupper );
+	return (key == "CLOSE");
 }
 
 const std::map<std::string, std::string> &Request::getHeader() const

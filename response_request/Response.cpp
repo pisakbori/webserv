@@ -5,6 +5,7 @@ std::map<int, std::string> Response::statuses = {
     {201, "Created"},
     {303, "See Other"},
     {400, "Bad Request"},
+    {403, "Forbidden"},
     {404, "Not Found"},
     {405, "Method Not Allowed"},
     {411, "Length Required"},
@@ -18,6 +19,8 @@ std::map<int, std::string> Response::statuses = {
 
 std::map<std::string, std::string> Response::mimeTypes = {
     {"html", "text/html"},
+    {"htm", "text/html"},
+    {"shtml", "text/html"},
     {"css", "text/css"},
     {"js", "application/javascript"},
     {"json", "application/json"},
@@ -44,7 +47,7 @@ std::map<std::string, std::string> Response::mimeTypes = {
     {"ttf", "font/ttf"},
     {"otf", "font/otf"},
     {"eot", "application/vnd.ms-fontobject"},
-    {"wasm", "application/wasm"} // WebAssembly
+    {"wasm", "application/wasm"},
 };
 
 // Constructor
@@ -168,6 +171,18 @@ std::string Response::toString() const
 }
 // Setters
 
+std::string getMeta()
+{
+    std::string str = "<meta charset =\"UTF-8\"><meta name =\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+    return str;
+}
+
+std::string getStyle()
+{
+    std::string str = "<style> body {font-family: Arial, sans-serif;margin: 0;height: 100vh; display: flex;justify-content: center; align-items: center; flex-direction: column; text-align: center;}h1{font - size : 3em;}ul { list-style: none; padding: 0; text-align: left; } ul li { margin: 10px 0; }</style>";
+    return str;
+}
+
 std::string Response::generateAutoindex(std::string &dir, std::string &original)
 {
     std::ostringstream html;
@@ -176,7 +191,9 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
         << "<!DOCTYPE html>\n"
         << "<html>\n"
         << "<head>\n"
+        << getMeta()
         << "<title>Index of " << original << "</title>\n"
+        << getStyle()
         << "</head>\n"
         << "<body>\n"
         << "<h1>Index of " << original << "</h1>\n"
@@ -202,6 +219,7 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
     }
 
     html << "</ul>\n"
+         << "<p><a href=\"/\">Return to Home Page</a></p>"
          << "</body>\n"
          << "</html>\n";
 

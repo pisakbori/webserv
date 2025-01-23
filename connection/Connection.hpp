@@ -30,7 +30,9 @@ private:
 	int openResource(std::string path);
 	int postResource(std::string path);
 	int redirect();
+	int setErrorResponse(const HttpError &e);
 	int _state;
+	bool _close;
 
 public:
 	size_t _sentChunks;
@@ -63,7 +65,7 @@ public:
 	void reset();
 	void checkTimeout();
 	int acceptConnection();
-	void handleAutoIndex(std::string path);
+	int getDirectory(std::string path, std::string uri);
 
 	// Getters
 	const std::vector<Server>& getServ() const;
@@ -72,6 +74,7 @@ public:
 	int getState() const;
 	const Response &getResponse() const;
 	const Request *getRequest() const;
+	bool hasConnectionClose() const;
 
 	// Setters
 	void setState(int s);

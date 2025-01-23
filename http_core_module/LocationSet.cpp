@@ -98,7 +98,7 @@ void Location::set_autoindex(std::string arg)
 
 void Location::set_index(std::string arg)
 {
-	index.pop_back();
+	index = {};
 	std::istringstream iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 		index.push_back(std::move(token));

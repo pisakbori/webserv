@@ -48,6 +48,7 @@ public:
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
 	const std::map<std::string, std::string> &getHeader() const;
+	bool hasConnectionClose() const;
 	std::string const &getBody() const;
 	// Setters
 };

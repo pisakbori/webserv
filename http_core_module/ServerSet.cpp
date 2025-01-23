@@ -73,7 +73,7 @@ void	Server::set_error_page(std::string arg)
 			token[0] - '0' > 0 && token[0] - '0' < 6)
 		{
 			error_page.code.push_back(std::stoi(token));
-			error_page.overwrite = 200;
+			error_page.overwrite = 0;
 		}
 		else if (token.size() == 4 && token.front() == '=' &&
 			std::isdigit(token[1]) && std::isdigit(token[2]) &&
