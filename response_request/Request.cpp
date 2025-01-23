@@ -115,14 +115,21 @@ void Request::parseRequestLine(std::string &line)
 }
 
 // field-line   = field-name ":" OWS field-value OWS
-void Request::parseFieldLine(std::string &line)
+void Request::parseFieldLine(std::string &line, bool *headerRead)
 {
 	line = Validate::sanitize(line);
 	if (line.empty())
+	{
+		std::cout << "kurwa jestem tu" << std::endl;
+		*headerRead = true;
 		return;
+	}
 	auto colon_pos = line.find(":");
 	if (colon_pos == std::string::npos)
+	{
+		std::cout << line << std::endl;
 		throw HttpError("Malformed header field: missing colon separator", 400);
+	}
 	if (colon_pos > 0 && std::isspace(line[colon_pos - 1]))
 		throw HttpError("Malformed header field: whitespace before colon", 400);
 	std::string key = Validate::headerName(line.substr(0, colon_pos));
@@ -153,15 +160,16 @@ void Request::parseContentLength(Connection *c, std::istringstream &stream)
 		_body.push_back(ch);
 		size--;
 	}
-	if (size > 0 || !stream)
-		throw HttpError("Bad Request", 400);
+	if (size > 0)
 		return;
+		// throw HttpError("Bad Request", 400);
 	c->setState(Connection::REQ_READY);
 	// we don't care about leftovers, even Chrome gave up HTTP pipelining.
 }
 
 void Request::parseRequest(Connection *c)
 {
+	bool headerRead = false;
 	std::string line;
 	std::istringstream stream(_input);
 	if (_input.find("\n") == std::string::npos &&
@@ -172,8 +180,10 @@ void Request::parseRequest(Connection *c)
 	if (_input.find("\n\n") == std::string::npos &&
 		_input.find("\r\n\r\n") == std::string::npos)
 		return;
-	while (std::getline(stream, line))
-		parseFieldLine(line);
+	while (!headerRead && std::getline(stream, line))
+		parseFieldLine(line, &headerRead);
+	if (!headerRead)
+		return;
 	matchHost(c);
 	if (_method == "GET" || _method == "HEAD")
 		c->setState(Connection::REQ_READY);
