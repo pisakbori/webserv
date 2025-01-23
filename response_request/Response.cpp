@@ -2,13 +2,16 @@
 
 std::map<int, std::string> Response::statuses = {
     {200, "OK"},
+    {201, "Created"},
     {303, "See Other"},
     {400, "Bad Request"},
     {404, "Not Found"},
-    {408, "Request Timeout"},
     {405, "Method Not Allowed"},
-    {414, "URI Too Long"},
+    {411, "Length Required"},
+    {408, "Request Timeout"},
+    {409, "Conflict"},
     {413, "Payload Too Large"},
+    {414, "URI Too Long"},
     {415, "Unsupported Media Type"},
     {500, "Internal Server Error"},
     {505, "HTTP Version Not Supported"}};
@@ -23,17 +26,31 @@ std::map<std::string, std::string> Response::mimeTypes = {
     {"jpeg", "image/jpeg"},
     {"gif", "image/gif"},
     {"svg", "image/svg+xml"},
+    {"ico", "image/vnd.microsoft.icon"},
     {"pdf", "application/pdf"},
     {"zip", "application/zip"},
     {"txt", "text/plain"},
     {"xml", "application/xml"},
-    {"xml", "text/xml"} // ???? TODO:which one is good for xml?
+    {"mp4", "video/mp4"},
+    {"webm", "video/webm"},
+    {"ogg", "video/ogg"},
+    {"mp3", "audio/mpeg"},
+    {"wav", "audio/wav"},
+    {"flac", "audio/flac"},
+    {"aac", "audio/aac"},
+    {"m4a", "audio/mp4"},
+    {"woff", "font/woff"},
+    {"woff2", "font/woff2"},
+    {"ttf", "font/ttf"},
+    {"otf", "font/otf"},
+    {"eot", "application/vnd.ms-fontobject"},
+    {"wasm", "application/wasm"} // WebAssembly
 };
 
 // Constructor
 Response::Response()
 {
-    std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
     setCode(200);
     setContentType("html");
 }
@@ -41,7 +58,7 @@ Response::Response()
 // Parameterized constructor: autoindex with directory as arg
 Response::Response(std::string dirPath, std::string url)
 {
-    std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(200);
     setContentType("html");
     _body = generateAutoindex(dirPath, url);
@@ -49,7 +66,7 @@ Response::Response(std::string dirPath, std::string url)
 
 Response::Response(const HttpError &err)
 {
-    std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(err.getCode());
     setContentType("html");
     for (const auto &pair : err.getExtraFields())
@@ -62,19 +79,19 @@ Response::Response(const HttpError &err)
 Response::Response(const Response &other)
 {
     *this = other;
-    std::cout << "\e[2mCopy constructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mCopy constructor Response called\e[0m" << std::endl;
 }
 
 // Destructor
 Response::~Response()
 {
-    std::cout << "\e[2mDestructor Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mDestructor Response called\e[0m" << std::endl;
 }
 
 // Overloads
 Response &Response::operator=(const Response &other)
 {
-    std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
+    // std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
     if (this != &other)
     {
         _header = other._header;
@@ -96,7 +113,6 @@ void Response::setContentType(std::string const &str)
     if (mimeTypes.find(str) != mimeTypes.end())
     {
         _header["Content-Type"] = mimeTypes[str];
-        std::cout << "content type " << mimeTypes[str] << std::endl;
     }
     else if (str.empty())
         _header["Content-Type"] = "application/octet-stream";
@@ -173,11 +189,10 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
             std::string name = entry.path().filename().string() + (entry.is_directory() ? "/" : "");
             std::string url = entry.path();
             url = url.substr(dir.length());
-            if (original.back() == '/' && !url.empty())
+            if (original.back() == '/' && !url.empty() && url.front() == '/')
                 original.pop_back();
             std::string combined = original + url;
             html << "<li><a href=\"" << combined << "\">" << name << "</a></li>\n";
-            std::cout << "whole ahref=" << combined << "<<" << std::endl;
         }
         std::cout << Colors::RESET;
     }

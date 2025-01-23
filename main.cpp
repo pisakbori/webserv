@@ -16,10 +16,17 @@ void handle_sigint(int signal)
 	std::exit(0);
 }
 
+void sigpipe_handler(int sig)
+{
+	(void)sig;
+	// std::cerr << "SIGPIPE received " << sig << std::endl;
+}
+
 int main()
 {
 	std::signal(SIGINT, handle_sigint);
-	webserv.configure("./test_input/autoindex.conf");
+	signal(SIGPIPE, sigpipe_handler);
+	webserv.configure("./test_input/2server.conf");
 	webserv.run();
 	return 0;
 }

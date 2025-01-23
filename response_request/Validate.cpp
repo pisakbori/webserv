@@ -3,13 +3,13 @@
 // Constructor
 Validate::Validate()
 {
-	std::cout << "\e[2mDefault constructor Validate called\e[0m" << std::endl;
+	// std::cout << "\e[2mDefault constructor Validate called\e[0m" << std::endl;
 }
 
 // Parameterized constructor
 // Validate::Validate()
 // {
-// 	std::cout << "\e[2mParameterized constructor Validate called\e[0m" <<
+// 	// std::cout << "\e[2mParameterized constructor Validate called\e[0m" <<
 // std::endl;
 // }
 
@@ -17,20 +17,20 @@ Validate::Validate()
 Validate::Validate(const Validate &other)
 {
 	(void)other;
-	std::cout << "\e[2mCopy constructor Validate called\e[0m" << std::endl;
+	// std::cout << "\e[2mCopy constructor Validate called\e[0m" << std::endl;
 }
 
 // Destructor
 Validate::~Validate()
 {
-	std::cout << "\e[2mDestructor Validate called\e[0m" << std::endl;
+	// std::cout << "\e[2mDestructor Validate called\e[0m" << std::endl;
 }
 
 // Overloads
 Validate &Validate::operator=(const Validate &other)
 {
 	(void)other;
-	std::cout << "\e[2mAssign operator Validate called\e[0m" << std::endl;
+	// std::cout << "\e[2mAssign operator Validate called\e[0m" << std::endl;
 	return (*this);
 }
 
