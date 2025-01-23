@@ -3,8 +3,8 @@
 // Parameterized constructor
 Connection::Connection(const std::vector<Server>& servers, const std::vector<int>& valid_idx, int fd) :
 	_servers(servers),
-	_fd(fd),
-	_valid_servers(valid_idx)
+	_valid_servers(valid_idx),
+	_fd(fd)
 {
 	_req = new Request();
 	_hasTimeout = false;
@@ -18,8 +18,8 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 // Copy constructor
 Connection::Connection(const Connection &other) :
 	_servers(other._servers),
-	_fd(other._fd),
-	_valid_servers(other._valid_servers)
+	_valid_servers(other._valid_servers),
+	_fd(other._fd)
 {
 	// std::cout << "\e[2mCopy constructor Connection called\e[0m" << std::endl;
 	*this = other;
@@ -297,6 +297,11 @@ const std::vector<Server> &Connection::getServ() const
 {
 	return _servers;
 }
+
+const std::vector<int>& Connection::getValidServers() const
+{
+	return _valid_servers;
+}
 // Setters
 
 void Connection::setState(int s)
@@ -305,4 +310,12 @@ void Connection::setState(int s)
 		std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
 				  << Colors::RESET;
 	_state = s;
+}
+
+void Connection::setResponsibleServer(int i)
+{
+	_responsible_server = i;
+	std::cout << Colors::YELLOW;
+	std::cout << "request will be handled by server with index ";
+	std::cout << _responsible_server << std::endl << Colors::RESET;
 }

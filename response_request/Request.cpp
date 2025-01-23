@@ -85,14 +85,12 @@ void Request::matchHost(Connection *c)
 {
 	std::string host = _header["HOST"];
 
-	std::cout << c->_responsible_server << std::endl;
-	for (const int& i : c->_valid_servers)
+	for (const int& i : c->getValidServers())
 	{
 		std::vector<std::string> server_names = c->getServ().at(i).get_server_name();
 		if (std::find(server_names.begin(), server_names.end(), host) != server_names.end())
-			c->_responsible_server = i;
+			c->setResponsibleServer(i);
 	}
-	std::cout << c->_responsible_server << std::endl;
 }
 
 void Request::parseRequest(Connection *c)

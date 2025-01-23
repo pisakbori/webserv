@@ -17,6 +17,8 @@ class Connection
 {
 private:
 	const std::vector<Server>& _servers;
+	const std::vector<int>& _valid_servers;
+	int _responsible_server;
 	int _fd;
 	Response _res;
 	Request *_req;
@@ -31,10 +33,8 @@ private:
 	int _state;
 
 public:
-	const std::vector<int>& _valid_servers;
 	size_t _sentChunks;
 	size_t _uploadedBytes;
-	int _responsible_server;
 	bool _hasTimeout;
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ = 1;
@@ -67,12 +67,14 @@ public:
 
 	// Getters
 	const std::vector<Server>& getServ() const;
+	const std::vector<int>& getValidServers() const;
 	int getState() const;
 	const Response &getResponse() const;
 	const Request *getRequest() const;
 
 	// Setters
 	void setState(int s);
+	void setResponsibleServer(int i);
 };
 
 #endif
