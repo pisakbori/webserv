@@ -16,7 +16,7 @@ err_page_t 					Server::get_error_page(void) const
 	return error_page;
 }
 
-size_t 						Server::get_client_max_body_size(void) const
+long long					Server::get_client_max_body_size(void) const
 {
 	return client_max_body_size;
 }

@@ -35,7 +35,7 @@ class Server
 		Listen						listen;
 		std::vector<std::string>	server_name;
 		err_page_t					error_page;
-		size_t						client_max_body_size;
+		long long					client_max_body_size;
 		struct sockaddr_in			_serverAddr;
 
 	// Setters
@@ -66,7 +66,7 @@ class Server
 		const Listen &				get_listen(void) const;
 		std::vector<std::string>	get_server_name(void) const;
 		err_page_t					get_error_page(void) const;
-		size_t						get_client_max_body_size(void) const;
+		long long					get_client_max_body_size(void) const;
 		std::vector<Location>		location;
 		void						startListening(void);
 		void						stopListening(void);
