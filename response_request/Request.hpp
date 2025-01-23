@@ -39,7 +39,7 @@ public:
 	void append(std::string const &str);
 	void matchHost(Connection *c);
 	void parseRequestLine(std::string &line);
-	void parseFieldLine(std::string &line);
+	void parseFieldLine(std::string &line, bool *headerRead);
 	void parseContentLength(Connection *c, std::istringstream &stream);
 	void parseRequest(Connection *c);
 
