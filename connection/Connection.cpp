@@ -12,7 +12,7 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 	setState(WAITING_REQ);
 	_sentChunks = 0;
 	_uploadedBytes = 0;
-	_responsible_server = 0;
+	_responsible_server = valid_idx.at(0);
 }
 
 // Copy constructor
