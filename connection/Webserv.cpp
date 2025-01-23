@@ -321,6 +321,8 @@ void Webserv::run()
 				// close all previous fds
 				for (const auto & [listen, fd] : listenFdMap)
 					close(fd);
+				FD_ZERO(&_master);
+				std::exit(1);
 			}
 		}
 		else
