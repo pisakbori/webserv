@@ -38,6 +38,7 @@ Connection &Connection::operator=(const Connection &other)
 	if (this != &other)
 	{
 		_fd = other._fd;
+		_responsible_server = other._responsible_server;
 		_req = other._req;
 		_res = other._res;
 		_sentChunks = other._sentChunks;
@@ -129,7 +130,7 @@ int Connection::getResource(std::string uri)
 {
 	Server server;
 
-	server = _servers.at(_responsible_server);
+	server = getResponsibleServer();
 	_location = server.get_location(_req->getUri());
 	if (server.get_location(_req->getUri()).get_redirect().first)
 	{
@@ -163,7 +164,7 @@ int Connection::postResource(std::string uri)
 	// only if it doesn't exist? if it exists, act like GET
 	Server server;
 
-	server = _servers.at(_responsible_server);
+	server = getResponsibleServer();
 	_location = server.get_location(_req->getUri());
 	if (_location.get_redirect().first)
 		return redirect();
@@ -234,7 +235,7 @@ int Connection::process()
 	catch (HttpError &e)
 	{
 		setState(RES_READY);
-		err_page_t error_page = _servers.at(_responsible_server).get_error_page();
+		err_page_t error_page = getResponsibleServer().get_error_page();
 		auto v = error_page.code;
 		if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
 		{
@@ -302,6 +303,11 @@ const std::vector<Server> &Connection::getServ() const
 const std::vector<int>& Connection::getValidServers() const
 {
 	return _valid_servers;
+}
+
+const Server& Connection::getResponsibleServer() const
+{
+	return _servers.at(_responsible_server);
 }
 // Setters
 

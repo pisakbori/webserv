@@ -68,6 +68,7 @@ public:
 	// Getters
 	const std::vector<Server>& getServ() const;
 	const std::vector<int>& getValidServers() const;
+	const Server& getResponsibleServer() const;
 	int getState() const;
 	const Response &getResponse() const;
 	const Request *getRequest() const;
