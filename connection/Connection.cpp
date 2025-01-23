@@ -143,7 +143,7 @@ int Connection::redirect()
 
 int Connection::getResource(std::string uri)
 {
-	_location = _server.get_location(_req->getUri());
+	_location = _server.get_location(uri);
 	if (_location.get_redirect().first)
 		return redirect();
 	std::string path = _location.get_route(uri);
