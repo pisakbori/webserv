@@ -137,7 +137,10 @@ void Webserv::readFromResource(int fd)
 		_connections[_resources[fd]]->appendToResponseBody(str);
 	}
 	else if (bytesRead < 0)
+	{
 		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
+		// TODO:Bori disconnect?
+	}
 	else if (bytesRead == 0)
 	{
 		std::cout << "\e[2mFinished reading resource " << fd << "\e[0m" << std::endl;
@@ -177,7 +180,7 @@ void Webserv::readFromSocket(int fd)
 		std::cout << Colors::RED << "bytesRead 0 " << fd << Colors::RESET << std::endl;
 		if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
 		{
-			std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
+			// std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
 			return;
 		}
 		std::cout << "==========================================Close connection" << std::endl;
@@ -200,10 +203,16 @@ void Webserv::writeToResourceFd(int i)
 			closeConnection(_resources[i]);
 			return;
 		}
-		else
+		else if (uploadedBytes > 0)
 		{
 			std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
 			c->_uploadedBytes += uploadedBytes;
+		}
+		else
+		{
+			// TODO:Bori    no space left?? shuld i respond internal server error?
+			closeConnection(_resources[i]);
+			return;
 		}
 	}
 	else
@@ -214,47 +223,63 @@ void Webserv::writeToResourceFd(int i)
 	}
 }
 
-void Webserv::sendOneChunk(std::string response, Connection *c, int i)
+void Webserv::sendOneChunk(Connection *c, int i)
 {
-	std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
+	std::string substring = c->getResponse().getContent(c->_sentBytes, WRITE_BUFFER_SIZE);
 	int bytesSent = send(i, substring.c_str(), substring.length(), 0);
-	c->_sentChunks++;
 	if (bytesSent == -1)
 	{
 		std::cout << Colors::RED << "Error sending response." << Colors::RESET << std::endl;
 		closeConnection(i);
 	}
-	else
+	else if (bytesSent > 0)
+	{
+		c->_sentBytes += bytesSent;
 		std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+	}
+	else if (bytesSent == 0)
+	{
+
+		std::cout << Colors::RED << "0 sent.....????" << Colors::RESET << std::endl;
+		closeConnection(i);
+	}
 }
 
 void Webserv::writeToSocket(Connection *c, int i)
 {
 	// std::cout << "Sending response to " << i << "\n ";
-	std::string response = c->getResponse().toString();
-	if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
-		sendOneChunk(response, c, i);
-	else
-		c->setState(Connection::RES_SENT);
-	if (c->getState() == Connection::RES_SENT)
+	try
 	{
-		if (c->_hasTimeout)
+		if (c->_sentBytes < c->getResponse().getSize())
 		{
-			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
-					  << Colors::RESET;
-			closeConnection(i);
-		}
-		else if (c->hasConnectionClose())
-		{
-			std::cout << Colors::RED << "Request had Connection Close so remove " << i << std::endl
-					  << Colors::RESET;
-			closeConnection(i);
+			sendOneChunk(c, i);
 		}
 		else
+			c->setState(Connection::RES_SENT);
+		if (c->getState() == Connection::RES_SENT)
 		{
-			c->reset();
-			printOpenFds();
+			if (c->_hasTimeout)
+			{
+				std::cout << Colors::RED << "Timeout so remove " << i << std::endl
+						  << Colors::RESET;
+				closeConnection(i);
+			}
+			else if (c->hasConnectionClose())
+			{
+				std::cout << Colors::RED << "Request had Connection Close so remove " << i << std::endl
+						  << Colors::RESET;
+				closeConnection(i);
+			}
+			else
+			{
+				c->reset();
+				printOpenFds();
+			}
 		}
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << '\n';
 	}
 }
 

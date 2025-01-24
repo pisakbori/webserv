@@ -18,7 +18,6 @@ private:
 	fd_set _readfds;
 	fd_set _writefds;
 	fd_set _exceptfds;
-	// TODO:make it list
 	std::vector<Server> _servers;
 	int _nReady;
 
@@ -28,7 +27,7 @@ private:
 	void readFromResource(int fd);
 	void readFromSocket(int fd);
 	void writeToResourceFd(int i);
-	void sendOneChunk(std::string response, Connection *c, int i);
+	void sendOneChunk(Connection *c, int i);
 	void onWrite(int fd);
 	void removeConnection(int fd);
 	void closeResourceFd(int i);

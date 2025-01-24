@@ -51,7 +51,7 @@ std::map<std::string, std::string> Response::mimeTypes = {
 };
 
 // Constructor
-Response::Response()
+Response::Response() : _body(std::make_unique<std::string>()), _fullContent(std::make_unique<std::string>())
 {
     // std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
     setCode(200);
@@ -64,7 +64,8 @@ Response::Response(std::string dirPath, std::string url)
     // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(200);
     setContentType("html");
-    _body = generateAutoindex(dirPath, url);
+    _body = std::make_unique<std::string>(generateAutoindex(dirPath, url));
+    _fullContent = std::make_unique<std::string>();
 }
 
 Response::Response(const HttpError &err)
@@ -74,8 +75,9 @@ Response::Response(const HttpError &err)
     setContentType("html");
     for (const auto &pair : err.getExtraFields())
         _header[pair.first] = pair.second;
-    _body = err.what();
+    _body = std::make_unique<std::string>(err.what());
     wrapInHtml();
+    _fullContent = std::make_unique<std::string>();
 }
 
 // Copy constructor
@@ -88,7 +90,7 @@ Response::Response(const Response &other)
 // Destructor
 Response::~Response()
 {
-    // std::cout << "\e[2mDestructor Response called\e[0m" << std::endl;
+    std::cout << "\e[2mDestructor Response called--------------------------------\e[0m" << std::endl;
 }
 
 // Overloads
@@ -99,7 +101,8 @@ Response &Response::operator=(const Response &other)
     {
         _header = other._header;
         setCode(other._statusCode);
-        _body = other._body;
+        _body = std::make_unique<std::string>(*other._body);
+        _fullContent = std::make_unique<std::string>(*other._fullContent);
     }
     return *this;
 }
@@ -108,7 +111,7 @@ Response &Response::operator=(const Response &other)
 
 void Response::appendToBody(std::string const &str)
 {
-    _body.append(str);
+    _body->append(str);
 }
 
 void Response::setContentType(std::string const &str)
@@ -140,24 +143,30 @@ void Response::wrapInHtml()
                 << this->_statusCode << " " << this->_statusText
                 << "</h1>\n"
                 << "<p>"
-                << this->_body
+                << *_body
                 << "</p>\n"
                 << "</body>\n"
                 << "</html>";
-    _body = htmlContent.str();
+    *_body = htmlContent.str();
 }
 
 // Getters
-std::string Response::getBody() const
+
+const std::string Response::getContent(std::size_t from, std::size_t size) const
 {
-    return _body;
+    return _fullContent->substr(from, size);
 }
 
-std::string Response::toString() const
+std::size_t Response::getSize() const
+{
+    return _fullContent->length();
+}
+
+void Response::setContent()
 {
     std::stringstream content;
     content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
-    content << "Content-Length: " << _body.size() << std::endl;
+    content << "Content-Length: " << _body->size() << std::endl;
     content << "Keep-Alive: timeout=" << KEEPALIVE_TIMEOUT << "s" << std::endl;
     if (_statusCode == 408)
         content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
@@ -166,8 +175,9 @@ std::string Response::toString() const
         content << it->first << ": " << it->second << std::endl;
     }
     content << std::endl;
-    content << _body << std::endl;
-    return content.str();
+    _fullContent->append(content.str());
+    _fullContent->append(*_body);
+    _body.reset();
 }
 // Setters
 
@@ -228,7 +238,7 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
 
 void Response::setBody(const std::string &str)
 {
-    _body = str;
+    *_body = str;
 }
 
 void Response::setCode(int code)

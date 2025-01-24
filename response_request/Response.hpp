@@ -10,7 +10,8 @@ class Response
 private:
 	std::string _statusText;
 	int _statusCode;
-	std::string _body;
+	std::unique_ptr<std::string> _body;
+	std::unique_ptr<std::string> _fullContent;
 	std::map<std::string, std::string> _header;
 	void wrapInHtml();
 
@@ -40,9 +41,10 @@ public:
 	std::string generateAutoindex(std::string &dir, std::string &url);
 
 	// Getters
-	std::string getBody() const;
-	std::string toString() const;
+	const std::string getContent(std::size_t from, std::size_t to) const;
+	std::size_t getSize() const;
 	// Setters
+	void setContent();
 	void setBody(const std::string &str);
 	void setCode(int code);
 };

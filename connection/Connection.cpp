@@ -10,7 +10,7 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	setState(WAITING_REQ);
-	_sentChunks = 0;
+	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_responsible_server = valid_idx.at(0);
 	_close = false;
@@ -42,7 +42,7 @@ Connection &Connection::operator=(const Connection &other)
 		_responsible_server = other._responsible_server;
 		_req = other._req;
 		_res = other._res;
-		_sentChunks = other._sentChunks;
+		_sentBytes = other._sentBytes;
 		_uploadedBytes = other._uploadedBytes;
 		_hasTimeout = other._hasTimeout;
 		setState(other._state);
@@ -80,7 +80,7 @@ void Connection::reset()
 	*_req = Request();
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
-	_sentChunks = 0;
+	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_close = false;
 };
@@ -146,7 +146,7 @@ int Connection::redirect()
 {
 	_res.setCode(_location.get_redirect().first);
 	_res.appendToHeader("Location", _location.get_redirect().second);
-	_state = RES_READY;
+	setState(RES_READY);
 	return -1;
 }
 
@@ -279,7 +279,7 @@ void Connection::checkTimeout()
 	catch (const HttpError &e)
 	{
 		_res = Response(e);
-		_state = RES_READY;
+		setState(RES_READY);
 		_hasTimeout = true;
 	}
 }
@@ -329,6 +329,8 @@ void Connection::setState(int s)
 		std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
 				  << Colors::RESET;
 	_state = s;
+	if (s == Connection::RES_READY)
+		_res.setContent();
 }
 
 void Connection::setResponsibleServer(int i)

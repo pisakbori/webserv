@@ -4,7 +4,6 @@
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
-#include <fcntl.h>
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -35,7 +34,7 @@ private:
 	bool _close;
 
 public:
-	size_t _sentChunks;
+	size_t _sentBytes;
 	size_t _uploadedBytes;
 	bool _hasTimeout;
 	static constexpr int WAITING_REQ = 0;
