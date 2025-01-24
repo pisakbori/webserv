@@ -9,7 +9,7 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 	_req = new Request();
 	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
-	setState(WAITING_REQ);
+	_state = WAITING_REQ;
 	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_responsible_server = valid_idx.at(0);
@@ -29,7 +29,8 @@ Connection::Connection(const Connection &other) :
 // Destructor
 Connection::~Connection()
 {
-	// std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
+	std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
+	delete _req;
 }
 
 // Overloads
@@ -68,8 +69,8 @@ int Connection::acceptConnection()
 		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
 	std::cout << "fd is " << fd << std::endl;
-	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
-	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	_keepAliveTimeout = std::chrono::system_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
+	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	return fd;
 }
 
@@ -79,7 +80,7 @@ void Connection::reset()
 	setState(WAITING_REQ);
 	*_req = Request();
 	_res = Response();
-	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_close = false;
@@ -270,7 +271,7 @@ void Connection::checkTimeout()
 {
 	try
 	{
-		auto now = std::chrono::steady_clock::now();
+		auto now = std::chrono::system_clock::now();
 		if ((_state == READING_REQ || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
 			throw HttpError("Request Header timeout", 408);
 		else if (now >= _keepAliveTimeout)

@@ -26,7 +26,7 @@ int main()
 {
 	std::signal(SIGINT, handle_sigint);
 	signal(SIGPIPE, sigpipe_handler);
-	webserv.configure("./test_input/2server.conf");
+	webserv.configure("./test_input/aws.conf");
 	// webserv.configure("./test_input/1server_indextest.conf");
 	webserv.run();
 	return 0;

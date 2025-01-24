@@ -37,8 +37,10 @@ Webserv::Webserv(const Webserv &other)
 // Destructor
 Webserv::~Webserv()
 {
-	// TODO:
 	// std::cout << "\e[2mDestructor Webserv called\e[0m" << std::endl;
+    for (auto& pair : _connections) {
+        delete pair.second; 
+    }
 }
 
 // Overloads
@@ -223,7 +225,7 @@ void Webserv::writeToResourceFd(int i)
 	}
 }
 
-void Webserv::sendOneChunk(Connection *c, int i)
+int Webserv::sendOneChunk(Connection *c, int i)
 {
 	std::string substring = c->getResponse().getContent(c->_sentBytes, WRITE_BUFFER_SIZE);
 	int bytesSent = send(i, substring.c_str(), substring.length(), 0);
@@ -236,6 +238,7 @@ void Webserv::sendOneChunk(Connection *c, int i)
 	{
 		c->_sentBytes += bytesSent;
 		std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+		return 1;
 	}
 	else if (bytesSent == 0)
 	{
@@ -243,6 +246,7 @@ void Webserv::sendOneChunk(Connection *c, int i)
 		std::cout << Colors::RED << "0 sent.....????" << Colors::RESET << std::endl;
 		closeConnection(i);
 	}
+	return 0;
 }
 
 void Webserv::writeToSocket(Connection *c, int i)
@@ -252,7 +256,8 @@ void Webserv::writeToSocket(Connection *c, int i)
 	{
 		if (c->_sentBytes < c->getResponse().getSize())
 		{
-			sendOneChunk(c, i);
+			if (!sendOneChunk(c, i))
+			return;
 		}
 		else
 			c->setState(Connection::RES_SENT);
@@ -320,6 +325,7 @@ void Webserv::run()
 	std::map<Listen, int> listenFdMap;
 	int maxfd = -1;
 
+// TODO:Marian there is somehow a leak related to listenFdMap. please take a look
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
 		Listen& listen = _servers[i].get_listen();
@@ -387,17 +393,15 @@ void Webserv::stop()
 {
 	for (auto it = _connections.begin(); it != _connections.end(); ++it)
 	{
-		close(it->first);
+		closeFd(it->first);
 	}
 	for (auto it = _resources.begin(); it != _resources.end(); ++it)
 	{
-		close(it->first);
+		closeFd(it->first);
 	}
-	for (size_t i = 0; i < _servers.size(); i++)
+	for (auto it = _listenFdLookup.begin(); it != _listenFdLookup.end(); ++it)
 	{
-		std::cout << std::endl
-				  << _servers[i].getListenFd() << " fd closed" << std::endl;
-		close(_servers[i].getListenFd());
+		closeFd(it->first);
 	}
 }
 

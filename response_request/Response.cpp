@@ -90,7 +90,7 @@ Response::Response(const Response &other)
 // Destructor
 Response::~Response()
 {
-    std::cout << "\e[2mDestructor Response called--------------------------------\e[0m" << std::endl;
+    // std::cout << "\e[2mDestructor Response called\e[0m" << std::endl;
 }
 
 // Overloads
