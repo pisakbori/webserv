@@ -22,8 +22,8 @@ private:
 	Response _res;
 	Request *_req;
 	Location _location;
-	std::chrono::time_point<std::chrono::high_resolution_clock> _keepAliveTimeout;
-	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
+	std::chrono::system_clock::time_point _keepAliveTimeout;
+	std::chrono::system_clock::time_point _clientHeaderTimeout;
 
 	int getResource(std::string path);
 	int openResource(std::string path);
