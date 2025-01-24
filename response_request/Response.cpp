@@ -162,7 +162,7 @@ std::size_t Response::getSize() const
     return _fullContent->length();
 }
 
-void Response::setContent()
+void Response::setContent(bool withBody)
 {
     std::stringstream content;
     content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
@@ -176,7 +176,8 @@ void Response::setContent()
     }
     content << std::endl;
     _fullContent->append(content.str());
-    _fullContent->append(*_body);
+    if (withBody)
+        _fullContent->append(*_body);
     _body.reset();
 }
 // Setters

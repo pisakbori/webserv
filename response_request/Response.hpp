@@ -44,7 +44,7 @@ public:
 	const std::string getContent(std::size_t from, std::size_t to) const;
 	std::size_t getSize() const;
 	// Setters
-	void setContent();
+	void setContent(bool withBody = true);
 	void setBody(const std::string &str);
 	void setCode(int code);
 };

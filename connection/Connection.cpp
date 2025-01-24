@@ -250,7 +250,7 @@ int Connection::process()
 				_res.appendToHeader("Connection", "close");
 				_close = true;
 			}
-			if (_req->getMethod() == "GET")
+			if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
 				return getResource(_req->getUri());
 			else if (_req->getMethod() == "POST")
 				return postResource(_req->getUri());
@@ -331,7 +331,7 @@ void Connection::setState(int s)
 				  << Colors::RESET;
 	_state = s;
 	if (s == Connection::RES_READY)
-		_res.setContent();
+		_res.setContent(_req->getMethod() != "HEAD");
 }
 
 void Connection::setResponsibleServer(int i)
