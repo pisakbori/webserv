@@ -56,7 +56,7 @@ class Location
 		std::string					get_root(void) const;
 		bool						get_autoindex(void) const;
 		std::vector<std::string>	get_index(void) const;
-		std::string					get_route(const std::string &uri);
+		std::filesystem::path 		get_route(const std::string &uri);
 
 };
 std::ostream &	operator<<(std::ostream & os, const Location & location);

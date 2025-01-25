@@ -26,7 +26,7 @@ private:
 	std::chrono::system_clock::time_point _clientHeaderTimeout;
 
 	int getResource(std::string path);
-	int openResource(std::string path);
+	int openResource(std::filesystem::path path);
 	int postResource(std::string path);
 	int redirect();
 	int setErrorResponse(const HttpError &e);
@@ -64,7 +64,7 @@ public:
 	void reset();
 	void checkTimeout();
 	int acceptConnection();
-	int getDirectory(std::string path, std::string uri);
+	int getDirectory(std::filesystem::path path, std::filesystem::path uri);
 
 	// Getters
 	const std::vector<Server>& getServ() const;

@@ -31,13 +31,13 @@ std::vector<std::string> Location::get_index(void) const
 	return index;
 }
 
-std::string Location::get_route(const std::string &str)
+std::filesystem::path Location::get_route(const std::string &str)
 {
-	std::string route;
+	std::filesystem::path route;
 	if (str == uri)
-		route = root;
+		route = std::filesystem::path(root);
 	else if (str.find(uri) == 0)
-		route = root + "/" + str.substr(uri.length());
+		route = std::filesystem::path(root) / std::filesystem::path(str.substr(uri.length())).relative_path();
 	else
 		throw HttpError("Oh no! " + str + " not found.", 404);
 	return route;

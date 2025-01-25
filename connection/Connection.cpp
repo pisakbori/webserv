@@ -98,7 +98,7 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
-int Connection::getDirectory(std::string dirPath, std::string uri)
+int Connection::getDirectory(std::filesystem::path dirPath, std::filesystem::path uri)
 {
 	if (_location.get_autoindex())
 	{
@@ -127,7 +127,7 @@ int Connection::getDirectory(std::string dirPath, std::string uri)
 	throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 }
 
-int Connection::openResource(std::string path)
+int Connection::openResource(std::filesystem::path path)
 {
 	int resourceFd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
 	setState(Connection::READING_RESOURCE);
@@ -135,11 +135,7 @@ int Connection::openResource(std::string path)
 	{
 		throw HttpError("Forbidden, not possible to open resource", 403);
 	}
-	size_t pos = path.rfind('.');
-	if (pos != std::string::npos)
-		_res.setContentType(path.substr(pos + 1));
-	else
-		_res.setContentType("");
+	_res.setContentType(path.extension());
 	return resourceFd;
 }
 
@@ -159,7 +155,7 @@ int Connection::getResource(std::string uri)
 	_location = getResponsibleServer().get_location(uri);
 	if (_location.get_redirect().first)
 		return redirect();
-	std::string path = _location.get_route(uri);
+	std::filesystem::path path = _location.get_route(uri);
 	std::cout << Colors::RED << "GetResource " << path << std::endl
 			  << Colors::RESET;
 	if (!std::filesystem::exists(path))
@@ -180,18 +176,17 @@ int Connection::postResource(std::string uri)
 	_location = server.get_location(_req->getUri());
 	if (_location.get_redirect().first)
 		return redirect();
-	std::string path = _location.get_route(uri);
+	std::filesystem::path path = _location.get_route(uri);
 	if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
 		return openResource(path);
-
-	path = _location.get_root();
 
 	std::filesystem::path filePath = uri;
 	std::string filename = filePath.filename().string();
 	_res.setCode(201);
-	_res.setContentType("json");
+	_res.setContentType(".json");
 	std::filesystem::path accessLocation = _location.get_uri();
-	std::filesystem::path uploadLocation = path;
+	std::filesystem::path uploadLocation = _location.get_root();
+	;
 	accessLocation /= filename;
 	uploadLocation /= filename;
 	if (std::filesystem::exists(uploadLocation))

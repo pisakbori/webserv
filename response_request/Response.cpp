@@ -18,36 +18,36 @@ std::map<int, std::string> Response::statuses = {
     {505, "HTTP Version Not Supported"}};
 
 std::map<std::string, std::string> Response::mimeTypes = {
-    {"html", "text/html"},
-    {"htm", "text/html"},
-    {"shtml", "text/html"},
-    {"css", "text/css"},
-    {"js", "application/javascript"},
-    {"json", "application/json"},
-    {"png", "image/png"},
-    {"jpg", "image/jpeg"},
-    {"jpeg", "image/jpeg"},
-    {"gif", "image/gif"},
-    {"svg", "image/svg+xml"},
-    {"ico", "image/vnd.microsoft.icon"},
-    {"pdf", "application/pdf"},
-    {"zip", "application/zip"},
-    {"txt", "text/plain"},
-    {"xml", "application/xml"},
-    {"mp4", "video/mp4"},
-    {"webm", "video/webm"},
-    {"ogg", "video/ogg"},
-    {"mp3", "audio/mpeg"},
-    {"wav", "audio/wav"},
-    {"flac", "audio/flac"},
-    {"aac", "audio/aac"},
-    {"m4a", "audio/mp4"},
-    {"woff", "font/woff"},
-    {"woff2", "font/woff2"},
-    {"ttf", "font/ttf"},
-    {"otf", "font/otf"},
-    {"eot", "application/vnd.ms-fontobject"},
-    {"wasm", "application/wasm"},
+    {".html", "text/html"},
+    {".htm", "text/html"},
+    {".shtml", "text/html"},
+    {".css", "text/css"},
+    {".js", "application/javascript"},
+    {".json", "application/json"},
+    {".png", "image/png"},
+    {".jpg", "image/jpeg"},
+    {".jpeg", "image/jpeg"},
+    {".gif", "image/gif"},
+    {".svg", "image/svg+xml"},
+    {".ico", "image/vnd.microsoft.icon"},
+    {".pdf", "application/pdf"},
+    {".zip", "application/zip"},
+    {".txt", "text/plain"},
+    {".xml", "application/xml"},
+    {".mp4", "video/mp4"},
+    {".webm", "video/webm"},
+    {".ogg", "video/ogg"},
+    {".mp3", "audio/mpeg"},
+    {".wav", "audio/wav"},
+    {".flac", "audio/flac"},
+    {".aac", "audio/aac"},
+    {".m4a", "audio/mp4"},
+    {".woff", "font/woff"},
+    {".woff2", "font/woff2"},
+    {".ttf", "font/ttf"},
+    {".otf", "font/otf"},
+    {".eot", "application/vnd.ms-fontobject"},
+    {".wasm", "application/wasm"},
 };
 
 // Constructor
@@ -55,15 +55,15 @@ Response::Response() : _body(std::make_unique<std::string>()), _fullContent(std:
 {
     // std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
     setCode(200);
-    setContentType("html");
+    setContentType(".html");
 }
 
 // Parameterized constructor: autoindex with directory as arg
-Response::Response(std::string dirPath, std::string url)
+Response::Response(std::filesystem::path dirPath, std::filesystem::path url)
 {
     // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(200);
-    setContentType("html");
+    setContentType(".html");
     _body = std::make_unique<std::string>(generateAutoindex(dirPath, url));
     _fullContent = std::make_unique<std::string>();
 }
@@ -72,7 +72,7 @@ Response::Response(const HttpError &err)
 {
     // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(err.getCode());
-    setContentType("html");
+    setContentType(".html");
     for (const auto &pair : err.getExtraFields())
         _header[pair.first] = pair.second;
     _body = std::make_unique<std::string>(err.what());
@@ -207,7 +207,7 @@ std::string getStyle()
     return str;
 }
 
-std::string Response::generateAutoindex(std::string &dir, std::string &original)
+std::string Response::generateAutoindex(std::filesystem::path &dir, std::filesystem::path &original)
 {
     std::ostringstream html;
 
@@ -216,24 +216,25 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
         << "<html>\n"
         << "<head>\n"
         << getMeta()
-        << "<title>Index of " << original << "</title>\n"
+        << "<title>Index of " << original.string() << "</title>\n"
         << getStyle()
         << "</head>\n"
         << "<body>\n"
-        << "<h1>Index of " << original << "</h1>\n"
+        << "<h1>Index of " << original.string() << "</h1>\n"
         << "<ul>\n";
 
     try
     {
         for (const auto &entry : std::filesystem::directory_iterator(dir))
         {
-            std::string name = entry.path().filename().string() + (entry.is_directory() ? "/" : "");
-            std::string url = entry.path();
-            url = url.substr(dir.length());
-            if (original.back() == '/' && !url.empty() && url.front() == '/')
-                original.pop_back();
-            std::string combined = original + url;
-            html << "<li><a href=\"" << combined << "\">" << name << "</a></li>\n";
+
+            std::string name = entry.path().filename();
+            if (entry.is_directory())
+                name += "/";
+            auto url = std::filesystem::path(entry.path().string().substr(dir.string().length()));
+            std::filesystem::path combined = original / url.relative_path();
+
+            html << "<li><a href=\"" << combined.string() << "\">" << name << "</a></li>\n";
         }
         std::cout << Colors::RESET;
     }

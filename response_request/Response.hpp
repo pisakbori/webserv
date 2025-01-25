@@ -22,7 +22,7 @@ public:
 	// Constructor
 	Response();
 	// Parameterized constructor
-	Response(std::string dirPath, std::string url);
+	Response(std::filesystem::path dirPath, std::filesystem::path url);
 	Response(const HttpError &err);
 
 	// Copy constructor
@@ -38,7 +38,7 @@ public:
 	void appendToHeader(std::string key, std::string value);
 	void appendToBody(std::string const &str);
 	void setContentType(std::string const &str);
-	std::string generateAutoindex(std::string &dir, std::string &url);
+	std::string generateAutoindex(std::filesystem::path &dir, std::filesystem::path &original);
 
 	// Getters
 	const std::string getContent(std::size_t from, std::size_t to) const;
