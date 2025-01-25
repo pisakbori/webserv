@@ -150,6 +150,17 @@ void Response::wrapInHtml()
     *_body = htmlContent.str();
 }
 
+std::string getHttpDate()
+{
+    std::time_t now = std::time(nullptr);
+    std::tm gmtTime = *std::gmtime(&now);
+
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &gmtTime);
+
+    return std::string(buffer);
+}
+
 // Getters
 
 const std::string Response::getContent(std::size_t from, std::size_t size) const
@@ -166,7 +177,9 @@ void Response::setContent(bool withBody)
 {
     std::stringstream content;
     content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
+    content << "Date: " << getHttpDate() << std::endl;
     content << "Content-Length: " << _body->size() << std::endl;
+    content << "Server: 4/2Elephants" << std::endl;
     content << "Keep-Alive: timeout=" << KEEPALIVE_TIMEOUT << "s" << std::endl;
     if (_statusCode == 408)
         content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
