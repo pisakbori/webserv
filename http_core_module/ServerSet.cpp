@@ -1,22 +1,34 @@
 #include "Server.hpp"
 
 // Member functions
-void	Server::populate_server(std::ifstream & infile)
+void	Server::populate_server(std::istringstream & infile)
 {
 	std::string		line;
 	Location		location;
+	bool			bracket_closed;
 
+	bracket_closed = false;
 	while (std::getline(infile, line))
 	{
+		trim(line);
+		if (line.empty())
+			continue ;
 		if (line.find("}") != std::string::npos)
-			return ;
-		if (line.find("location") != std::string::npos)
 		{
+			bracket_closed = true;
+			break ;
+		}
+		if (line.find("location ") == 0)
+		{
+			locationBlockValid(line);
 			location.populate_location(infile, line);
 			this->location.push_back(location);
 		}
-		this->set_server(line);
+		else
+			this->set_server(line);
 	}
+	if (!bracket_closed)
+		throw std::runtime_error("unexpected end of file, expecting \"}\"");
 }
 
 // Setters
@@ -38,13 +50,21 @@ void	Server::set_server(std::string directive)
 	};
 	int			i;
 	const int	N = sizeof(directives) / sizeof(directives[0]);
+	std::string	directive_name = directive.substr(0, directive.find_first_of(" ;"));
 
 	i = 0;
-	while (i < N && directive.find(directives[i]) == std::string::npos)
+	while (i < N && directive_name.compare(directives[i]) != 0)
 		i++;
-	std::string arg = extract_parameters(directives[i], directive);
 	if (i != N)
+	{
+		std::string arg = extract_parameters(directives[i], directive);
+		if (arg.empty())
+			throw std::runtime_error(
+				"invalid number of arguments for directive \"" + directive_name + "\"");
 		(this->*fnptr[i])(arg);
+	}
+	else
+		throw std::runtime_error("unknown directive \"" + directive_name + "\"");
 }
 
 void	Server::parse_listen(std::string arg)
@@ -92,12 +112,22 @@ void	Server::set_client_max_body_size(std::string arg)
 		== std::string::npos)
 	{
 		if (std::tolower(arg.back()) == 'k')
+		{
 			client_max_body_size = (std::stoi(arg) << 10);
-		else if (std::tolower(arg.back()) == 'm')
+			return ;
+		}
+		if (std::tolower(arg.back()) == 'm')
+		{
 			client_max_body_size = (std::stoi(arg) << 20);
-		else if (std::isdigit(arg.back()))
+			return ;
+		}
+		if (std::isdigit(arg.back()))
+		{
 			client_max_body_size = std::stoi(arg);
+			return ;
+		}
 	}
-	else
-		std::cerr << "Invalid input" << std::endl;
+	throw std::runtime_error(
+		"\"client_max_body_size\" directive invalid value"
+		);
 }

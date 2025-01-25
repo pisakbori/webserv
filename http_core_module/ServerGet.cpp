@@ -6,6 +6,11 @@ Listen &					Server::get_listen(void)
 	return listen;
 }
 
+const Listen &				Server::get_listen(void) const
+{
+	return listen;
+}
+
 std::vector<std::string>	Server::get_server_name(void) const
 {
 	return server_name;

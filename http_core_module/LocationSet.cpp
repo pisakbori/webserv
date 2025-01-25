@@ -1,13 +1,16 @@
 #include "Location.hpp"
 
 // Member functions
-void	Location::populate_location(std::ifstream & infile, std::string line)
+void	Location::populate_location(std::istringstream & infile, std::string line)
 {
 	this->set_uri(line);
 	while (std::getline(infile, line))
 	{
-		if (line.find("	}") != std::string::npos)
-			return ;
+		trim(line);
+		if (line.empty())
+			continue ;
+		if (line.find("}") != std::string::npos)
+			break ;
 		this->set_location(line);
 	}
 }
@@ -33,13 +36,21 @@ void	Location::set_location(std::string directive)
 	};
 	int			i;
 	const int	N = sizeof(directives) / sizeof(directives[0]);
+	std::string	directive_name = directive.substr(0, directive.find_first_of(" ;"));
 
 	i = 0;
-	while (i < N && directive.find(directives[i]) == std::string::npos)
+	while (i < N && directive_name.find(directives[i]) == std::string::npos)
 		i++;
-	std::string arg = extract_parameters(directives[i], directive);
 	if (i != N)
+	{
+		std::string arg = extract_parameters(directives[i], directive);
+		if (arg.empty())
+			throw std::runtime_error(
+				"invalid number of arguments for directive \"" + directive_name + "\"");
 		(this->*fnptr[i])(arg);
+	}
+	else
+		throw std::runtime_error("unknown directive \"" + directive_name + "\"");
 }
 
 void Location::set_uri(std::string uri)

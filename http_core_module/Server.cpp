@@ -1,22 +1,5 @@
 #include "Server.hpp"
 
-std::string		extract_parameters(
-	const std::string & name,
-	const std::string & directive
-	)
-{
-	std::string	arg;
-	if (directive.find(name) != std::string::npos
-		&& directive.find(' ') != std::string::npos
-		&& directive.back() == ';')
-	{
-		arg = directive.substr(directive.find(' ') + 1);
-		arg = arg.substr(0, arg.find_last_not_of("; ") + 1);
-		return arg;
-	}
-	return "";
-}
-
 // Constructor
 Server::Server() :
 	listen(),
@@ -62,7 +45,7 @@ Server &		Server::operator=(Server const & rhs)
 
 std::ostream &operator<<(std::ostream &os, const Server &server)
 {
-	// os << server.get_listen();
+	os << server.get_listen();
 	os << "server_name: ";
 	std::vector<std::string> v(server.get_server_name());
 	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)

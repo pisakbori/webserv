@@ -12,6 +12,7 @@
 #include "Location.hpp"
 #include "CommonIncludes.hpp"
 #include "HttpError.hpp"
+#include "Parsing.hpp"
 
 /*
  * Server class stores information regarding server directive in the .conf
@@ -28,7 +29,7 @@ typedef struct err_page_s
 	int overwrite;
 	std::string uri;
 } err_page_t;
-
+class Location;
 class Server
 {
 	private:
@@ -59,7 +60,7 @@ class Server
 		Server &	operator=(Server const & rhs);
 
 	// Member functions
-		void						populate_server(std::ifstream & infile);
+		void						populate_server(std::istringstream & infile);
 
 	// Getters
 		Listen &					get_listen(void);
@@ -74,9 +75,6 @@ class Server
 		const Location &			get_location(std::string uri) const;
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);
-std::string		extract_parameters(
-	const std::string & name,
-	const std::string & directive
-	);
+
 
 #endif
