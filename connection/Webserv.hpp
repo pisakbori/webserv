@@ -2,6 +2,7 @@
 #define WEBSERV_HPP
 
 #include "Connection.hpp"
+#include "../http_core_module/Parsing.hpp"
 #include <set>
 #include <sys/types.h>
 #include <sys/select.h>

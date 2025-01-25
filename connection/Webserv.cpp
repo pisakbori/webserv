@@ -51,24 +51,8 @@ Webserv &Webserv::operator=(const Webserv &other)
 }
 
 // Member functions
-void parse_config(std::string file_name, std::vector<Server> &servers)
-{
-	std::ifstream infile(file_name);
-	std::string line;
-
-	while (std::getline(infile, line))
-	{
-		Server serv;
-		if (line.find("server {") != std::string::npos)
-			serv.populate_server(infile);
-		servers.push_back(serv);
-	}
-}
-
 void Webserv::configure(std::string configFile)
 {
-	std::ifstream infile(configFile);
-	std::string line;
 	parse_config(configFile, _servers);
 	std::cout << Colors::GREEN;
 	for (size_t i = 0; i < _servers.size(); ++i)
