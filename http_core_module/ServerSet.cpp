@@ -80,28 +80,42 @@ void	Server::set_server_name(std::string arg)
 		server_name.push_back(std::move(token));
 }
 
+static void	set_code(int *code, const std::string &value)
+{
+	if (!value.empty() && std::all_of(value.begin(), value.end(), ::isdigit))
+		*code = stoi(value);
+	else
+		throw std::runtime_error("invalid value \"" + value + "\"");
+}
+
 void	Server::set_error_page(std::string arg)
 {
-	std::istringstream	iss(arg);
+	std::istringstream			iss(arg);
+	std::vector<std::string>	tokens;
 
 	for (std::string token; std::getline(iss, token, ' ');)
+		tokens.push_back(token);
+	if (tokens.size() < 2)
+		throw std::runtime_error(
+			"invalid number of arguments in \"error_page\" directive"
+			);
+	this->error_page.uri = tokens.back();
+	tokens.pop_back();
+	std::string	overwrite;
+	overwrite = tokens.back();
+	if (overwrite.front() == '=')
 	{
-		if (token == "=")
-			error_page.overwrite = 0;
-		else if (token.size() == 3 && std::isdigit(token[0]) &&
-			std::isdigit(token[1]) && std::isdigit(token[2]) &&
-			token[0] - '0' > 0 && token[0] - '0' < 6)
-		{
-			error_page.code.push_back(std::stoi(token));
-			error_page.overwrite = 0;
-		}
-		else if (token.size() == 4 && token.front() == '=' &&
-			std::isdigit(token[1]) && std::isdigit(token[2]) &&
-			std::isdigit(token[3]) && token[1] - '0' > 0 &&
-			token[1] - '0' < 6)
-			error_page.overwrite = std::stoi(token.substr(1));
-		else
-			error_page.uri = token;
+		std::string num = overwrite.substr(1);
+		set_code(&this->error_page.overwrite, num);
+		tokens.pop_back();
+	}
+	for (const std::string &token : tokens) 
+	{
+		int	code;
+		set_code(&code, token);
+		if (code < 300 || code > 599)
+			throw std::runtime_error("value \"" + token + "\" must be between 300 and 599");
+		this->error_page.code.push_back(code);
 	}
 }
 

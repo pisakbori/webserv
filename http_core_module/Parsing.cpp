@@ -51,7 +51,7 @@ void serverBlockValid(std::string & line)
 		throw std::runtime_error("expected server block");
 }
 
-void parse_config(std::string file_name, std::vector<Server> &servers)
+std::string normalize_config(const std::string & file_name)
 {
 	std::string		line;
 	std::ifstream	infile(file_name);
@@ -64,18 +64,34 @@ void parse_config(std::string file_name, std::vector<Server> &servers)
 		char end = line.back();
 		if (end != ';' && end != '{' && end != '}')
 			line += '\n';
+		bool lastWasSpace = false;
 		for (char ch : line)
 		{
 			if (ch == '\t')
 				result += ' ';
+			if (ch == ' ')
+			{
+				if (!lastWasSpace)
+					result += ch;
+				lastWasSpace = true;
+			}
 			else
+			{
 				result += ch;
+				lastWasSpace = false;
+			}
 			if (ch == ';' || ch == '{' || ch == '}')
 				result += '\n';
 		}
 		config.append(result);
 	}
-	std::istringstream	stream(config);
+	return config;
+}
+
+void parse_config(std::string file_name, std::vector<Server> &servers)
+{
+	std::istringstream	stream(normalize_config(file_name));
+	std::string			line;
 	while (std::getline(stream, line))
 	{
 		Server serv;
