@@ -74,7 +74,8 @@ void	Server::parse_listen(std::string arg)
 
 void	Server::set_server_name(std::string arg)
 {
-	server_name.pop_back();
+	if (server_name.back().empty())
+		server_name.pop_back();
 	std::istringstream	iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 		server_name.push_back(std::move(token));
@@ -92,6 +93,7 @@ void	Server::set_error_page(std::string arg)
 {
 	std::istringstream			iss(arg);
 	std::vector<std::string>	tokens;
+	err_page_t					error;
 
 	for (std::string token; std::getline(iss, token, ' ');)
 		tokens.push_back(token);
@@ -99,14 +101,15 @@ void	Server::set_error_page(std::string arg)
 		throw std::runtime_error(
 			"invalid number of arguments in \"error_page\" directive"
 			);
-	this->error_page.uri = tokens.back();
+	error.uri = tokens.back();
 	tokens.pop_back();
 	std::string	overwrite;
 	overwrite = tokens.back();
+	error.overwrite = 0;
 	if (overwrite.front() == '=')
 	{
 		std::string num = overwrite.substr(1);
-		set_code(&this->error_page.overwrite, num);
+		set_code(&error.overwrite, num);
 		tokens.pop_back();
 	}
 	for (const std::string &token : tokens) 
@@ -115,8 +118,9 @@ void	Server::set_error_page(std::string arg)
 		set_code(&code, token);
 		if (code < 300 || code > 599)
 			throw std::runtime_error("value \"" + token + "\" must be between 300 and 599");
-		this->error_page.code.push_back(code);
+		error.code.push_back(code);
 	}
+	this->error_page.push_back(error);
 }
 
 void	Server::set_client_max_body_size(std::string arg)

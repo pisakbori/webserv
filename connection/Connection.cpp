@@ -208,7 +208,7 @@ int Connection::postResource(std::string uri)
 
 int Connection::setErrorResponse(const HttpError &e)
 {
-	err_page_t error_page = getResponsibleServer().get_error_page();
+	err_page_t error_page = getResponsibleServer().get_error_page(e.getCode());
 	auto v = error_page.code;
 	if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
 	{

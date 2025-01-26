@@ -35,7 +35,7 @@ class Server
 	private:
 		Listen						listen;
 		std::vector<std::string>	server_name;
-		err_page_t					error_page;
+		std::vector<err_page_t>		error_page;
 		long long					client_max_body_size;
 		struct sockaddr_in			_serverAddr;
 
@@ -66,7 +66,8 @@ class Server
 		Listen &					get_listen(void);
 		const Listen &				get_listen(void) const;
 		std::vector<std::string>	get_server_name(void) const;
-		err_page_t					get_error_page(void) const;
+		std::vector<err_page_t>		get_error_page(void) const;
+		err_page_t					get_error_page(const int & e_code) const;
 		long long					get_client_max_body_size(void) const;
 		std::vector<Location>		location;
 		void						startListening(void);

@@ -51,14 +51,17 @@ std::ostream &operator<<(std::ostream &os, const Server &server)
 	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
 		os << *i << ' ';
 	os << std::endl;
-	os << "error_page: " << std::endl;
-	std::vector<int> vint(server.get_error_page().code);
-	os << "  code(s): ";
-	for (size_t i = 0; i < vint.size(); ++i)
-		os << vint[i] << ' ';
-	os << std::endl;
-	os << "  overwrite: " << server.get_error_page().overwrite << std::endl;
-	os << "  uri: " << server.get_error_page().uri << std::endl;
+	for (const err_page_t& error : server.get_error_page())
+	{
+		os << "error_page: " << std::endl;
+		std::vector<int> vint(error.code);
+		os << "  codes: ";
+		for (size_t i = 0; i < vint.size(); ++i)
+			os << vint[i] << ' ';
+		os << std::endl;
+		os << "  overwrite: " << error.overwrite << std::endl;
+		os << "  uri: " << error.uri << std::endl;
+	}
 	os << "client_max_body_size: " << server.get_client_max_body_size() << std::endl;
 	std::vector<Location> l(server.location);
 	for (size_t i = 0; i < l.size(); ++i)
