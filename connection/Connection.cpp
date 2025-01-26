@@ -155,7 +155,8 @@ int Connection::getResource(std::string uri)
 	Server server;
 
 	server = getResponsibleServer();
-	_location = getResponsibleServer().get_location(uri);
+	_location = server.get_location(uri);
+	_location.validate_allowed("GET");
 	if (_location.get_redirect().first)
 		return redirect();
 	std::string path = _location.get_route(uri);
@@ -177,6 +178,7 @@ int Connection::postResource(std::string uri)
 
 	server = getResponsibleServer();
 	_location = server.get_location(_req->getUri());
+	_location.validate_allowed("POST");
 	if (_location.get_redirect().first)
 		return redirect();
 	std::string path = _location.get_route(uri);

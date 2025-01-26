@@ -55,32 +55,6 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 }
 
 // Member functions
-// TODO:move to utils
-std::string joinStrings(const std::vector<std::string> &vec, const std::string &delimiter)
-{
-	std::ostringstream oss;
-	for (size_t i = 0; i < vec.size(); ++i)
-	{
-		oss << vec[i];
-		if (i != vec.size() - 1)
-			oss << delimiter;
-	}
-	return oss.str();
-}
-
-void Request::validateAllowed(std::string uri, std::string method, const Server &serv)
-{
-	// TODO:where should i store location?:/
-	auto location = serv.get_location(uri);
-	auto allowed = location.get_allow();
-	if (std::find(allowed.begin(), allowed.end(), method) == allowed.end())
-	{
-		auto err = HttpError(method + " method not allowed for " + uri, 405);
-		err.setField("Allow", joinStrings(location.get_allow(), ", "));
-		throw err;
-	}
-};
-
 void Request::matchHost(Connection *c)
 {
 	if (_header.find("HOST") == _header.end())
