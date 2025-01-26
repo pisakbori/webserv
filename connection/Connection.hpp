@@ -65,6 +65,7 @@ public:
 	void reset();
 	void checkTimeout();
 	int acceptConnection();
+	void updateKeepAliveTimeout();
 	int getDirectory(std::string path, std::string uri);
 
 	// Getters

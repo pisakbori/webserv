@@ -139,6 +139,7 @@ void Webserv::readFromSocket(int fd)
 	{
 		std::string str(buf, bytesRead);
 		std::cout << "read " << bytesRead << " from socket" << std::endl;
+		_connections[fd]->updateKeepAliveTimeout();
 		_connections[fd]->append(str);
 		if (_connections[fd]->getState() == Connection::READING_REQ)
 		{
@@ -209,7 +210,10 @@ void Webserv::sendOneChunk(std::string response, Connection *c, int i)
 		closeConnection(i);
 	}
 	else
+	{
+		c->updateKeepAliveTimeout();
 		std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+	}
 }
 
 void Webserv::writeToSocket(Connection *c, int i)
