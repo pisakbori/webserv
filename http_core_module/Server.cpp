@@ -3,7 +3,7 @@
 // Constructor
 Server::Server() :
 	listen(),
-	server_name(1),
+	server_name(),
 	error_page(),
 	client_max_body_size(1 << 20),
 	location()

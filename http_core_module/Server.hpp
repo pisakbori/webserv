@@ -77,5 +77,4 @@ class Server
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);
 
-
 #endif
