@@ -6,6 +6,8 @@ Server::Server() :
 	server_name(),
 	error_page(),
 	client_max_body_size(1 << 20),
+	listen_set(false),
+	client_max_body_size_set(false),
 	location()
 {
 	std::cout << "\e[2mServer default constructor\e[0m" << Colors::RESET << std::endl;
@@ -17,6 +19,8 @@ Server::Server(Server const & src) :
 	server_name(src.server_name),
 	error_page(src.error_page),
 	client_max_body_size(src.client_max_body_size),
+	listen_set(src.listen_set),
+	client_max_body_size_set(src.client_max_body_size_set),
 	location(src.location)
 {
 	std::cout << "\e[2mServer copy constructor\e[0m" << Colors::RESET << std::endl;
@@ -39,6 +43,8 @@ Server &		Server::operator=(Server const & rhs)
 		this->error_page = rhs.error_page;
 		this->client_max_body_size = rhs.client_max_body_size;
 		this->location = rhs.location;
+		this->listen_set = rhs.listen_set;
+		this->client_max_body_size_set = rhs.client_max_body_size_set;
 	}
 	return *this;
 }
@@ -72,7 +78,7 @@ std::ostream &operator<<(std::ostream &os, const Server &server)
 void Server::startListening(void)
 {
 	listen.startListening();
-};
+}
 
 void Server::stopListening(void)
 {

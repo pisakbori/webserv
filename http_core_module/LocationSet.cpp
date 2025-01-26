@@ -9,7 +9,7 @@ void	Location::populate_location(std::istringstream & infile, std::string line)
 		trim(line);
 		if (line.empty())
 			continue ;
-		if (line.find("}") != std::string::npos)
+		if (line.find('}') != std::string::npos)
 			break ;
 		this->set_location(line);
 	}
@@ -80,11 +80,10 @@ void Location::set_allow(std::string arg)
 
 void Location::set_redirect(std::string arg)
 {
-	static bool already_set = false;
-	if (already_set)
+	if (redirect_set)
 		throw std::runtime_error(
 			"\"redirect\" directive is duplicate");
-	already_set = true;
+	redirect_set = true;
 	std::istringstream iss(arg);
 	std::string token;
 	if (std::getline(iss, token, ' '))
@@ -112,21 +111,19 @@ void Location::set_redirect(std::string arg)
 
 void Location::set_root(std::string arg)
 {
-	static bool already_set = false;
-	if (already_set)
+	if (root_set)
 		throw std::runtime_error(
 			"\"root\" directive is duplicate");
-	already_set = true;
+	root_set = true;
 	root = arg;
 }
 
 void Location::set_autoindex(std::string arg)
 {
-	static bool already_set = false;
-	if (already_set)
+	if (autoindex_set)
 		throw std::runtime_error(
 			"\"autoindex\" directive is duplicate");
-	already_set = true;
+	autoindex_set = true;
 	if (arg == "on")
 		autoindex = true;
 	else if (arg == "off")

@@ -24,6 +24,9 @@ class Location
 		std::string					root;
 		bool						autoindex;
 		std::vector<std::string>	index;
+		bool						redirect_set;
+		bool						root_set;
+		bool						autoindex_set;
 
 	// Setters
 		void						set_location(std::string directive);
@@ -49,6 +52,7 @@ class Location
 	
 	// Member functions
 		void						populate_location(std::istringstream & infile, std::string line);
+		void						validate_allowed(const std::string &method) const;
 
 	// Getters
 		std::string					get_uri(void) const;

@@ -7,7 +7,10 @@ Location::Location() :
 	redirect(),
 	root("html"),
 	autoindex(false),
-	index()
+	index(),
+	redirect_set(false),
+	root_set(false),
+	autoindex_set(false)
 {
 	allow.push_back("GET");
 	allow.push_back("HEAD");
@@ -22,7 +25,10 @@ Location::Location(Location const & src) :
 	redirect(src.redirect),
 	root(src.root),
 	autoindex(src.autoindex),
-	index(src.index)
+	index(src.index),
+	redirect_set(src.redirect_set),
+	root_set(src.root_set),
+	autoindex_set(src.autoindex_set)
 {
 }
 
@@ -42,6 +48,9 @@ Location &	Location::operator=(Location const & rhs)
 		this->root = rhs.root;
 		this->autoindex = rhs.autoindex;
 		this->index = rhs.index;
+		this->redirect_set = rhs.redirect_set;
+		this->root_set = rhs.root_set;
+		this->autoindex_set = rhs.autoindex_set;
 	}
 	return *this;
 }
@@ -64,4 +73,28 @@ std::ostream &operator<<(std::ostream &os, const Location &location)
 	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
 		os << *i << ' ';
 	return os;
+}
+
+// Member functions
+// TODO:move to utils
+std::string joinStrings(const std::vector<std::string> &vec, const std::string &delimiter)
+{
+	std::ostringstream oss;
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		oss << vec[i];
+		if (i != vec.size() - 1)
+			oss << delimiter;
+	}
+	return oss.str();
+}
+
+void	Location::validate_allowed(const std::string &method) const
+{
+	if (std::find(allow.begin(), allow.end(), method) == allow.end())
+	{
+		auto err = HttpError(method + " method not allowed for " + uri, 405);
+		err.setField("Allow", joinStrings(allow, ", "));
+		throw err;
+	}
 }

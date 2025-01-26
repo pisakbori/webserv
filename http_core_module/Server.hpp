@@ -38,6 +38,8 @@ class Server
 		std::vector<err_page_t>		error_page;
 		long long					client_max_body_size;
 		struct sockaddr_in			_serverAddr;
+		bool						listen_set;
+		bool						client_max_body_size_set;
 
 	// Setters
 		void						set_server(std::string directive);

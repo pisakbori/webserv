@@ -13,7 +13,7 @@ void	Server::populate_server(std::istringstream & infile)
 		trim(line);
 		if (line.empty())
 			continue ;
-		if (line.find("}") != std::string::npos)
+		if (line.find('}') != std::string::npos)
 		{
 			bracket_closed = true;
 			break ;
@@ -69,11 +69,10 @@ void	Server::set_server(std::string directive)
 
 void	Server::parse_listen(std::string arg)
 {
-	static bool already_set = false;
-	if (already_set)
+	if (listen_set)
 		throw std::runtime_error(
 			"\"listen\" directive is duplicate");
-	already_set = true;
+	listen_set = true;
 	listen.parse_listen(arg);
 }
 
@@ -127,11 +126,10 @@ void	Server::set_error_page(std::string arg)
 
 void	Server::set_client_max_body_size(std::string arg)
 {
-	static bool already_set = false;
-	if (already_set)
+	if (client_max_body_size_set)
 		throw std::runtime_error(
 			"\"client_max_body_size\" directive is duplicate");
-	already_set = true;
+	client_max_body_size_set = true;
 	if (arg.substr(0, arg.size() - 2)
 		.find_first_not_of("0123456789")
 		== std::string::npos)
