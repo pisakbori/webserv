@@ -107,7 +107,7 @@ int Connection::getDirectory(std::string dirPath, std::string uri)
 	}
 	else
 	{
-		if (!_location.get_index().size())
+		if (_location.get_index().empty())
 			throw HttpError("Forbidden", 403);
 		for (size_t i = 0; i < _location.get_index().size(); i++)
 		{
