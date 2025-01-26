@@ -55,8 +55,8 @@ std::ostream &operator<<(std::ostream &os, const Location &location)
 		os << *i << ' ';
 	os << std::endl;
 	os << "  redirect: ";
-	os << location.get_redirect().first << ' ';
-	os << location.get_redirect().second << std::endl;
+	os << "code: " << location.get_redirect().first << ' ';
+	os << "url: " <<location.get_redirect().second << std::endl;
 	os << "  root: " << location.get_root() << std::endl;
 	os << "  autoindex: " << std::boolalpha << location.get_autoindex() << std::endl;
 	os << "  index: ";

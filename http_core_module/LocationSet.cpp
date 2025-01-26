@@ -64,17 +64,27 @@ void Location::set_uri(std::string uri)
 
 void Location::set_allow(std::string arg)
 {
+	static bool already_set = false;
+	if (!already_set)
+		allow.clear();
+	already_set = true;
 	std::istringstream iss(arg);
-	allow.clear();
 	for (std::string token; std::getline(iss, token, ' ');)
 	{
 		if (token == "HEAD" || token == "GET" || token == "POST" || token == "DELETE")
 			allow.push_back(token);
+		else
+			throw std::runtime_error("invalid method \"" + token + "\"");
 	}
 }
 
 void Location::set_redirect(std::string arg)
 {
+	static bool already_set = false;
+	if (already_set)
+		throw std::runtime_error(
+			"\"redirect\" directive is duplicate");
+	already_set = true;
 	std::istringstream iss(arg);
 	std::string token;
 	if (std::getline(iss, token, ' '))
@@ -82,6 +92,9 @@ void Location::set_redirect(std::string arg)
 		try
 		{
 			redirect.first = std::stoi(token);
+			if (redirect.first < 100 || redirect.first > 599)
+				throw std::runtime_error(
+					"value \"" + token + "\" must be between 100 and 599");
 		}
 		catch (const std::invalid_argument &)
 		{
@@ -89,27 +102,44 @@ void Location::set_redirect(std::string arg)
 			redirect.second = token;
 			return;
 		}
-		if (std::getline(iss, token))
+		if (std::getline(iss, token, ' '))
 			redirect.second = token;
+		if (!iss.eof())
+			throw std::runtime_error(
+				"invalid number of arguments in \"error_page\" directive");
 	}
 }
 
 void Location::set_root(std::string arg)
 {
+	static bool already_set = false;
+	if (already_set)
+		throw std::runtime_error(
+			"\"root\" directive is duplicate");
+	already_set = true;
 	root = arg;
 }
 
 void Location::set_autoindex(std::string arg)
 {
+	static bool already_set = false;
+	if (already_set)
+		throw std::runtime_error(
+			"\"autoindex\" directive is duplicate");
+	already_set = true;
 	if (arg == "on")
 		autoindex = true;
 	else if (arg == "off")
 		autoindex = false;
+	else
+		throw std::runtime_error(
+			"invalid value \"" + \
+			arg + "\" in \"autoindex\" directive," + \
+			"it must be \"on\" or \"off\"");
 }
 
 void Location::set_index(std::string arg)
 {
-	index = {};
 	std::istringstream iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 		index.push_back(std::move(token));

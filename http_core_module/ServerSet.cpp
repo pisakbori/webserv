@@ -69,13 +69,16 @@ void	Server::set_server(std::string directive)
 
 void	Server::parse_listen(std::string arg)
 {
+	static bool already_set = false;
+	if (already_set)
+		throw std::runtime_error(
+			"\"listen\" directive is duplicate");
+	already_set = true;
 	listen.parse_listen(arg);
 }
 
 void	Server::set_server_name(std::string arg)
 {
-	if (server_name.back().empty())
-		server_name.pop_back();
 	std::istringstream	iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 		server_name.push_back(std::move(token));
@@ -99,8 +102,7 @@ void	Server::set_error_page(std::string arg)
 		tokens.push_back(token);
 	if (tokens.size() < 2)
 		throw std::runtime_error(
-			"invalid number of arguments in \"error_page\" directive"
-			);
+			"invalid number of arguments in \"error_page\" directive");
 	error.uri = tokens.back();
 	tokens.pop_back();
 	std::string	overwrite;
@@ -125,6 +127,11 @@ void	Server::set_error_page(std::string arg)
 
 void	Server::set_client_max_body_size(std::string arg)
 {
+	static bool already_set = false;
+	if (already_set)
+		throw std::runtime_error(
+			"\"client_max_body_size\" directive is duplicate");
+	already_set = true;
 	if (arg.substr(0, arg.size() - 2)
 		.find_first_not_of("0123456789")
 		== std::string::npos)
@@ -146,6 +153,5 @@ void	Server::set_client_max_body_size(std::string arg)
 		}
 	}
 	throw std::runtime_error(
-		"\"client_max_body_size\" directive invalid value"
-		);
+		"\"client_max_body_size\" directive invalid value");
 }
