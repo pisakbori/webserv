@@ -28,6 +28,7 @@ private:
 	int getResource(std::string path);
 	int openResource(std::filesystem::path path);
 	int postResource(std::string path);
+	int deleteResource(std::string path);
 	int redirect();
 	int setErrorResponse(const HttpError &e);
 	int _state;

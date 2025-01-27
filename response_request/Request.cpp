@@ -158,11 +158,11 @@ void Request::parseRequest(Connection *c)
 	if (!headerRead)
 		return;
 	matchHost(c);
-	if (_method == "GET" || _method == "HEAD")
+	if (_method == "GET" || _method == "HEAD" || _method == "DELETE")
 		c->setState(Connection::REQ_READY);
 	else if (_header.find("CONTENT-LENGTH") != _header.end())
 		parseContentLength(c, stream);
-	else if (_method == "POST" || _method == "DELETE")
+	else if (_method == "POST")
 	{
 		// TODO: Chunked transfer encoding?
 		throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);

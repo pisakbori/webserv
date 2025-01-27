@@ -3,6 +3,7 @@
 std::map<int, std::string> Response::statuses = {
     {200, "OK"},
     {201, "Created"},
+    {204, "No content"},
     {303, "See Other"},
     {400, "Bad Request"},
     {403, "Forbidden"},
