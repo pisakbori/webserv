@@ -4,7 +4,6 @@
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
-#include <fcntl.h>
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -23,11 +22,11 @@ private:
 	Response _res;
 	Request *_req;
 	Location _location;
-	std::chrono::time_point<std::chrono::high_resolution_clock> _keepAliveTimeout;
-	std::chrono::time_point<std::chrono::high_resolution_clock> _clientHeaderTimeout;
+	std::chrono::system_clock::time_point _keepAliveTimeout;
+	std::chrono::system_clock::time_point _clientHeaderTimeout;
 
 	int getResource(std::string path);
-	int openResource(std::string path);
+	int openResource(std::filesystem::path path);
 	int postResource(std::string path);
 	int redirect();
 	int setErrorResponse(const HttpError &e);
@@ -35,7 +34,7 @@ private:
 	bool _close;
 
 public:
-	size_t _sentChunks;
+	size_t _sentBytes;
 	size_t _uploadedBytes;
 	bool _hasTimeout;
 	static constexpr int WAITING_REQ = 0;
@@ -65,7 +64,7 @@ public:
 	void reset();
 	void checkTimeout();
 	int acceptConnection();
-	int getDirectory(std::string path, std::string uri);
+	int getDirectory(std::filesystem::path path, std::filesystem::path uri);
 
 	// Getters
 	const std::vector<Server>& getServ() const;

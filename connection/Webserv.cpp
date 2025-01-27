@@ -37,8 +37,10 @@ Webserv::Webserv(const Webserv &other)
 // Destructor
 Webserv::~Webserv()
 {
-	// TODO:
 	// std::cout << "\e[2mDestructor Webserv called\e[0m" << std::endl;
+    for (auto& pair : _connections) {
+        delete pair.second; 
+    }
 }
 
 // Overloads
@@ -137,7 +139,10 @@ void Webserv::readFromResource(int fd)
 		_connections[_resources[fd]]->appendToResponseBody(str);
 	}
 	else if (bytesRead < 0)
+	{
 		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
+		// TODO:Bori disconnect?
+	}
 	else if (bytesRead == 0)
 	{
 		std::cout << "\e[2mFinished reading resource " << fd << "\e[0m" << std::endl;
@@ -177,7 +182,7 @@ void Webserv::readFromSocket(int fd)
 		std::cout << Colors::RED << "bytesRead 0 " << fd << Colors::RESET << std::endl;
 		if (_connections[fd]->getState() >= Connection::REQ_READY && _connections[fd]->getState() != Connection::RES_SENT)
 		{
-			std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
+			// std::cerr << "Client closed the connection, but request processed so we send response" << std::endl;
 			return;
 		}
 		std::cout << "==========================================Close connection" << std::endl;
@@ -200,10 +205,16 @@ void Webserv::writeToResourceFd(int i)
 			closeConnection(_resources[i]);
 			return;
 		}
-		else
+		else if (uploadedBytes > 0)
 		{
 			std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
 			c->_uploadedBytes += uploadedBytes;
+		}
+		else
+		{
+			// TODO:Bori    no space left?? shuld i respond internal server error?
+			closeConnection(_resources[i]);
+			return;
 		}
 	}
 	else
@@ -214,47 +225,66 @@ void Webserv::writeToResourceFd(int i)
 	}
 }
 
-void Webserv::sendOneChunk(std::string response, Connection *c, int i)
+int Webserv::sendOneChunk(Connection *c, int i)
 {
-	std::string substring = response.substr(c->_sentChunks * WRITE_BUFFER_SIZE, WRITE_BUFFER_SIZE);
+	std::string substring = c->getResponse().getContent(c->_sentBytes, WRITE_BUFFER_SIZE);
 	int bytesSent = send(i, substring.c_str(), substring.length(), 0);
-	c->_sentChunks++;
 	if (bytesSent == -1)
 	{
 		std::cout << Colors::RED << "Error sending response." << Colors::RESET << std::endl;
 		closeConnection(i);
 	}
-	else
+	else if (bytesSent > 0)
+	{
+		c->_sentBytes += bytesSent;
 		std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+		return 1;
+	}
+	else if (bytesSent == 0)
+	{
+
+		std::cout << Colors::RED << "0 sent.....????" << Colors::RESET << std::endl;
+		closeConnection(i);
+	}
+	return 0;
 }
 
 void Webserv::writeToSocket(Connection *c, int i)
 {
 	// std::cout << "Sending response to " << i << "\n ";
-	std::string response = c->getResponse().toString();
-	if (c->_sentChunks * WRITE_BUFFER_SIZE < response.length())
-		sendOneChunk(response, c, i);
-	else
-		c->setState(Connection::RES_SENT);
-	if (c->getState() == Connection::RES_SENT)
+	try
 	{
-		if (c->_hasTimeout)
+		if (c->_sentBytes < c->getResponse().getSize())
 		{
-			std::cout << Colors::RED << "Timeout so remove " << i << std::endl
-					  << Colors::RESET;
-			closeConnection(i);
-		}
-		else if (c->hasConnectionClose())
-		{
-			std::cout << Colors::RED << "Request had Connection Close so remove " << i << std::endl
-					  << Colors::RESET;
-			closeConnection(i);
+			if (!sendOneChunk(c, i))
+			return;
 		}
 		else
+			c->setState(Connection::RES_SENT);
+		if (c->getState() == Connection::RES_SENT)
 		{
-			c->reset();
-			printOpenFds();
+			if (c->_hasTimeout)
+			{
+				std::cout << Colors::RED << "Timeout so remove " << i << std::endl
+						  << Colors::RESET;
+				closeConnection(i);
+			}
+			else if (c->hasConnectionClose())
+			{
+				std::cout << Colors::RED << "Request had Connection Close so remove " << i << std::endl
+						  << Colors::RESET;
+				closeConnection(i);
+			}
+			else
+			{
+				c->reset();
+				printOpenFds();
+			}
 		}
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << '\n';
 	}
 }
 
@@ -295,6 +325,7 @@ void Webserv::run()
 	std::map<Listen, int> listenFdMap;
 	int maxfd = -1;
 
+// TODO:Marian there is somehow a leak related to listenFdMap. please take a look
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
 		Listen& listen = _servers[i].get_listen();
@@ -362,17 +393,15 @@ void Webserv::stop()
 {
 	for (auto it = _connections.begin(); it != _connections.end(); ++it)
 	{
-		close(it->first);
+		closeFd(it->first);
 	}
 	for (auto it = _resources.begin(); it != _resources.end(); ++it)
 	{
-		close(it->first);
+		closeFd(it->first);
 	}
-	for (size_t i = 0; i < _servers.size(); i++)
+	for (auto it = _listenFdLookup.begin(); it != _listenFdLookup.end(); ++it)
 	{
-		std::cout << std::endl
-				  << _servers[i].getListenFd() << " fd closed" << std::endl;
-		close(_servers[i].getListenFd());
+		closeFd(it->first);
 	}
 }
 

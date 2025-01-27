@@ -5,6 +5,7 @@
 #include <set>
 #include <sys/types.h>
 #include <sys/select.h>
+#include <cstring> //for memcpy because FD_COPY wasn't acailable for linux
 
 class Webserv
 {
@@ -18,7 +19,6 @@ private:
 	fd_set _readfds;
 	fd_set _writefds;
 	fd_set _exceptfds;
-	// TODO:make it list
 	std::vector<Server> _servers;
 	int _nReady;
 
@@ -28,7 +28,7 @@ private:
 	void readFromResource(int fd);
 	void readFromSocket(int fd);
 	void writeToResourceFd(int i);
-	void sendOneChunk(std::string response, Connection *c, int i);
+	int sendOneChunk(Connection *c, int i); //0 on failure
 	void onWrite(int fd);
 	void removeConnection(int fd);
 	void closeResourceFd(int i);

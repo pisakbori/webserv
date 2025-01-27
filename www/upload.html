@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload</title>
+  <script>
+
+
+    function updateAction() {
+      const fileInput = document.getElementById('file');
+      const form = document.getElementById('uploadForm');
+      
+      // Get the selected file name
+      const filename = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+      
+      // Update the form action to the filename
+      form.action = '/' + filename;
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();  // Prevent the default form submission
+
+      const fileInput = document.getElementById('file');
+      const form = document.getElementById('uploadForm');
+      
+      // Get the file from the input
+      const file = fileInput.files[0];
+      if (!file) {
+        document.getElementById('responseMessage').innerHTML = 'No file selected!';
+        document.getElementById('responseMessage').style.color = 'red';
+        return;
+      }
+
+      // Read the file as a binary stream (for non-text files)
+      const reader = new FileReader();
+      reader.onload = async function() {
+        const fileData = reader.result; // This is the file data as a binary string or ArrayBuffer
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream', // Sending raw data without multipart encoding
+              'Content-Length': fileData.byteLength, // Optional: Sending the length of the file
+            },
+            body: fileData,  // Send the raw file data as the request body
+          });
+
+          const statusCode = response.status;
+          const statusMessage = response.statusText;
+
+          if (response.ok) {
+            document.getElementById('responseMessage').innerHTML = `File uploaded successfully! (Status: ${statusCode} ${statusMessage})
+            <a href= "${response.headers.get('Location')}"> Check it out here </a>
+            `;
+            document.getElementById('responseMessage').style.color = 'green';
+          } else {
+            document.getElementById('responseMessage').innerHTML = `Error: ${statusMessage}. Status Code: ${statusCode}`;
+            document.getElementById('responseMessage').style.color = 'red';
+          }
+        } catch (error) {
+          document.getElementById('responseMessage').innerHTML = 'An error occurred. Please try again.';
+          document.getElementById('responseMessage').style.color = 'red';
+        }
+      };
+      
+      // Read the file as ArrayBuffer (binary data)
+      reader.readAsArrayBuffer(file);
+    }
+  </script>
+  <!-- <script>
+    function updateAction() {
+      const fileInput = document.getElementById('file');
+      const form = document.getElementById('uploadForm');
+      
+      // Get the selected file name
+      const filename = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+      
+      // Update the form action to the filename
+      form.action = '/uploads/' + filename;
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();  // Prevent the default form submission
+
+      const form = document.getElementById('uploadForm');
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          // If the response is successful (status 200-299)
+          document.getElementById('responseMessage').innerHTML = 'File uploaded successfully!';
+          document.getElementById('responseMessage').style.color = 'green';
+        } else {
+          // If the response is not successful (any other status code)
+          document.getElementById('responseMessage').innerHTML =`File upload failed. Reason: ${response.status} ${response.statusText}`;
+          document.getElementById('responseMessage').style.color = 'red';
+        }
+      } catch (error) {
+        // Catch any errors (e.g., network issues)
+        document.getElementById('responseMessage').innerHTML = 'An error occurred. Please try again.';
+        document.getElementById('responseMessage').style.color = 'red';
+      }
+    }
+  </script> -->
+
+  
+</head>
+<body>
+  <h1>Upload a File</h1>
+  <form id="uploadForm" method="POST" onsubmit="handleSubmit(event)">
+    <label for="file">Choose a file:</label>
+    <input type="file" id="file" name="file" required onchange="updateAction()">
+    <br><br>
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="responseMessage" style="margin-top: 20px;"></div>
+</body>
+</html>

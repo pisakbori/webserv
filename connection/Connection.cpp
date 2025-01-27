@@ -9,8 +9,8 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 	_req = new Request();
 	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
-	setState(WAITING_REQ);
-	_sentChunks = 0;
+	_state = WAITING_REQ;
+	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_responsible_server = valid_idx.at(0);
 	_close = false;
@@ -29,7 +29,8 @@ Connection::Connection(const Connection &other) :
 // Destructor
 Connection::~Connection()
 {
-	// std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
+	std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
+	delete _req;
 }
 
 // Overloads
@@ -42,7 +43,7 @@ Connection &Connection::operator=(const Connection &other)
 		_responsible_server = other._responsible_server;
 		_req = other._req;
 		_res = other._res;
-		_sentChunks = other._sentChunks;
+		_sentBytes = other._sentBytes;
 		_uploadedBytes = other._uploadedBytes;
 		_hasTimeout = other._hasTimeout;
 		setState(other._state);
@@ -68,8 +69,8 @@ int Connection::acceptConnection()
 		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
 	std::cout << "fd is " << fd << std::endl;
-	_keepAliveTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
-	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	_keepAliveTimeout = std::chrono::system_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
+	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	return fd;
 }
 
@@ -79,8 +80,8 @@ void Connection::reset()
 	setState(WAITING_REQ);
 	*_req = Request();
 	_res = Response();
-	_clientHeaderTimeout = std::chrono::steady_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
-	_sentChunks = 0;
+	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_close = false;
 };
@@ -97,7 +98,7 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
-int Connection::getDirectory(std::string dirPath, std::string uri)
+int Connection::getDirectory(std::filesystem::path dirPath, std::filesystem::path uri)
 {
 	if (_location.get_autoindex())
 	{
@@ -126,7 +127,7 @@ int Connection::getDirectory(std::string dirPath, std::string uri)
 	throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 }
 
-int Connection::openResource(std::string path)
+int Connection::openResource(std::filesystem::path path)
 {
 	int resourceFd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
 	setState(Connection::READING_RESOURCE);
@@ -134,11 +135,7 @@ int Connection::openResource(std::string path)
 	{
 		throw HttpError("Forbidden, not possible to open resource", 403);
 	}
-	size_t pos = path.rfind('.');
-	if (pos != std::string::npos)
-		_res.setContentType(path.substr(pos + 1));
-	else
-		_res.setContentType("");
+	_res.setContentType(path.extension());
 	return resourceFd;
 }
 
@@ -146,7 +143,7 @@ int Connection::redirect()
 {
 	_res.setCode(_location.get_redirect().first);
 	_res.appendToHeader("Location", _location.get_redirect().second);
-	_state = RES_READY;
+	setState(RES_READY);
 	return -1;
 }
 
@@ -158,7 +155,7 @@ int Connection::getResource(std::string uri)
 	_location = getResponsibleServer().get_location(uri);
 	if (_location.get_redirect().first)
 		return redirect();
-	std::string path = _location.get_route(uri);
+	std::filesystem::path path = _location.get_route(uri);
 	std::cout << Colors::RED << "GetResource " << path << std::endl
 			  << Colors::RESET;
 	if (!std::filesystem::exists(path))
@@ -179,18 +176,17 @@ int Connection::postResource(std::string uri)
 	_location = server.get_location(_req->getUri());
 	if (_location.get_redirect().first)
 		return redirect();
-	std::string path = _location.get_route(uri);
+	std::filesystem::path path = _location.get_route(uri);
 	if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
 		return openResource(path);
-
-	path = _location.get_root();
 
 	std::filesystem::path filePath = uri;
 	std::string filename = filePath.filename().string();
 	_res.setCode(201);
-	_res.setContentType("json");
+	_res.setContentType(".json");
 	std::filesystem::path accessLocation = _location.get_uri();
-	std::filesystem::path uploadLocation = path;
+	std::filesystem::path uploadLocation = _location.get_root();
+	;
 	accessLocation /= filename;
 	uploadLocation /= filename;
 	if (std::filesystem::exists(uploadLocation))
@@ -249,7 +245,7 @@ int Connection::process()
 				_res.appendToHeader("Connection", "close");
 				_close = true;
 			}
-			if (_req->getMethod() == "GET")
+			if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
 				return getResource(_req->getUri());
 			else if (_req->getMethod() == "POST")
 				return postResource(_req->getUri());
@@ -270,7 +266,7 @@ void Connection::checkTimeout()
 {
 	try
 	{
-		auto now = std::chrono::steady_clock::now();
+		auto now = std::chrono::system_clock::now();
 		if ((_state == READING_REQ || _state == WAITING_REQ) && now >= _clientHeaderTimeout)
 			throw HttpError("Request Header timeout", 408);
 		else if (now >= _keepAliveTimeout)
@@ -279,7 +275,7 @@ void Connection::checkTimeout()
 	catch (const HttpError &e)
 	{
 		_res = Response(e);
-		_state = RES_READY;
+		setState(RES_READY);
 		_hasTimeout = true;
 	}
 }
@@ -329,6 +325,8 @@ void Connection::setState(int s)
 		std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
 				  << Colors::RESET;
 	_state = s;
+	if (s == Connection::RES_READY)
+		_res.setContent(_req->getMethod() != "HEAD");
 }
 
 void Connection::setResponsibleServer(int i)

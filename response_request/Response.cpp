@@ -18,64 +18,66 @@ std::map<int, std::string> Response::statuses = {
     {505, "HTTP Version Not Supported"}};
 
 std::map<std::string, std::string> Response::mimeTypes = {
-    {"html", "text/html"},
-    {"htm", "text/html"},
-    {"shtml", "text/html"},
-    {"css", "text/css"},
-    {"js", "application/javascript"},
-    {"json", "application/json"},
-    {"png", "image/png"},
-    {"jpg", "image/jpeg"},
-    {"jpeg", "image/jpeg"},
-    {"gif", "image/gif"},
-    {"svg", "image/svg+xml"},
-    {"ico", "image/vnd.microsoft.icon"},
-    {"pdf", "application/pdf"},
-    {"zip", "application/zip"},
-    {"txt", "text/plain"},
-    {"xml", "application/xml"},
-    {"mp4", "video/mp4"},
-    {"webm", "video/webm"},
-    {"ogg", "video/ogg"},
-    {"mp3", "audio/mpeg"},
-    {"wav", "audio/wav"},
-    {"flac", "audio/flac"},
-    {"aac", "audio/aac"},
-    {"m4a", "audio/mp4"},
-    {"woff", "font/woff"},
-    {"woff2", "font/woff2"},
-    {"ttf", "font/ttf"},
-    {"otf", "font/otf"},
-    {"eot", "application/vnd.ms-fontobject"},
-    {"wasm", "application/wasm"},
+    {".html", "text/html"},
+    {".htm", "text/html"},
+    {".shtml", "text/html"},
+    {".css", "text/css"},
+    {".js", "application/javascript"},
+    {".json", "application/json"},
+    {".png", "image/png"},
+    {".jpg", "image/jpeg"},
+    {".jpeg", "image/jpeg"},
+    {".gif", "image/gif"},
+    {".svg", "image/svg+xml"},
+    {".ico", "image/vnd.microsoft.icon"},
+    {".pdf", "application/pdf"},
+    {".zip", "application/zip"},
+    {".txt", "text/plain"},
+    {".xml", "application/xml"},
+    {".mp4", "video/mp4"},
+    {".webm", "video/webm"},
+    {".ogg", "video/ogg"},
+    {".mp3", "audio/mpeg"},
+    {".wav", "audio/wav"},
+    {".flac", "audio/flac"},
+    {".aac", "audio/aac"},
+    {".m4a", "audio/mp4"},
+    {".woff", "font/woff"},
+    {".woff2", "font/woff2"},
+    {".ttf", "font/ttf"},
+    {".otf", "font/otf"},
+    {".eot", "application/vnd.ms-fontobject"},
+    {".wasm", "application/wasm"},
 };
 
 // Constructor
-Response::Response()
+Response::Response() : _body(std::make_unique<std::string>()), _fullContent(std::make_unique<std::string>())
 {
     // std::cout << "\e[2mDefault constructor Response called\e[0m" << std::endl;
     setCode(200);
-    setContentType("html");
+    setContentType(".html");
 }
 
 // Parameterized constructor: autoindex with directory as arg
-Response::Response(std::string dirPath, std::string url)
+Response::Response(std::filesystem::path dirPath, std::filesystem::path url)
 {
     // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(200);
-    setContentType("html");
-    _body = generateAutoindex(dirPath, url);
+    setContentType(".html");
+    _body = std::make_unique<std::string>(generateAutoindex(dirPath, url));
+    _fullContent = std::make_unique<std::string>();
 }
 
 Response::Response(const HttpError &err)
 {
     // std::cout << "\e[2mParameterized constructor Response called\e[0m" << std::endl;
     setCode(err.getCode());
-    setContentType("html");
+    setContentType(".html");
     for (const auto &pair : err.getExtraFields())
         _header[pair.first] = pair.second;
-    _body = err.what();
+    _body = std::make_unique<std::string>(err.what());
     wrapInHtml();
+    _fullContent = std::make_unique<std::string>();
 }
 
 // Copy constructor
@@ -99,7 +101,8 @@ Response &Response::operator=(const Response &other)
     {
         _header = other._header;
         setCode(other._statusCode);
-        _body = other._body;
+        _body = std::make_unique<std::string>(*other._body);
+        _fullContent = std::make_unique<std::string>(*other._fullContent);
     }
     return *this;
 }
@@ -108,7 +111,7 @@ Response &Response::operator=(const Response &other)
 
 void Response::appendToBody(std::string const &str)
 {
-    _body.append(str);
+    _body->append(str);
 }
 
 void Response::setContentType(std::string const &str)
@@ -140,24 +143,43 @@ void Response::wrapInHtml()
                 << this->_statusCode << " " << this->_statusText
                 << "</h1>\n"
                 << "<p>"
-                << this->_body
+                << *_body
                 << "</p>\n"
                 << "</body>\n"
                 << "</html>";
-    _body = htmlContent.str();
+    *_body = htmlContent.str();
+}
+
+std::string getHttpDate()
+{
+    std::time_t now = std::time(nullptr);
+    std::tm gmtTime = *std::gmtime(&now);
+
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &gmtTime);
+
+    return std::string(buffer);
 }
 
 // Getters
-std::string Response::getBody() const
+
+const std::string Response::getContent(std::size_t from, std::size_t size) const
 {
-    return _body;
+    return _fullContent->substr(from, size);
 }
 
-std::string Response::toString() const
+std::size_t Response::getSize() const
+{
+    return _fullContent->length();
+}
+
+void Response::setContent(bool withBody)
 {
     std::stringstream content;
     content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
-    content << "Content-Length: " << _body.size() << std::endl;
+    content << "Date: " << getHttpDate() << std::endl;
+    content << "Content-Length: " << _body->size() << std::endl;
+    content << "Server: 4/2Elephants" << std::endl;
     content << "Keep-Alive: timeout=" << KEEPALIVE_TIMEOUT << "s" << std::endl;
     if (_statusCode == 408)
         content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
@@ -166,8 +188,10 @@ std::string Response::toString() const
         content << it->first << ": " << it->second << std::endl;
     }
     content << std::endl;
-    content << _body << std::endl;
-    return content.str();
+    _fullContent->append(content.str());
+    if (withBody)
+        _fullContent->append(*_body);
+    _body.reset();
 }
 // Setters
 
@@ -183,7 +207,7 @@ std::string getStyle()
     return str;
 }
 
-std::string Response::generateAutoindex(std::string &dir, std::string &original)
+std::string Response::generateAutoindex(std::filesystem::path &dir, std::filesystem::path &original)
 {
     std::ostringstream html;
 
@@ -192,24 +216,25 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
         << "<html>\n"
         << "<head>\n"
         << getMeta()
-        << "<title>Index of " << original << "</title>\n"
+        << "<title>Index of " << original.string() << "</title>\n"
         << getStyle()
         << "</head>\n"
         << "<body>\n"
-        << "<h1>Index of " << original << "</h1>\n"
+        << "<h1>Index of " << original.string() << "</h1>\n"
         << "<ul>\n";
 
     try
     {
         for (const auto &entry : std::filesystem::directory_iterator(dir))
         {
-            std::string name = entry.path().filename().string() + (entry.is_directory() ? "/" : "");
-            std::string url = entry.path();
-            url = url.substr(dir.length());
-            if (original.back() == '/' && !url.empty() && url.front() == '/')
-                original.pop_back();
-            std::string combined = original + url;
-            html << "<li><a href=\"" << combined << "\">" << name << "</a></li>\n";
+
+            std::string name = entry.path().filename();
+            if (entry.is_directory())
+                name += "/";
+            auto url = std::filesystem::path(entry.path().string().substr(dir.string().length()));
+            std::filesystem::path combined = original / url.relative_path();
+
+            html << "<li><a href=\"" << combined.string() << "\">" << name << "</a></li>\n";
         }
         std::cout << Colors::RESET;
     }
@@ -228,7 +253,7 @@ std::string Response::generateAutoindex(std::string &dir, std::string &original)
 
 void Response::setBody(const std::string &str)
 {
-    _body = str;
+    *_body = str;
 }
 
 void Response::setCode(int code)

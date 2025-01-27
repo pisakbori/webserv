@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <exception>
 #include <sstream>
+#include <memory> //for unique_ptr
+#include <filesystem> 
 #include <Colors.h>
 
 #include <unistd.h>

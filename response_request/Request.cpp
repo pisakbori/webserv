@@ -149,7 +149,7 @@ void Request::parseContentLength(Connection *c, std::istringstream &stream)
 		throw HttpError("Bad Request", 400);
 	long long size = std::stoll(value);
 	if (size > c->getResponsibleServer().get_client_max_body_size())
-		throw HttpError("Paload Too Large", 413);
+		throw HttpError("Payload Too Large", 413);
 	_bodySize = size;
 	char ch;
 	// TODO: if header read, only append to body would be ideal..
