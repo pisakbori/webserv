@@ -1,20 +1,17 @@
 #ifndef REQ_HPP
 #define REQ_HPP
 
-#include "HttpError.hpp"
-#include "Validate.hpp"
+#include "HttpMessage.hpp"
 #include "Connection.hpp"
-#include "CommonIncludes.hpp"
 
 class Connection;
-class Request
+class Request : public HttpMessage
 {
 private:
 	std::string _method;
 	std::string _uri;
 	std::string _protocol;
 	std::string _body;
-	std::map<std::string, std::string> _header;
 	std::string _input;
 
 public:
@@ -37,7 +34,6 @@ public:
 	void append(std::string const &str);
 	void matchHost(Connection *c);
 	void parseRequestLine(std::string &line);
-	void parseFieldLine(std::string &line, bool *headerRead);
 	void parseContentLength(Connection *c, std::istringstream &stream);
 	void parseRequest(Connection *c);
 

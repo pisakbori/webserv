@@ -1,18 +1,16 @@
 #ifndef RES_HPP
 #define RES_HPP
 
-#include "CommonIncludes.hpp"
-#include "HttpError.hpp"
 #include "Location.hpp"
+#include "HttpMessage.hpp"
 
-class Response
+class Response : public HttpMessage
 {
 private:
 	std::string _statusText;
 	int _statusCode;
 	std::unique_ptr<std::string> _body;
 	std::unique_ptr<std::string> _fullContent;
-	std::map<std::string, std::string> _header;
 	void wrapInHtml();
 
 public:
@@ -45,6 +43,7 @@ public:
 	std::size_t getSize() const;
 	// Setters
 	void setContent(bool withBody = true);
+	void setCGIContent(std::string cgiOutput);
 	void setBody(const std::string &str);
 	void setCode(int code);
 };

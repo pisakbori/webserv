@@ -30,7 +30,6 @@ Request &Request::operator=(const Request &other)
 	if (this != &other)
 	{
 		_input = other._input;
-		_header = other._header;
 		_method = other._method;
 		_protocol = other._protocol;
 		_uri = other._uri;
@@ -88,31 +87,6 @@ void Request::parseRequestLine(std::string &line)
 		throw HttpError(_protocol + " protocol not supported", 505);
 }
 
-// field-line   = field-name ":" OWS field-value OWS
-void Request::parseFieldLine(std::string &line, bool *headerRead)
-{
-	line = Validate::sanitize(line);
-	if (line.empty())
-	{
-		*headerRead = true;
-		return;
-	}
-	auto colon_pos = line.find(":");
-	if (colon_pos == std::string::npos)
-	{
-		std::cout << line << std::endl;
-		throw HttpError("Malformed header field: missing colon separator", 400);
-	}
-	if (colon_pos > 0 && std::isspace(line[colon_pos - 1]))
-		throw HttpError("Malformed header field: whitespace before colon", 400);
-	std::string key = Validate::headerName(line.substr(0, colon_pos));
-	std::transform(key.begin(), key.end(), key.begin(), ::toupper );
-	std::string value = line.substr(colon_pos + 1);
-	value.erase(0, value.find_first_not_of(" \t"));
-    value.erase(value.find_last_not_of(" \t") + 1);
-	_header[key] = value;
-}
-
 void Request::parseContentLength(Connection *c, std::istringstream &stream)
 {
 	if (_header.find("TRANSFER-ENCODING") != _header.end())
@@ -154,7 +128,7 @@ void Request::parseRequest(Connection *c)
 		_input.find("\r\n\r\n") == std::string::npos)
 		return;
 	while (!headerRead && std::getline(stream, line))
-		parseFieldLine(line, &headerRead);
+		parseFieldLine(line, &headerRead, 400);
 	if (!headerRead)
 		return;
 	matchHost(c);

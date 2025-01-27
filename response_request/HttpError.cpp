@@ -22,9 +22,12 @@ HttpError::HttpError(HttpError const &ex) { *this = ex; };
 
 HttpError &HttpError::operator=(const HttpError &ex)
 {
-	_message = ex.getMessage();
-	_code = ex.getCode();
-	_extraHeaderFields = ex._extraHeaderFields;
+	if (this != &ex)
+	{
+		_message = ex.getMessage();
+		_code = ex.getCode();
+		_extraHeaderFields = ex._extraHeaderFields;
+	}
 	return *this;
 };
 

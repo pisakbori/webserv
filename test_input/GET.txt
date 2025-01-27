@@ -1,4 +1,4 @@
-GET /images/dd HTTP/1.1
+GET /i HTTP/1.1
 Host: localhost
 User-Agent: curl/7.68.0
 Content-length:182

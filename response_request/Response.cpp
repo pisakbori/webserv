@@ -4,6 +4,7 @@ std::map<int, std::string> Response::statuses = {
     {200, "OK"},
     {201, "Created"},
     {204, "No content"},
+    {302, "Found"},
     {303, "See Other"},
     {400, "Bad Request"},
     {403, "Forbidden"},
@@ -49,7 +50,7 @@ std::map<std::string, std::string> Response::mimeTypes = {
     {".otf", "font/otf"},
     {".eot", "application/vnd.ms-fontobject"},
     {".wasm", "application/wasm"},
-};
+    {".py", "text/x-python"}};
 
 // Constructor
 Response::Response() : _body(std::make_unique<std::string>()), _fullContent(std::make_unique<std::string>())
@@ -100,7 +101,6 @@ Response &Response::operator=(const Response &other)
     // std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
     if (this != &other)
     {
-        _header = other._header;
         setCode(other._statusCode);
         _body = std::make_unique<std::string>(*other._body);
         _fullContent = std::make_unique<std::string>(*other._fullContent);
@@ -119,10 +119,10 @@ void Response::setContentType(std::string const &str)
 {
     if (mimeTypes.find(str) != mimeTypes.end())
     {
-        _header["Content-Type"] = mimeTypes[str];
+        _header["CONTENT-TYPE"] = mimeTypes[str];
     }
     else if (str.empty())
-        _header["Content-Type"] = "application/octet-stream";
+        _header["CONTENT-TYPE"] = "application/octet-stream";
     else
         throw HttpError("Unsupported Media Type " + str, 415);
 }
@@ -194,6 +194,44 @@ void Response::setContent(bool withBody)
         _fullContent->append(*_body);
     _body.reset();
 }
+
+void Response::setCGIContent(std::string cgiOutput)
+{
+    std::string line;
+    std::istringstream stream(cgiOutput);
+
+    if (cgiOutput.find("\n\n") == std::string::npos &&
+        cgiOutput.find("\r\n\r\n") == std::string::npos)
+    {
+        std::cout << "doesnt have header fields\n"
+                  << cgiOutput;
+        _body->append(cgiOutput);
+    }
+    else
+    {
+        // take out any header fields.
+        bool headerRead = false;
+        while (!headerRead && std::getline(stream, line))
+            parseFieldLine(line, &headerRead, 500);
+        if (_header.find("STATUS") != _header.end())
+        {
+            std::string code = _header["STATUS"].substr(0, 3);
+            if (!code.empty() && std::all_of(code.begin(), code.end(), ::isdigit))
+                setCode(stoi(code));
+            else
+                setCode(200);
+        }
+        else
+            setCode(200);
+        if (_header.find("CONTENT-TYPE") == _header.end())
+            setContentType(".html");
+        char ch;
+        while (stream.get(ch))
+            _body->push_back(ch);
+    }
+    setContent();
+}
+
 // Setters
 
 std::string getMeta()
