@@ -69,9 +69,16 @@ int Connection::acceptConnection()
 		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
 	std::cout << "fd is " << fd << std::endl;
-	_keepAliveTimeout = std::chrono::system_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
+	updateKeepAliveTimeout();
 	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 	return fd;
+}
+
+// used when connection is established and when data is send or recived
+void Connection::updateKeepAliveTimeout()
+{
+	if (!_hasTimeout)
+		_keepAliveTimeout = std::chrono::system_clock::now() + std::chrono::seconds(KEEPALIVE_TIMEOUT);
 }
 
 void Connection::reset()

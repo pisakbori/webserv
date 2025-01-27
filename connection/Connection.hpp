@@ -65,6 +65,7 @@ public:
 	void checkTimeout();
 	int acceptConnection();
 	int getDirectory(std::filesystem::path path, std::filesystem::path uri);
+	void updateKeepAliveTimeout();
 
 	// Getters
 	const std::vector<Server>& getServ() const;

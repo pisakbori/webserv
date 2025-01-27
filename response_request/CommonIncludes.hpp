@@ -19,6 +19,6 @@
 #define MAX_QUEUED 1000
 #define CLIENT_HEADER_TIMEOUT 60  //  from established connection until finish sending header
 #define CLIENT_BODY_TIMEOUT 60000 //  between successive read operations TODO:
-#define KEEPALIVE_TIMEOUT 75      //   How long after sending resonse should we wait before closing connection.
+#define KEEPALIVE_TIMEOUT 75      //  time allowed to keep connection open if no data is sent or received by a host
 
 #endif
