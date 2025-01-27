@@ -88,6 +88,7 @@ void Connection::reset()
 	*_req = Request();
 	_res = Response();
 	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+	updateKeepAliveTimeout();
 	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_close = false;
