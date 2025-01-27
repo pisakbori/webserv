@@ -212,6 +212,37 @@ int Connection::postResource(std::string uri)
 	return resourceFd;
 }
 
+static bool file_in_use(const std::string& filePath)
+{
+	std::ifstream file(filePath, std::ios::in | std::ios::binary);
+	return !file.is_open();
+}
+
+int Connection::deleteResource(std::string uri)
+{
+	Server server;
+
+	server = getResponsibleServer();
+	_location = server.get_location(_req->getUri());
+	_location.validate_allowed("DELETE");
+	if (_location.get_redirect().first)
+		return redirect();
+	std::filesystem::path path = _location.get_route(uri);
+	if (!std::filesystem::exists(path))
+		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
+	else if (std::filesystem::is_directory(path) && !std::filesystem::is_empty(path))
+		throw HttpError("Deleting directories not allowed", 405);
+	else
+	{
+		if (file_in_use(path) && !std::filesystem::is_directory(path))
+			throw HttpError("Cannot delete file in use", 409);
+		std::filesystem::remove(path);
+		_res.setCode(204);
+	}
+	setState(Connection::RES_READY);
+	return -1;
+}
+
 int Connection::setErrorResponse(const HttpError &e)
 {
 	err_page_t error_page = getResponsibleServer().get_error_page(e.getCode());
@@ -259,6 +290,8 @@ int Connection::process()
 				return getResource(_req->getUri());
 			else if (_req->getMethod() == "POST")
 				return postResource(_req->getUri());
+			else if (_req->getMethod() == "DELETE")
+				return deleteResource(_req->getUri());
 		}
 	}
 	catch (HttpError &e)
