@@ -69,6 +69,32 @@ void Request::matchHost(Connection *c)
 	}
 }
 
+void Request::extractQueryString()
+{
+	std::string	query;
+
+	size_t question_pos = _uri.find('?');
+	if (question_pos == std::string::npos)
+		return ;
+	query = _uri.substr(question_pos + 1);
+	_uri = _uri.substr(0, question_pos);
+	std::istringstream	iss(query);
+	for (std::string line; getline(iss, line, '&');)
+	{
+		size_t	equal_pos = line.find('=');
+		if (equal_pos != std::string::npos)
+		{
+			std::string	key, value;
+			key = line.substr(0, equal_pos);
+			value = line.substr(equal_pos + 1);
+			// std::cout << key << " " << value << std::endl;
+			_query[key] = value;
+		}
+		else
+			_query[line] = "";
+	}
+}
+
 // request-line   = method SP request-target SP HTTP-version
 void Request::parseRequestLine(std::string &line)
 {
@@ -76,14 +102,16 @@ void Request::parseRequestLine(std::string &line)
 	if (std::any_of(line.begin(), line.end(), [](char c)
 		{ return std::isspace(c) && c != ' '; }))
 	{
-		throw HttpError("Invalid whitespace in request line: ", 400);
+		throw HttpError("Invalid whitespace in request line", 400);
 	}
 	std::istringstream stream(line);
 
 	stream >> _method >> _uri >> _protocol;
-	if (_method.empty() || _uri.empty() || _protocol.empty())
+	if (_method.empty() || _uri.empty() ||
+		_uri.front() == '?' || _protocol.empty())
 		throw HttpError("Bad Request", 400);
 	Validate::url(_uri);
+	extractQueryString();
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
 }

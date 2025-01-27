@@ -41,6 +41,8 @@ std::string Validate::url(std::string str)
 	size_t i = 0;
 
 	std::string invalid = " ()#<>{}|\\^~[]`";
+	if (str.length() > 8000)
+		throw HttpError("URI Too Long", 414);
 	while (i < str.length())
 	{
 		if (invalid.find(str[i]) != std::string::npos)
