@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <HttpError.hpp>
+#include "Parsing.hpp"
 
 /*
  * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
@@ -23,6 +24,9 @@ class Location
 		std::string					root;
 		bool						autoindex;
 		std::vector<std::string>	index;
+		bool						redirect_set;
+		bool						root_set;
+		bool						autoindex_set;
 
 	// Setters
 		void						set_location(std::string directive);
@@ -47,7 +51,8 @@ class Location
 		Location &	operator=(Location const & rhs);
 	
 	// Member functions
-		void						populate_location(std::ifstream & infile, std::string line);
+		void						populate_location(std::istringstream & infile, std::string line);
+		void						validate_allowed(const std::string &method) const;
 
 	// Getters
 		std::string					get_uri(void) const;
@@ -60,9 +65,5 @@ class Location
 
 };
 std::ostream &	operator<<(std::ostream & os, const Location & location);
-std::string		extract_parameters(
-	const std::string & name,
-	const std::string & directive
-	);
 
 #endif

@@ -13,6 +13,7 @@ SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/Location.cpp \
 					$(HTTP_DIR)/LocationSet.cpp \
 					$(HTTP_DIR)/LocationGet.cpp \
+					$(HTTP_DIR)/Parsing.cpp \
 					$(REQ_RES_DIR)/Validate.cpp \
 					$(REQ_RES_DIR)/HttpError.cpp \
 					$(REQ_RES_DIR)/Request.cpp \

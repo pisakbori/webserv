@@ -17,8 +17,6 @@ private:
 	std::map<std::string, std::string> _header;
 	std::string _input;
 
-	void validateAllowed(std::string uri, std::string method, const Server &serv);
-
 public:
 	size_t _bodySize;
 	// Constructor

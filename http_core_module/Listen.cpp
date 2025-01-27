@@ -36,6 +36,11 @@ Listen	&Listen::operator=(const Listen &other)
 	return (*this);
 }
 
+bool Listen::operator<(const Listen& other) const
+{
+	return std::tie(host, port) < std::tie(other.host, other.port);
+}
+
 std::ostream &operator<<(std::ostream &os, const Listen &listen)
 {
 	os << "host: " << listen.get_host() << std::endl;
@@ -106,6 +111,29 @@ void	Listen::parse_listen(std::string arg)
 		set_host(arg);
 }
 
+void	Listen::resolveHostname(const std::string& hostname)
+{
+	struct addrinfo hints{}, *res;
+	hints.ai_family = AF_INET;  // IPv4
+	hints.ai_socktype = SOCK_STREAM;
+
+	int status = getaddrinfo(hostname.c_str(), nullptr, &hints, &res);
+	if (status != 0)
+	{
+		throw std::runtime_error(
+			"Error resolving hostname '" + hostname + "': " + gai_strerror(status)
+			);
+	}
+	std::cout << "Hostname '" << hostname << "' resolved to IPs:" << std::endl;
+	for (struct addrinfo* p = res; p != nullptr; p = p->ai_next)
+	{
+		char ip[INET_ADDRSTRLEN];
+		inet_ntop(p->ai_family, &((struct sockaddr_in*)p->ai_addr)->sin_addr, ip, sizeof(ip));
+		std::cout << " - " << ip << std::endl;
+	}
+	freeaddrinfo(res);
+}
+
 void	Listen::set_host(std::string arg)
 {
 	char	sa_data[16];
@@ -122,12 +150,19 @@ void	Listen::set_host(std::string arg)
 			return ; // IPv4
 	}
 	else
-		return ; // hostname
+		resolveHostname(arg);
 }
 
 void	Listen::set_port(std::string arg)
 {
-	if (arg.find_first_not_of("0123456789") == std::string::npos &&
+	if (!arg.empty() &&
+		arg.find_first_not_of("0123456789") == std::string::npos &&
 		std::stoi(arg) > 0 && std::stoi(arg) < 65536)
+	{
 		port = std::stoi(arg);
+	}
+	else
+		throw std::runtime_error(
+			"invalid port \"" + arg + "\" of the \"listen\" directive"
+			);
 }

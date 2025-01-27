@@ -26,7 +26,15 @@ int main()
 {
 	std::signal(SIGINT, handle_sigint);
 	signal(SIGPIPE, sigpipe_handler);
-	webserv.configure("./test_input/aws.conf");
+	try
+	{
+		webserv.configure("./test_input/1server.conf");
+	}
+	catch (std::runtime_error &e)
+	{
+		std::cerr << e.what() << std::endl;
+		return 1;
+	}
 	// webserv.configure("./test_input/1server_indextest.conf");
 	webserv.run();
 	return 0;

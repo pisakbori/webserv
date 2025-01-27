@@ -13,6 +13,7 @@
 #include "Location.hpp"
 #include "CommonIncludes.hpp"
 #include "HttpError.hpp"
+#include "Parsing.hpp"
 
 /*
  * Server class stores information regarding server directive in the .conf
@@ -29,15 +30,17 @@ typedef struct err_page_s
 	int overwrite;
 	std::string uri;
 } err_page_t;
-
+class Location;
 class Server
 {
 	private:
 		Listen						listen;
 		std::vector<std::string>	server_name;
-		err_page_t					error_page;
+		std::vector<err_page_t>		error_page;
 		long long					client_max_body_size;
 		struct sockaddr_in			_serverAddr;
+		bool						listen_set;
+		bool						client_max_body_size_set;
 
 	// Setters
 		void						set_server(std::string directive);
@@ -60,13 +63,14 @@ class Server
 		Server &	operator=(Server const & rhs);
 
 	// Member functions
-		void						populate_server(std::ifstream & infile);
+		void						populate_server(std::istringstream & infile);
 
 	// Getters
 		Listen &					get_listen(void);
 		const Listen &				get_listen(void) const;
 		std::vector<std::string>	get_server_name(void) const;
-		err_page_t					get_error_page(void) const;
+		std::vector<err_page_t>		get_error_page(void) const;
+		err_page_t					get_error_page(const int & e_code) const;
 		long long					get_client_max_body_size(void) const;
 		std::vector<Location>		location;
 		void						startListening(void);
@@ -75,9 +79,5 @@ class Server
 		const Location &			get_location(std::string uri) const;
 };
 std::ostream &	operator<<(std::ostream & os, const Server & server);
-std::string		extract_parameters(
-	const std::string & name,
-	const std::string & directive
-	);
 
 #endif

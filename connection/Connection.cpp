@@ -108,7 +108,7 @@ int Connection::getDirectory(std::filesystem::path dirPath, std::filesystem::pat
 	}
 	else
 	{
-		if (!_location.get_index().size())
+		if (_location.get_index().empty())
 			throw HttpError("Forbidden", 403);
 		for (size_t i = 0; i < _location.get_index().size(); i++)
 		{
@@ -152,7 +152,8 @@ int Connection::getResource(std::string uri)
 	Server server;
 
 	server = getResponsibleServer();
-	_location = getResponsibleServer().get_location(uri);
+	_location = server.get_location(uri);
+	_location.validate_allowed("GET");
 	if (_location.get_redirect().first)
 		return redirect();
 	std::filesystem::path path = _location.get_route(uri);
@@ -174,6 +175,7 @@ int Connection::postResource(std::string uri)
 
 	server = getResponsibleServer();
 	_location = server.get_location(_req->getUri());
+	_location.validate_allowed("POST");
 	if (_location.get_redirect().first)
 		return redirect();
 	std::filesystem::path path = _location.get_route(uri);
@@ -204,7 +206,7 @@ int Connection::postResource(std::string uri)
 
 int Connection::setErrorResponse(const HttpError &e)
 {
-	err_page_t error_page = getResponsibleServer().get_error_page();
+	err_page_t error_page = getResponsibleServer().get_error_page(e.getCode());
 	auto v = error_page.code;
 	if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
 	{

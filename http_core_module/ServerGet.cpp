@@ -6,14 +6,32 @@ Listen &					Server::get_listen(void)
 	return listen;
 }
 
+const Listen &				Server::get_listen(void) const
+{
+	return listen;
+}
+
 std::vector<std::string>	Server::get_server_name(void) const
 {
 	return server_name;
 }
 
-err_page_t 					Server::get_error_page(void) const
+std::vector<err_page_t>		Server::get_error_page(void) const
 {
 	return error_page;
+}
+
+err_page_t					Server::get_error_page(const int &e_code) const
+{
+	for (const err_page_t& error : error_page)
+	{
+		for (const int& code : error.code)
+		{
+			if (code == e_code)
+				return error;
+		}
+	}
+	return err_page_t();
 }
 
 long long					Server::get_client_max_body_size(void) const

@@ -4,6 +4,8 @@
 #include <string>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <cstring>
 #include <unistd.h>
 #include <tuple>
 #define MAX_QUEUED 1000
@@ -29,12 +31,10 @@ class Listen
 		
 	// Overloads
 		Listen	&operator=(const Listen &);
-		bool operator<(const Listen& other) const
-		{
-			return std::tie(host, port) < std::tie(other.host, other.port);
-		}
-		
+		bool operator<(const Listen& other) const;
+
 	// Member functions
+		void			resolveHostname(const std::string& hostname);
 		void			parse_listen(std::string arg);
 		void			startListening(void);
 		void			stopListening(void);
