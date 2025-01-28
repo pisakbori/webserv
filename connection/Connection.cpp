@@ -74,12 +74,10 @@ int Connection::acceptConnection()
 	updateKeepAliveTimeout();
 	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 
-	if (pipe(_pipefd) == -1)
-	{
+	if (pipe(_cgi2parent) == -1)
 		throw std::runtime_error("Pipe failed");
-	}
-	std::cout << "pipe1 " << _pipefd[1] << std::endl;
-	std::cout << "pipe0 " << _pipefd[0] << std::endl;
+	if (pipe(_parent2cgi) == -1)
+		throw std::runtime_error("Pipe failed");
 	return fd;
 }
 
@@ -103,12 +101,10 @@ void Connection::reset()
 	_uploadedBytes = 0;
 	_close = false;
 	_cgiResult = "";
-	if (pipe(_pipefd) == -1)
-	{
+	if (pipe(_cgi2parent) == -1)
 		throw std::runtime_error("Pipe failed");
-	}
-	std::cout << Colors::YELLOW << "new fds in pipe are " << _pipefd[0] << " " << _pipefd[1] << std::endl
-			  << Colors::RESET;
+	if (pipe(_parent2cgi) == -1)
+		throw std::runtime_error("Pipe failed");
 };
 
 void Connection::append(std::string const &str)
@@ -218,14 +214,15 @@ int Connection::startCGIprocess(std::filesystem::path path)
 
 	if (_cgiPid == 0)
 	{
+		close(_parent2cgi[1]);
+		close(_cgi2parent[0]);
 		// TODO: do i need to add more stuff to args??
 		std::vector<char *> args;
 		args.push_back(const_cast<char *>(cgiPath.c_str()));
 		args.push_back(const_cast<char *>(path.c_str()));
 		args.push_back(nullptr);
-
-		close(_pipefd[0]);
-		dup2(_pipefd[1], STDOUT_FILENO);
+		dup2(_parent2cgi[0], STDIN_FILENO);
+		dup2(_cgi2parent[1], STDOUT_FILENO);
 		std::vector<char *> env;
 		for (auto it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it)
 			env.push_back(const_cast<char *>(it->c_str()));
@@ -235,10 +232,7 @@ int Connection::startCGIprocess(std::filesystem::path path)
 	}
 	else if (_cgiPid > 0)
 	{
-		std::cout << "Close from parent fd " << _pipefd[1] << std::endl;
-		close(_pipefd[1]);
-		_pipefd[1] = -1;
-		setState(CGI_STARTED);
+		setState(CGI_READ_REQ_BODY);
 	}
 	else
 	{
@@ -500,9 +494,9 @@ int Connection::processCGIOutput()
 
 void Connection::setState(int s)
 {
-	// if (_state != s)
-	// 	std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
-	// 			  << Colors::RESET;
+	if (_state != s)
+		std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
+				  << Colors::RESET;
 	_state = s;
 	if (s == Connection::RES_READY)
 		_res.setContent(_req->getMethod() != "HEAD");

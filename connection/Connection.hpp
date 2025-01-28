@@ -43,16 +43,18 @@ public:
 	size_t _sentBytes;
 	size_t _uploadedBytes;
 	bool _hasTimeout;
-	int _pipefd[2];
+	int _cgi2parent[2];
+	int _parent2cgi[2];
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ = 1;
 	static constexpr int REQ_READY = 2;
-	static constexpr int CGI_STARTED = 3;
-	static constexpr int CGI_OUTPUT_READY = 4;
-	static constexpr int READING_RESOURCE = 5;
-	static constexpr int WRITING_RESOURCE = 6;
-	static constexpr int RES_READY = 7;
-	static constexpr int RES_SENT = 8;
+	static constexpr int CGI_READ_REQ_BODY = 3;
+	// static constexpr int CGI_WRITE_OUTPUT = 4;
+	static constexpr int CGI_OUTPUT_READY = 5;
+	static constexpr int READING_RESOURCE = 6;
+	static constexpr int WRITING_RESOURCE = 7;
+	static constexpr int RES_READY = 8;
+	static constexpr int RES_SENT = 9;
 
 	// Parameterized constructor
 	Connection(const std::vector<Server>&, const std::vector<int>&, int);

@@ -43,6 +43,7 @@ private:
 	int maxFd(void) const;
 	void closeConnection(int fd);
 	void writeToSocket(Connection *c, int i);
+	void writeToCGIStdin(int i);
 
 public:
 	// Constructor

@@ -67,11 +67,12 @@ void Webserv::acceptNewConnection(int fd)
 	auto c = new Connection(_servers, _listenFdLookup[fd], fd);
 	int newfd = c->acceptConnection();
 	_connections[newfd] = c;
-	_cgiFds[c->_pipefd[0]] = newfd;
-	_cgiFds[c->_pipefd[1]] = newfd;
 	FD_SET(newfd, &_master);
-	FD_SET(c->_pipefd[0], &_master);
-	// FD_SET(c->_pipefd[1], &_master);
+
+	_cgiFds[c->_cgi2parent[0]] = newfd;
+	_cgiFds[c->_parent2cgi[1]] = newfd;
+	FD_SET(c->_cgi2parent[0], &_master);
+	FD_SET(c->_parent2cgi[1], &_master);
 	printOpenFds();
 }
 
@@ -131,10 +132,12 @@ void Webserv::closeConnection(int fd)
 {
 	std::cout << "close connection\n";
 	closeConnectionResource(fd);
-	closeFd(_connections[fd]->_pipefd[0], "for read");
-	closeFd(_connections[fd]->_pipefd[1], "for write");
-	_cgiFds.erase(_connections[fd]->_pipefd[0]);
-	_cgiFds.erase(_connections[fd]->_pipefd[1]);
+	closeFd(_connections[fd]->_cgi2parent[0], "where parent was reading from");
+	closeFd(_connections[fd]->_parent2cgi[1], "where parent was writing to");
+	_cgiFds.erase(_connections[fd]->_cgi2parent[0]);
+	_cgiFds.erase(_connections[fd]->_parent2cgi[1]);
+	// _connections[fd]->_cgi2parent[0] = -1;
+	// _connections[fd]->_cgi2parent[0] = -1;
 	delete _connections[fd];
 	_connections.erase(fd);
 	closeFd(fd, "socket");
@@ -170,7 +173,7 @@ void Webserv::readFromCGI(int fd)
 	ssize_t bytesRead = read(fd, buf, sizeof(buf));
 	if (bytesRead > 0)
 	{
-		// std::cout << "\e[2mRead " << bytesRead << " bytes from CGI " << fd << "\e[0m" << std::endl;
+		std::cout << "\e[2mRead " << bytesRead << " bytes from CGI " << fd << "\e[0m" << std::endl;
 		std::string str(buf, bytesRead);
 		_connections[_cgiFds[fd]]->appendToCGIResult(str);
 	}
@@ -181,7 +184,7 @@ void Webserv::readFromCGI(int fd)
 	}
 	else if (bytesRead == 0)
 	{
-		// std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
+		std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
 		_connections[_cgiFds[fd]]->setState(Connection::CGI_OUTPUT_READY);
 		int resourceFd = _connections[_cgiFds[fd]]->processCGIOutput();
 		if (resourceFd != -1)
@@ -191,10 +194,9 @@ void Webserv::readFromCGI(int fd)
 			FD_SET(resourceFd, &_master);
 			printOpenFds();
 		}
-
-		// add to resource file descriptors
-		_connections[_cgiFds[fd]]->_pipefd[0] = -1;
-		closeFd(fd, "cgi Fd");
+		// close cgi2parent, it finished.
+		_connections[_cgiFds[fd]]->_cgi2parent[0] = -1;
+		closeFd(fd, "cgi2parent");
 		_cgiFds.erase(fd);
 	}
 }
@@ -218,6 +220,13 @@ void Webserv::readFromSocket(int fd)
 				_resources[resourceFd] = fd;
 				FD_SET(resourceFd, &_master);
 				printOpenFds();
+			}
+			else if (_connections[fd]->getState() == Connection::CGI_READ_REQ_BODY)
+			{
+				closeFd(_connections[fd]->_cgi2parent[1], "_cgi2parent write: useless");
+				closeFd(_connections[fd]->_parent2cgi[0], "_parent2cgi read: useless");
+				_cgiFds.erase(_connections[fd]->_cgi2parent[1]);
+				_cgiFds.erase(_connections[fd]->_parent2cgi[0]);
 			}
 		}
 	}
@@ -274,6 +283,46 @@ void Webserv::writeToResourceFd(int i)
 	}
 }
 
+void Webserv::writeToCGIStdin(int i)
+{
+	std::cout << "here writeToCGIStdin" << i << std::endl;
+	auto c = _connections[_cgiFds[i]];
+	if (c->getState() != Connection::CGI_READ_REQ_BODY)
+		return;
+
+	size_t size = c->getRequest()->_bodySize;
+	if (size > 0 && c->_uploadedBytes < size)
+	{
+		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
+		int uploadedBytes = write(i, substring.c_str(), substring.size());
+		if (uploadedBytes == -1)
+		{
+			// TODO:Bori - should i even close connection or just throw 500?
+			closeConnection(_cgiFds[i]);
+			return;
+		}
+		else if (uploadedBytes > 0)
+		{
+			// std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
+			c->_uploadedBytes += uploadedBytes;
+		}
+		else
+		{
+			// TODO:Bori    no space left?? shuld i respond internal server error?
+			closeConnection(_cgiFds[i]);
+			return;
+		}
+	}
+	else
+	{
+		std::cout << "finished writing request\n";
+		// c->setState(Connection::CGI_WRITE_OUTPUT);
+		closeFd(i, "finished writing request body to CGI");
+		_cgiFds.erase(i);
+		c->_cgi2parent[0] = -1;
+	}
+}
+
 int Webserv::sendOneChunk(Connection *c, int i)
 {
 	std::string substring = c->getResponse().getContent(c->_sentBytes, WRITE_BUFFER_SIZE);
@@ -327,15 +376,15 @@ void Webserv::writeToSocket(Connection *c, int i)
 			}
 			else
 			{
-				closeFd(_connections[i]->_pipefd[0], "for read");
-				closeFd(_connections[i]->_pipefd[1], "for write");
-				_cgiFds.erase(_connections[i]->_pipefd[0]);
-				_cgiFds.erase(_connections[i]->_pipefd[1]);
+				closeFd(_connections[i]->_cgi2parent[0], "for read");
+				_cgiFds.erase(_connections[i]->_cgi2parent[0]);
+				closeFd(_connections[i]->_parent2cgi[1], "for write");
+				_cgiFds.erase(_connections[i]->_parent2cgi[1]);
 				c->reset();
-				_cgiFds[c->_pipefd[0]] = i;
-				_cgiFds[c->_pipefd[1]] = i;
-				FD_SET(c->_pipefd[0], &_master);
-				// FD_SET(c->_pipefd[1], &_master);
+				_cgiFds[c->_cgi2parent[0]] = i;
+				FD_SET(c->_cgi2parent[0], &_master);
+				_cgiFds[c->_parent2cgi[1]] = i;
+				FD_SET(c->_parent2cgi[1], &_master);
 				printOpenFds();
 			}
 		}
@@ -357,6 +406,10 @@ void Webserv::onWrite(int i)
 		c->checkTimeout();
 		if (c->getState() == Connection::RES_READY)
 			writeToSocket(c, i);
+	}
+	else if (isCGI(i) && _connections[_cgiFds[i]]->_parent2cgi[1] == i)
+	{
+		writeToCGIStdin(i);
 	}
 }
 

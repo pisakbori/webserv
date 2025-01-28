@@ -13,6 +13,6 @@ print("</body>")
 print("</html>")
 
 # Sleep for 7 seconds
-time.sleep(7)
+time.sleep(1)
 
 raise Exception("Sorry, I have to fail here")
