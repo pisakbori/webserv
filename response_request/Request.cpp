@@ -29,6 +29,7 @@ Request &Request::operator=(const Request &other)
 	// std::cout << "\e[2mAssign operator Request called\e[0m" << std::endl;
 	if (this != &other)
 	{
+		HttpMessage::operator=(other);
 		_input = other._input;
 		_method = other._method;
 		_protocol = other._protocol;
@@ -177,11 +178,6 @@ bool Request::hasConnectionClose() const
 		key = it->second;
 	std::transform(key.begin(), key.end(), key.begin(), ::toupper );
 	return (key == "CLOSE");
-}
-
-const std::map<std::string, std::string> &Request::getHeader() const
-{
-	return _header;
 }
 
 // Setters

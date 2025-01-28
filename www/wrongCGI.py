@@ -12,4 +12,7 @@ print("<h1>Hello, World!</h1>")
 print("</body>")
 print("</html>")
 
+# Sleep for 7 seconds
+time.sleep(7)
+
 raise Exception("Sorry, I have to fail here")

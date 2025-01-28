@@ -30,7 +30,6 @@ HttpMessage::~HttpMessage()
 // Overloads
 HttpMessage &HttpMessage::operator=(const HttpMessage &other)
 {
-
 	if (this != &other)
 	{
 		_header = other._header;
@@ -66,5 +65,10 @@ void HttpMessage::parseFieldLine(std::string &line, bool *headerRead, int errorC
 }
 
 // Getters
+
+const std::map<std::string, std::string> &HttpMessage::getHeader() const
+{
+	return _header;
+}
 
 // Setters

@@ -29,6 +29,7 @@ public:
 	void parseFieldLine(std::string &line, bool *headerRead, int errorCode);
 
 	// Getters
+	const std::map<std::string, std::string> &getHeader() const;
 
 	// Setters
 };

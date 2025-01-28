@@ -48,4 +48,6 @@ public:
 	void setCode(int code);
 };
 
+std::ostream &operator<<(std::ostream &os, const Response &res);
+
 #endif

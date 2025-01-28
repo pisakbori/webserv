@@ -101,6 +101,7 @@ Response &Response::operator=(const Response &other)
     // std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
     if (this != &other)
     {
+        HttpMessage::operator=(other);
         setCode(other._statusCode);
         _body = std::make_unique<std::string>(*other._body);
         _fullContent = std::make_unique<std::string>(*other._fullContent);
@@ -129,6 +130,7 @@ void Response::setContentType(std::string const &str)
 
 void Response::appendToHeader(std::string key, std::string value)
 {
+    std::transform(key.begin(), key.end(), key.begin(), ::toupper);
     _header[key] = value;
 }
 
@@ -215,7 +217,12 @@ void Response::setCGIContent(std::string cgiOutput)
         {
             std::string code = _header["STATUS"].substr(0, 3);
             if (!code.empty() && std::all_of(code.begin(), code.end(), ::isdigit))
+            {
+                int n = stoi(code);
+                if (n != 200)
+                    throw HttpError("CGI exited correctly but threw an error and communicated it.", n);
                 setCode(stoi(code));
+            }
             else
                 setCode(200);
         }
@@ -305,4 +312,13 @@ void Response::setCode(int code)
 {
     _statusCode = code;
     _statusText = statuses[_statusCode];
+}
+
+std::ostream &operator<<(std::ostream &os, const Response &res)
+{
+    for (auto it = res.getHeader().begin(); it != res.getHeader().end(); ++it)
+    {
+        std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
+    }
+    return os;
 }

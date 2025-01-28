@@ -166,8 +166,6 @@ void Webserv::readFromResource(int fd)
 
 void Webserv::readFromCGI(int fd)
 {
-	if (_connections[_cgiFds[fd]]->getState() != Connection::CGI_STARTED)
-		return;
 	char buf[READ_BUFFER_SIZE];
 	ssize_t bytesRead = read(fd, buf, sizeof(buf));
 	if (bytesRead > 0)
