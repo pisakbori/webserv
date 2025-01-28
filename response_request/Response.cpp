@@ -165,6 +165,10 @@ std::string getHttpDate()
 }
 
 // Getters
+int Response::getCode() const
+{
+    return _statusCode;
+}
 
 const std::string Response::getContent(std::size_t from, std::size_t size) const
 {
@@ -218,9 +222,6 @@ void Response::setCGIContent(std::string cgiOutput)
             std::string code = _header["STATUS"].substr(0, 3);
             if (!code.empty() && std::all_of(code.begin(), code.end(), ::isdigit))
             {
-                int n = stoi(code);
-                if (n != 200)
-                    throw HttpError("CGI exited correctly but threw an error and communicated it.", n);
                 setCode(stoi(code));
             }
             else

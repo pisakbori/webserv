@@ -41,6 +41,7 @@ public:
 	// Getters
 	const std::string getContent(std::size_t from, std::size_t to) const;
 	std::size_t getSize() const;
+	int getCode() const;
 	// Setters
 	void setContent(bool withBody = true);
 	void setCGIContent(std::string cgiOutput);

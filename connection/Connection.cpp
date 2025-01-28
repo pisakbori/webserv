@@ -459,18 +459,16 @@ int Connection::processCGIOutput()
 			throw HttpError("CGI did not terminate normally", 500);
 		}
 		_res.setCGIContent(_cgiResult);
+		err_page_t error_page = getResponsibleServer().get_error_page(_res.getCode());
+		auto v = error_page.code;
+		if (std::find(v.begin(), v.end(), _res.getCode()) != v.end())
+			throw HttpError("CGI exited correctly but set error code", _res.getCode());
 		_state = RES_READY;
 		return -1;
 	}
 	catch (const HttpError &e)
 	{
-		// if cgi throws any error code that we have to redirect, we keep it, otherwise 500.
-		err_page_t error_page = getResponsibleServer().get_error_page(e.getCode());
-		auto v = error_page.code;
-		if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
-			return setErrorResponse(e);
-		else
-			return setErrorResponse(HttpError(e.what(), 500));
+		return setErrorResponse(e);
 	}
 	catch (const std::exception &e)
 	{
