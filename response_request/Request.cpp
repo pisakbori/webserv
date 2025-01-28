@@ -93,11 +93,7 @@ void Request::parseContentLength(Connection *c, std::istringstream &stream)
 		throw HttpError("Bad Request", 400);
 	std::string	value;
 	value = _header["CONTENT-LENGTH"];
-	if (value.find_first_not_of("0123456789") != std::string::npos)
-		throw HttpError("Bad Request", 400);
-	long long size = std::stoll(value);
-	if (size > c->getResponsibleServer().get_client_max_body_size())
-		throw HttpError("Payload Too Large", 413);
+	auto size = Validate::contentLength(value, c->getResponsibleServer().get_client_max_body_size());
 	_bodySize = size;
 	char ch;
 	// TODO: if header read, only append to body would be ideal..
@@ -110,7 +106,7 @@ void Request::parseContentLength(Connection *c, std::istringstream &stream)
 	if (size > 0)
 		return;
 	else if (stream.get(ch))
-		throw HttpError("Request body is greater than Content-length", 400);
+		throw HttpError("Request body is greater than CONTENT-LENGTH", 400);
 	c->setState(Connection::REQ_READY);
 }
 
@@ -139,7 +135,7 @@ void Request::parseRequest(Connection *c)
 	else if (_method == "POST")
 	{
 		// TODO: Chunked transfer encoding?
-		throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);
+		throw HttpError("CONTENT-LENGTH or Transfer-Encoding header is required.", 411);
 	}
 	else
 		c->setState(Connection::REQ_READY);

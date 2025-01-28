@@ -76,6 +76,7 @@ public:
 	void updateKeepAliveTimeout();
 	void executeCGI(std::filesystem::path path, std::filesystem::path cgiPath);
 	void parseCGIOutput();
+	int processCGIOutput();
 
 	// Getters
 	const std::vector<Server>& getServ() const;

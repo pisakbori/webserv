@@ -172,19 +172,29 @@ void Webserv::readFromCGI(int fd)
 	ssize_t bytesRead = read(fd, buf, sizeof(buf));
 	if (bytesRead > 0)
 	{
-		std::cout << "\e[2mRead " << bytesRead << " bytes from resource " << fd << "\e[0m" << std::endl;
+		std::cout << "\e[2mRead " << bytesRead << " bytes from CGI " << fd << "\e[0m" << std::endl;
 		std::string str(buf, bytesRead);
 		_connections[_cgiFds[fd]]->appendToCGIResult(str);
 	}
 	else if (bytesRead < 0)
 	{
-		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
+		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from CGI" << fd << Colors::RESET << std::endl;
 		// TODO:Bori disconnect?
 	}
 	else if (bytesRead == 0)
 	{
 		std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
 		_connections[_cgiFds[fd]]->setState(Connection::CGI_OUTPUT_READY);
+		int resourceFd = _connections[_cgiFds[fd]]->processCGIOutput();
+		if (resourceFd != -1)
+		{
+			std::cout << "set resource " << resourceFd << std::endl;
+			_resources[resourceFd] = _cgiFds[fd];
+			FD_SET(resourceFd, &_master);
+			printOpenFds();
+		}
+
+		// add to resource file descriptors
 		_connections[_cgiFds[fd]]->_pipefd[0] = -1;
 		closeFd(fd);
 		_cgiFds.erase(fd);
@@ -206,6 +216,7 @@ void Webserv::readFromSocket(int fd)
 			int resourceFd = _connections[fd]->process();
 			if (resourceFd != -1)
 			{
+				std::cout << "set resource " << resourceFd << std::endl;
 				_resources[resourceFd] = fd;
 				FD_SET(resourceFd, &_master);
 				printOpenFds();
@@ -360,7 +371,7 @@ void Webserv::onRead(int fd)
 		readFromResource(fd);
 	else if (isConnection(fd))
 		readFromSocket(fd);
-	if (isCGI(fd))
+	else if (isCGI(fd))
 		readFromCGI(fd);
 }
 

@@ -177,13 +177,13 @@ std::size_t Response::getSize() const
 void Response::setContent(bool withBody)
 {
     std::stringstream content;
-    content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
-    content << "Date: " << getHttpDate() << std::endl;
-    content << "Content-Length: " << _body->size() << std::endl;
-    content << "Server: 4/2Elephants" << std::endl;
-    content << "Keep-Alive: timeout=" << KEEPALIVE_TIMEOUT << "s" << std::endl;
+    appendToHeader("DATE", getHttpDate());
+    appendToHeader("CONTENT-LENGTH", std::to_string(_body->size()));
+    appendToHeader("SERVER", "4/2Elephants");
+    appendToHeader("KEEP-ALIVE", "timeout=" + std::to_string(KEEPALIVE_TIMEOUT) + "s");
     if (_statusCode == 408)
-        content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
+        appendToHeader("CONNECTION", "close");
+    content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
     for (auto it = _header.begin(); it != _header.end(); ++it)
     {
         content << it->first << ": " << it->second << std::endl;
@@ -199,17 +199,15 @@ void Response::setCGIContent(std::string cgiOutput)
 {
     std::string line;
     std::istringstream stream(cgiOutput);
+    std::cout << "setting cgi response " << cgiOutput << std::endl;
 
     if (cgiOutput.find("\n\n") == std::string::npos &&
         cgiOutput.find("\r\n\r\n") == std::string::npos)
     {
-        std::cout << "doesnt have header fields\n"
-                  << cgiOutput;
         _body->append(cgiOutput);
     }
     else
     {
-        // take out any header fields.
         bool headerRead = false;
         while (!headerRead && std::getline(stream, line))
             parseFieldLine(line, &headerRead, 500);
@@ -225,9 +223,17 @@ void Response::setCGIContent(std::string cgiOutput)
             setCode(200);
         if (_header.find("CONTENT-TYPE") == _header.end())
             setContentType(".html");
+        size_t size = SIZE_MAX;
+        if (_header.find("CONTENT-LENGTH") != _header.end())
+        {
+            size = Validate::contentLength(_header["CONTENT-LENGTH"], size);
+        }
         char ch;
-        while (stream.get(ch))
+        while (stream.get(ch) && size > 0)
+        {
             _body->push_back(ch);
+            size--;
+        }
     }
     setContent();
 }

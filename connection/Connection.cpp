@@ -126,10 +126,6 @@ void Connection::appendToResponseBody(std::string const &str)
 void Connection::appendToCGIResult(std::string const &str)
 {
 	_cgiResult.append(str);
-	std::cout << Colors::GREEN << "read from CGI!" << std::endl
-			  << Colors::RESET;
-	std::cout << Colors::GREEN << str << std::endl
-			  << Colors::RESET;
 }
 
 int Connection::getDirectory(std::filesystem::path dirPath)
@@ -198,7 +194,6 @@ void Connection::executeCGI(std::filesystem::path path, std::filesystem::path cg
 	// pass the body to the CGI script via stdin
 
 	env.push_back(nullptr);
-	setState(CGI_STARTED);
 	_cgiPid = fork();
 
 	if (_cgiPid == 0)
@@ -222,6 +217,8 @@ void Connection::executeCGI(std::filesystem::path path, std::filesystem::path cg
 		// 	// In the parent process
 		std::cout << "Close from parent fd " << _pipefd[1] << std::endl;
 		close(_pipefd[1]);
+		setState(CGI_STARTED);
+
 		// 	int status;
 		// 	waitpid(pid, &status, 0); // Wait for the child process to finish
 		// 	std::cout << "Child process has finished executing." << std::endl;
@@ -394,7 +391,7 @@ int Connection::process()
 
 			// replace to match with all cgi extensions
 			if (path.extension() == ".py")
-				handleCGI(path);
+				return handleCGI(path);
 			else if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
 				return getResource(path);
 			else if (_req->getMethod() == "POST")
@@ -467,6 +464,27 @@ bool Connection::hasConnectionClose() const
 
 // Setters
 
+int Connection::processCGIOutput()
+{
+	try
+	{
+		int status;
+		waitpid(_cgiPid, &status, 0);
+		if (status != 0)
+		{
+			throw HttpError("CGI did not terminate normally", 500);
+		}
+		_res.setCGIContent(_cgiResult);
+		_state = RES_READY;
+		return -1;
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "set error response" << std::endl;
+		return setErrorResponse(HttpError(e.what(), 500));
+	}
+}
+
 void Connection::setState(int s)
 {
 	if (_state != s)
@@ -475,23 +493,6 @@ void Connection::setState(int s)
 	_state = s;
 	if (s == Connection::RES_READY)
 		_res.setContent(_req->getMethod() != "HEAD");
-	else if (s == Connection::CGI_OUTPUT_READY)
-	{
-		try
-		{
-			int status;
-			waitpid(_cgiPid, &status, 0);
-			if (status != 0)
-				throw HttpError("CGI did not terminate normally", 500);
-			_res.setCGIContent(_cgiResult);
-		}
-		catch (const std::exception &e)
-		{
-			setErrorResponse(e);
-		}
-
-		_state = RES_READY;
-	}
 }
 
 void Connection::setResponsibleServer(int i)
