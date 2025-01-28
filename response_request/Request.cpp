@@ -31,6 +31,7 @@ Request &Request::operator=(const Request &other)
 	{
 		_input = other._input;
 		_header = other._header;
+		_query = other._query;
 		_method = other._method;
 		_protocol = other._protocol;
 		_uri = other._uri;
@@ -45,6 +46,10 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 	std::cout << "Method: " << req.getMethod() << std::endl;
 	std::cout << "Protocol: " << req.getProtocol() << std::endl;
 	std::cout << "URI: " << req.getUri() << std::endl;
+	for (auto it = req.getQuery().begin(); it != req.getQuery().end(); ++it)
+	{
+		std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
+	}
 	for (auto it = req.getHeader().begin(); it != req.getHeader().end(); ++it)
 	{
 		std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
@@ -87,7 +92,6 @@ void Request::extractQueryString()
 			std::string	key, value;
 			key = line.substr(0, equal_pos);
 			value = line.substr(equal_pos + 1);
-			// std::cout << key << " " << value << std::endl;
 			_query[key] = value;
 		}
 		else
@@ -107,8 +111,7 @@ void Request::parseRequestLine(std::string &line)
 	std::istringstream stream(line);
 
 	stream >> _method >> _uri >> _protocol;
-	if (_method.empty() || _uri.empty() ||
-		_uri.front() == '?' || _protocol.empty())
+	if (_method.empty() || _uri.empty() || _protocol.empty())
 		throw HttpError("Bad Request", 400);
 	Validate::url(_uri);
 	extractQueryString();
@@ -240,6 +243,11 @@ bool Request::hasConnectionClose() const
 const std::map<std::string, std::string> &Request::getHeader() const
 {
 	return _header;
+}
+
+const std::map<std::string, std::string> &Request::getQuery() const
+{
+	return _query;
 }
 
 // Setters
