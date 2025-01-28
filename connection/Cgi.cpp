@@ -1,7 +1,5 @@
 #include "Cgi.hpp"
 
-#include <iostream>
-
 // Constructor
 Cgi::Cgi()
 {
@@ -39,6 +37,70 @@ Cgi &Cgi::operator=(const Cgi &other)
 }
 
 // Member functions
+void Cgi::setCgiEnv(const Request *req, std::string cgiPath)
+{
+	_cgiEnv = std::vector<std::string>{};
+	for (auto it = req->getHeader().begin(); it != req->getHeader().end(); ++it)
+	{
+		std::string key = it->first;
+		std::replace(key.begin(), key.end(), '-', '_');
+		if (key != "CONTENT_LENGTH" && key != "CONTENT_TYPE")
+			key = "HTTP_" + key;
+		_cgiEnv.push_back(key + "=" + it->second);
+	}
+	_cgiEnv.push_back("REQUEST_METHOD=" + req->getMethod());
+	_cgiEnv.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	// _cgiEnv.push_back("QUERY_STRING=" + _req->getQuery());
+	_cgiEnv.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	// TODO:Marian pls put servername here
+	// SERVER_NAME: The server's hostname or IP address.
+	// SERVER_PORT: The port number on which the server is listening.
+	// relative path to the CGI script from the document root, including the script’s name but excluding any query string
+	// REMOTE_ADDR: The IP address of the client making the request.?????
+	// REMOTE_PORT: The port number of the client making the request. ????
+	_cgiEnv.push_back("SCRIPT_NAME=" + cgiPath); // The path of the CGI script relative to the server's root.  mine is not good
+	_cgiEnv.push_back("REQUEST_URI=" + req->getUri());
+};
+
+void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const Location &location)
+{
+	std::string cgiPath = location.get_cgi_path();
+	// pass the body to the CGI script via stdin
+	setCgiEnv(req, cgiPath);
+
+	_cgiPid = fork();
+
+	if (_cgiPid == 0)
+	{
+		close(_parent2cgi[1]);
+		close(_cgi2parent[0]);
+		// TODO: do i need to add more stuff to args??
+		std::vector<char *> args;
+		args.push_back(const_cast<char *>(cgiPath.c_str()));
+		args.push_back(const_cast<char *>(path.c_str()));
+		args.push_back(nullptr);
+		dup2(_parent2cgi[0], STDIN_FILENO);
+		dup2(_cgi2parent[1], STDOUT_FILENO);
+		std::vector<char *> env;
+		for (auto it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it)
+			env.push_back(const_cast<char *>(it->c_str()));
+		env.push_back(nullptr);
+		if (execve(cgiPath.c_str(), args.data(), env.data()) == -1)
+			exit(EXIT_FAILURE);
+	}
+	else if (_cgiPid < 0)
+	{
+		throw HttpError("CGI failed to fork", 500);
+	}
+}
+
+void Cgi::setPipes()
+{
+	if (pipe(_cgi2parent) == -1)
+		throw std::runtime_error("Pipe failed");
+	if (pipe(_parent2cgi) == -1)
+		throw std::runtime_error("Pipe failed");
+}
 
 // Getters
 

@@ -7,6 +7,7 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 	_fd(fd)
 {
 	_req = new Request();
+	_cgi = new Cgi();
 	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	_state = WAITING_REQ;
@@ -74,10 +75,8 @@ int Connection::acceptConnection()
 	updateKeepAliveTimeout();
 	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 
-	if (pipe(_cgi2parent) == -1)
-		throw std::runtime_error("Pipe failed");
-	if (pipe(_parent2cgi) == -1)
-		throw std::runtime_error("Pipe failed");
+	_cgi->setPipes();
+
 	return fd;
 }
 
@@ -101,10 +100,7 @@ void Connection::reset()
 	_uploadedBytes = 0;
 	_close = false;
 	_cgiResult = "";
-	if (pipe(_cgi2parent) == -1)
-		throw std::runtime_error("Pipe failed");
-	if (pipe(_parent2cgi) == -1)
-		throw std::runtime_error("Pipe failed");
+	_cgi->setPipes();
 };
 
 void Connection::append(std::string const &str)
@@ -178,69 +174,6 @@ void Connection::parseCGIOutput()
 	_res.appendToBody(_cgiResult);
 }
 
-void Connection::setCgiEnv(std::string cgiPath)
-{
-	_cgiEnv = std::vector<std::string>{};
-	for (auto it = _req->getHeader().begin(); it != _req->getHeader().end(); ++it)
-	{
-		std::string key = it->first;
-		std::replace(key.begin(), key.end(), '-', '_');
-		if (key != "CONTENT_LENGTH" && key != "CONTENT_TYPE")
-			key = "HTTP_" + key;
-		_cgiEnv.push_back(key + "=" + it->second);
-	}
-	_cgiEnv.push_back("REQUEST_METHOD=" + _req->getMethod());
-	_cgiEnv.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	// _cgiEnv.push_back("QUERY_STRING=" + _req->getQuery());
-	_cgiEnv.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	// TODO:Marian pls put servername here
-	// SERVER_NAME: The server's hostname or IP address.
-	// SERVER_PORT: The port number on which the server is listening.
-	// relative path to the CGI script from the document root, including the script’s name but excluding any query string
-	// REMOTE_ADDR: The IP address of the client making the request.?????
-	// REMOTE_PORT: The port number of the client making the request. ????
-	_cgiEnv.push_back("SCRIPT_NAME=" + cgiPath); // The path of the CGI script relative to the server's root.  mine is not good
-	_cgiEnv.push_back("REQUEST_URI=" + _req->getUri());
-};
-
-int Connection::startCGIprocess(std::filesystem::path path)
-{
-
-	std::string cgiPath = _location.get_cgi_path();
-	// pass the body to the CGI script via stdin
-	setCgiEnv(cgiPath);
-
-	_cgiPid = fork();
-
-	if (_cgiPid == 0)
-	{
-		close(_parent2cgi[1]);
-		close(_cgi2parent[0]);
-		// TODO: do i need to add more stuff to args??
-		std::vector<char *> args;
-		args.push_back(const_cast<char *>(cgiPath.c_str()));
-		args.push_back(const_cast<char *>(path.c_str()));
-		args.push_back(nullptr);
-		dup2(_parent2cgi[0], STDIN_FILENO);
-		dup2(_cgi2parent[1], STDOUT_FILENO);
-		std::vector<char *> env;
-		for (auto it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it)
-			env.push_back(const_cast<char *>(it->c_str()));
-		env.push_back(nullptr);
-		if (execve(cgiPath.c_str(), args.data(), env.data()) == -1)
-			exit(EXIT_FAILURE);
-	}
-	else if (_cgiPid > 0)
-	{
-		setState(CGI_READ_REQ_BODY);
-	}
-	else
-	{
-		throw HttpError("CGI failed to fork", 500);
-	}
-	return -1;
-}
-
 int Connection::getResource(std::filesystem::path path)
 {
 	_redirections++;
@@ -282,7 +215,7 @@ int Connection::postResource(std::filesystem::path path)
 	return resourceFd;
 }
 
-static bool file_in_use(const std::string& filePath)
+static bool file_in_use(const std::string &filePath)
 {
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	return !file.is_open();
@@ -391,7 +324,11 @@ int Connection::process()
 
 			// replace to match with all cgi extensions
 			if (path.extension() == _location.get_cgi_extension())
-				return startCGIprocess(path);
+			{
+				_cgi->startCGIprocess(_req, path, _location);
+				setState(CGI_READ_REQ_BODY);
+				return -1;
+			}
 			else if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
 				return getResource(path);
 			else if (_req->getMethod() == "POST")
@@ -469,7 +406,7 @@ int Connection::processCGIOutput()
 	try
 	{
 		int status;
-		waitpid(_cgiPid, &status, 0);
+		waitpid(_cgi->_cgiPid, &status, 0);
 		if (status != 0)
 		{
 			throw HttpError("CGI did not terminate normally", 500);

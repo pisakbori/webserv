@@ -4,6 +4,7 @@
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
+#include "Cgi.hpp"
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -11,6 +12,7 @@
 #include <memory>
 
 class Request;
+class Cgi;
 
 class Connection
 {
@@ -19,32 +21,28 @@ private:
 	const std::vector<int>& _valid_servers;
 	int _responsible_server;
 	int _fd;
-	pid_t _cgiPid;
+
 	Response _res;
-	Request *_req;
 	Location _location;
 	std::chrono::system_clock::time_point _keepAliveTimeout;
 	std::chrono::system_clock::time_point _clientHeaderTimeout;
 	std::string _cgiResult;
 	int _redirections;
-	std::vector<std::string> _cgiEnv;
-	int startCGIprocess(std::filesystem::path uri);
 	int getResource(std::filesystem::path path);
 	int openResource(std::filesystem::path path);
 	int postResource(std::filesystem::path path);
 	int deleteResource(std::string path);
 	int redirect();
 	int setErrorResponse(const std::exception &e);
-	void setCgiEnv(std::string cgiPath);
 	int _state;
 	bool _close;
 
 public:
+	Cgi *_cgi;
+	Request *_req;
 	size_t _sentBytes;
 	size_t _uploadedBytes;
 	bool _hasTimeout;
-	int _cgi2parent[2];
-	int _parent2cgi[2];
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ = 1;
 	static constexpr int REQ_READY = 2;

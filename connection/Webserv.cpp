@@ -69,10 +69,10 @@ void Webserv::acceptNewConnection(int fd)
 	_connections[newfd] = c;
 	FD_SET(newfd, &_master);
 
-	_cgiFds[c->_cgi2parent[0]] = newfd;
-	_cgiFds[c->_parent2cgi[1]] = newfd;
-	FD_SET(c->_cgi2parent[0], &_master);
-	FD_SET(c->_parent2cgi[1], &_master);
+	_cgiFds[c->_cgi->_cgi2parent[0]] = newfd;
+	_cgiFds[c->_cgi->_parent2cgi[1]] = newfd;
+	FD_SET(c->_cgi->_cgi2parent[0], &_master);
+	FD_SET(c->_cgi->_parent2cgi[1], &_master);
 	printOpenFds();
 }
 
@@ -132,10 +132,10 @@ void Webserv::closeConnection(int fd)
 {
 	std::cout << "close connection\n";
 	closeConnectionResource(fd);
-	closeFd(_connections[fd]->_cgi2parent[0], "where parent was reading from");
-	closeFd(_connections[fd]->_parent2cgi[1], "where parent was writing to");
-	_cgiFds.erase(_connections[fd]->_cgi2parent[0]);
-	_cgiFds.erase(_connections[fd]->_parent2cgi[1]);
+	closeFd(_connections[fd]->_cgi->_cgi2parent[0], "where parent was reading from");
+	closeFd(_connections[fd]->_cgi->_parent2cgi[1], "where parent was writing to");
+	_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[0]);
+	_cgiFds.erase(_connections[fd]->_cgi->_parent2cgi[1]);
 	// _connections[fd]->_cgi2parent[0] = -1;
 	// _connections[fd]->_cgi2parent[0] = -1;
 	delete _connections[fd];
@@ -195,7 +195,7 @@ void Webserv::readFromCGI(int fd)
 			printOpenFds();
 		}
 		// close cgi2parent, it finished.
-		_connections[_cgiFds[fd]]->_cgi2parent[0] = -1;
+		_connections[_cgiFds[fd]]->_cgi->_cgi2parent[0] = -1;
 		closeFd(fd, "cgi2parent");
 		_cgiFds.erase(fd);
 	}
@@ -223,10 +223,10 @@ void Webserv::readFromSocket(int fd)
 			}
 			else if (_connections[fd]->getState() == Connection::CGI_READ_REQ_BODY)
 			{
-				closeFd(_connections[fd]->_cgi2parent[1], "_cgi2parent write: useless");
-				closeFd(_connections[fd]->_parent2cgi[0], "_parent2cgi read: useless");
-				_cgiFds.erase(_connections[fd]->_cgi2parent[1]);
-				_cgiFds.erase(_connections[fd]->_parent2cgi[0]);
+				closeFd(_connections[fd]->_cgi->_cgi2parent[1], "_cgi2parent write: useless");
+				closeFd(_connections[fd]->_cgi->_parent2cgi[0], "_parent2cgi read: useless");
+				_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[1]);
+				_cgiFds.erase(_connections[fd]->_cgi->_parent2cgi[0]);
 			}
 		}
 	}
@@ -318,7 +318,7 @@ void Webserv::writeToCGIStdin(int i)
 		// c->setState(Connection::CGI_WRITE_OUTPUT);
 		closeFd(i, "finished writing request body to CGI");
 		_cgiFds.erase(i);
-		c->_parent2cgi[1] = -1;
+		c->_cgi->_parent2cgi[1] = -1;
 	}
 }
 
@@ -375,15 +375,15 @@ void Webserv::writeToSocket(Connection *c, int i)
 			}
 			else
 			{
-				closeFd(_connections[i]->_cgi2parent[0], "for read");
-				_cgiFds.erase(_connections[i]->_cgi2parent[0]);
-				closeFd(_connections[i]->_parent2cgi[1], "for write");
-				_cgiFds.erase(_connections[i]->_parent2cgi[1]);
+				closeFd(_connections[i]->_cgi->_cgi2parent[0], "for read");
+				_cgiFds.erase(_connections[i]->_cgi->_cgi2parent[0]);
+				closeFd(_connections[i]->_cgi->_parent2cgi[1], "for write");
+				_cgiFds.erase(_connections[i]->_cgi->_parent2cgi[1]);
 				c->reset();
-				_cgiFds[c->_cgi2parent[0]] = i;
-				FD_SET(c->_cgi2parent[0], &_master);
-				_cgiFds[c->_parent2cgi[1]] = i;
-				FD_SET(c->_parent2cgi[1], &_master);
+				_cgiFds[c->_cgi->_cgi2parent[0]] = i;
+				FD_SET(c->_cgi->_cgi2parent[0], &_master);
+				_cgiFds[c->_cgi->_parent2cgi[1]] = i;
+				FD_SET(c->_cgi->_parent2cgi[1], &_master);
 				printOpenFds();
 			}
 		}
@@ -406,7 +406,7 @@ void Webserv::onWrite(int i)
 		if (c->getState() == Connection::RES_READY)
 			writeToSocket(c, i);
 	}
-	else if (isCGI(i) && _connections[_cgiFds[i]]->_parent2cgi[1] == i)
+	else if (isCGI(i) && _connections[_cgiFds[i]]->_cgi->_parent2cgi[1] == i)
 	{
 		writeToCGIStdin(i);
 	}
