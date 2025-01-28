@@ -182,20 +182,38 @@ void Connection::parseCGIOutput()
 	_res.appendToBody(_cgiResult);
 }
 
+void Connection::setCgiEnv(std::string cgiPath)
+{
+	_cgiEnv = std::vector<std::string>{};
+	for (auto it = _req->getHeader().begin(); it != _req->getHeader().end(); ++it)
+	{
+		std::string key = it->first;
+		std::replace(key.begin(), key.end(), '-', '_');
+		if (key != "CONTENT_LENGTH" && key != "CONTENT_TYPE")
+			key = "HTTP_" + key;
+		_cgiEnv.push_back(key + "=" + it->second);
+	}
+	_cgiEnv.push_back("REQUEST_METHOD=" + _req->getMethod());
+	_cgiEnv.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	// _cgiEnv.push_back("QUERY_STRING=" + _req->getQuery());
+	_cgiEnv.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	// TODO:Marian pls put servername here
+	// SERVER_NAME: The server's hostname or IP address.
+	// SERVER_PORT: The port number on which the server is listening.
+	// relative path to the CGI script from the document root, including the script’s name but excluding any query string
+	// REMOTE_ADDR: The IP address of the client making the request.?????
+	// REMOTE_PORT: The port number of the client making the request. ????
+	_cgiEnv.push_back("SCRIPT_NAME=" + cgiPath); // The path of the CGI script relative to the server's root.  mine is not good
+	_cgiEnv.push_back("REQUEST_URI=" + _req->getUri());
+};
+
 int Connection::startCGIprocess(std::filesystem::path path)
 {
 
 	std::string cgiPath = _location.get_cgi_path();
-	std::vector<char *> env;
-	for (auto it = _req->getHeader().begin(); it != _req->getHeader().end(); ++it)
-	{
-		std::string value = it->first + "=" + it->second;
-		env.push_back(const_cast<char *>(value.c_str()));
-	}
-	// TODO: set REQUEST_METHOD, QUERY_STRING
 	// pass the body to the CGI script via stdin
+	setCgiEnv(cgiPath);
 
-	env.push_back(nullptr);
 	_cgiPid = fork();
 
 	if (_cgiPid == 0)
@@ -208,7 +226,10 @@ int Connection::startCGIprocess(std::filesystem::path path)
 
 		close(_pipefd[0]);
 		dup2(_pipefd[1], STDOUT_FILENO);
-
+		std::vector<char *> env;
+		for (auto it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it)
+			env.push_back(const_cast<char *>(it->c_str()));
+		env.push_back(nullptr);
 		if (execve(cgiPath.c_str(), args.data(), env.data()) == -1)
 			exit(EXIT_FAILURE);
 	}
@@ -216,6 +237,7 @@ int Connection::startCGIprocess(std::filesystem::path path)
 	{
 		std::cout << "Close from parent fd " << _pipefd[1] << std::endl;
 		close(_pipefd[1]);
+		_pipefd[1] = -1;
 		setState(CGI_STARTED);
 	}
 	else
@@ -478,9 +500,9 @@ int Connection::processCGIOutput()
 
 void Connection::setState(int s)
 {
-	if (_state != s)
-		std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
-				  << Colors::RESET;
+	// if (_state != s)
+	// 	std::cout << Colors::YELLOW << "status set from " << _state << " to " << s << std::endl
+	// 			  << Colors::RESET;
 	_state = s;
 	if (s == Connection::RES_READY)
 		_res.setContent(_req->getMethod() != "HEAD");

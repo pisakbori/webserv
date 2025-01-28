@@ -64,7 +64,7 @@ public:
 	void configure(std::string configFile);
 	void run(void);
 	void stop();
-	void closeFd(int i);
+	void closeFd(int i, std::string type = "");
 	void printOpenFds() const;
 	void closeConnectionResource(int fd);
 	// Getters

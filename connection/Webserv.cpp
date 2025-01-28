@@ -102,11 +102,11 @@ void Webserv::printOpenFds() const
 			  << Colors::RESET;
 }
 
-void Webserv::closeFd(int fd)
+void Webserv::closeFd(int fd, std::string type)
 {
 	if (fd == -1)
 		return;
-	std::cout << "------------------------- Close fd: " << fd << std::endl;
+	std::cout << "------------------------- Close fd: " << fd << " " << type << std::endl;
 	close(fd);
 	FD_CLR(fd, &_master);
 	printOpenFds();
@@ -122,7 +122,7 @@ void Webserv::closeConnectionResource(int fd)
 						   });
 	if (it != _resources.end())
 	{
-		closeFd(it->first);
+		closeFd(it->first, "connecion resource");
 		_resources.erase(it->first);
 	}
 }
@@ -131,13 +131,13 @@ void Webserv::closeConnection(int fd)
 {
 	std::cout << "close connection\n";
 	closeConnectionResource(fd);
-	closeFd(_connections[fd]->_pipefd[0]);
-	closeFd(_connections[fd]->_pipefd[1]);
+	closeFd(_connections[fd]->_pipefd[0], "for read");
+	closeFd(_connections[fd]->_pipefd[1], "for write");
 	_cgiFds.erase(_connections[fd]->_pipefd[0]);
 	_cgiFds.erase(_connections[fd]->_pipefd[1]);
 	delete _connections[fd];
 	_connections.erase(fd);
-	closeFd(fd);
+	closeFd(fd, "socket");
 }
 
 void Webserv::readFromResource(int fd)
@@ -146,7 +146,7 @@ void Webserv::readFromResource(int fd)
 	ssize_t bytesRead = read(fd, buf, sizeof(buf));
 	if (bytesRead > 0)
 	{
-		std::cout << "\e[2mRead " << bytesRead << " bytes from resource " << fd << "\e[0m" << std::endl;
+		// std::cout << "\e[2mRead " << bytesRead << " bytes from resource " << fd << "\e[0m" << std::endl;
 		std::string str(buf, bytesRead);
 		_connections[_resources[fd]]->appendToResponseBody(str);
 	}
@@ -159,7 +159,7 @@ void Webserv::readFromResource(int fd)
 	{
 		std::cout << "\e[2mFinished reading resource " << fd << "\e[0m" << std::endl;
 		_connections[_resources[fd]]->setState(Connection::RES_READY);
-		closeFd(fd);
+		closeFd(fd, "read resource");
 		_resources.erase(fd);
 	}
 }
@@ -170,7 +170,7 @@ void Webserv::readFromCGI(int fd)
 	ssize_t bytesRead = read(fd, buf, sizeof(buf));
 	if (bytesRead > 0)
 	{
-		std::cout << "\e[2mRead " << bytesRead << " bytes from CGI " << fd << "\e[0m" << std::endl;
+		// std::cout << "\e[2mRead " << bytesRead << " bytes from CGI " << fd << "\e[0m" << std::endl;
 		std::string str(buf, bytesRead);
 		_connections[_cgiFds[fd]]->appendToCGIResult(str);
 	}
@@ -181,7 +181,7 @@ void Webserv::readFromCGI(int fd)
 	}
 	else if (bytesRead == 0)
 	{
-		std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
+		// std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
 		_connections[_cgiFds[fd]]->setState(Connection::CGI_OUTPUT_READY);
 		int resourceFd = _connections[_cgiFds[fd]]->processCGIOutput();
 		if (resourceFd != -1)
@@ -194,7 +194,7 @@ void Webserv::readFromCGI(int fd)
 
 		// add to resource file descriptors
 		_connections[_cgiFds[fd]]->_pipefd[0] = -1;
-		closeFd(fd);
+		closeFd(fd, "cgi Fd");
 		_cgiFds.erase(fd);
 	}
 }
@@ -256,7 +256,7 @@ void Webserv::writeToResourceFd(int i)
 		}
 		else if (uploadedBytes > 0)
 		{
-			std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
+			// std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
 			c->_uploadedBytes += uploadedBytes;
 		}
 		else
@@ -269,7 +269,7 @@ void Webserv::writeToResourceFd(int i)
 	else
 	{
 		c->setState(Connection::RES_READY);
-		closeFd(i);
+		closeFd(i, "upload resource");
 		_resources.erase(i);
 	}
 }
@@ -287,7 +287,7 @@ int Webserv::sendOneChunk(Connection *c, int i)
 	{
 		c->updateKeepAliveTimeout();
 		c->_sentBytes += bytesSent;
-		std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
+		// std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
 		return 1;
 	}
 	else if (bytesSent == 0)
@@ -327,8 +327,8 @@ void Webserv::writeToSocket(Connection *c, int i)
 			}
 			else
 			{
-				closeFd(_connections[i]->_pipefd[0]);
-				closeFd(_connections[i]->_pipefd[1]);
+				closeFd(_connections[i]->_pipefd[0], "for read");
+				closeFd(_connections[i]->_pipefd[1], "for write");
 				_cgiFds.erase(_connections[i]->_pipefd[0]);
 				_cgiFds.erase(_connections[i]->_pipefd[1]);
 				c->reset();
@@ -455,15 +455,15 @@ void Webserv::stop()
 {
 	for (auto it = _connections.begin(); it != _connections.end(); ++it)
 	{
-		closeFd(it->first);
+		closeFd(it->first, "socket");
 	}
 	for (auto it = _resources.begin(); it != _resources.end(); ++it)
 	{
-		closeFd(it->first);
+		closeFd(it->first, "resource");
 	}
 	for (auto it = _listenFdLookup.begin(); it != _listenFdLookup.end(); ++it)
 	{
-		closeFd(it->first);
+		closeFd(it->first, "listening");
 	}
 	for (auto it = _cgiFds.begin(); it != _cgiFds.end(); ++it)
 	{

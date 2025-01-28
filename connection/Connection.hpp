@@ -27,6 +27,7 @@ private:
 	std::chrono::system_clock::time_point _clientHeaderTimeout;
 	std::string _cgiResult;
 	int _redirections;
+	std::vector<std::string> _cgiEnv;
 	int startCGIprocess(std::filesystem::path uri);
 	int getResource(std::filesystem::path path);
 	int openResource(std::filesystem::path path);
@@ -34,6 +35,7 @@ private:
 	int deleteResource(std::string path);
 	int redirect();
 	int setErrorResponse(const std::exception &e);
+	void setCgiEnv(std::string cgiPath);
 	int _state;
 	bool _close;
 

@@ -5,7 +5,7 @@
 // Constructor
 HttpMessage::HttpMessage()
 {
-	std::cout << "\e[2mDefault constructor HttpMessage called\e[0m" << std::endl;
+	// std::cout << "\e[2mDefault constructor HttpMessage called\e[0m" << std::endl;
 }
 
 // Parameterized constructor
@@ -34,7 +34,7 @@ HttpMessage &HttpMessage::operator=(const HttpMessage &other)
 	{
 		_header = other._header;
 	}
-	std::cout << "\e[2mAssign operator HttpMessage called\e[0m" << std::endl;
+	// std::cout << "\e[2mAssign operator HttpMessage called\e[0m" << std::endl;
 	return (*this);
 }
 
