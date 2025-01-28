@@ -285,7 +285,6 @@ void Webserv::writeToResourceFd(int i)
 
 void Webserv::writeToCGIStdin(int i)
 {
-	std::cout << "here writeToCGIStdin" << i << std::endl;
 	auto c = _connections[_cgiFds[i]];
 	if (c->getState() != Connection::CGI_READ_REQ_BODY)
 		return;
@@ -319,7 +318,7 @@ void Webserv::writeToCGIStdin(int i)
 		// c->setState(Connection::CGI_WRITE_OUTPUT);
 		closeFd(i, "finished writing request body to CGI");
 		_cgiFds.erase(i);
-		c->_cgi2parent[0] = -1;
+		c->_parent2cgi[1] = -1;
 	}
 }
 
