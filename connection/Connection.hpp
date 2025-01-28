@@ -27,7 +27,7 @@ private:
 	std::chrono::system_clock::time_point _clientHeaderTimeout;
 	std::string _cgiResult;
 	int _redirections;
-	int handleCGI(std::filesystem::path uri);
+	int startCGIprocess(std::filesystem::path uri);
 	int getResource(std::filesystem::path path);
 	int openResource(std::filesystem::path path);
 	int postResource(std::filesystem::path path);
@@ -74,7 +74,6 @@ public:
 	int acceptConnection();
 	int getDirectory(std::filesystem::path path);
 	void updateKeepAliveTimeout();
-	void executeCGI(std::filesystem::path path, std::filesystem::path cgiPath);
 	void parseCGIOutput();
 	int processCGIOutput();
 

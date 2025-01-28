@@ -182,8 +182,10 @@ void Connection::parseCGIOutput()
 	_res.appendToBody(_cgiResult);
 }
 
-void Connection::executeCGI(std::filesystem::path path, std::filesystem::path cgiPath)
+int Connection::startCGIprocess(std::filesystem::path path)
 {
+
+	std::string cgiPath = _location.get_cgi_path();
 	std::vector<char *> env;
 	for (auto it = _req->getHeader().begin(); it != _req->getHeader().end(); ++it)
 	{
@@ -203,8 +205,6 @@ void Connection::executeCGI(std::filesystem::path path, std::filesystem::path cg
 		args.push_back(const_cast<char *>(cgiPath.c_str()));
 		args.push_back(const_cast<char *>(path.c_str()));
 		args.push_back(nullptr);
-		std::cout << cgiPath << std::endl;
-		std::cout << path << std::endl;
 
 		close(_pipefd[0]);
 		dup2(_pipefd[1], STDOUT_FILENO);
@@ -214,31 +214,15 @@ void Connection::executeCGI(std::filesystem::path path, std::filesystem::path cg
 	}
 	else if (_cgiPid > 0)
 	{
-		// 	// In the parent process
 		std::cout << "Close from parent fd " << _pipefd[1] << std::endl;
 		close(_pipefd[1]);
 		setState(CGI_STARTED);
-
-		// 	int status;
-		// 	waitpid(pid, &status, 0); // Wait for the child process to finish
-		// 	std::cout << "Child process has finished executing." << std::endl;
 	}
 	else
 	{
 		throw HttpError("CGI failed to fork", 500);
 	}
-}
-
-int Connection::handleCGI(std::filesystem::path path)
-{
-	// match cgi path to extension
-	// TODO:matching of cgi
-	// if (path.extension() == ".py")
-	// {
-	std::string pythonPath = "/usr/bin/python3";
-	executeCGI(path, pythonPath);
 	return -1;
-	// }
 }
 
 int Connection::getResource(std::filesystem::path path)
@@ -390,8 +374,8 @@ int Connection::process()
 			std::filesystem::path path = _location.get_route(_req->getUri());
 
 			// replace to match with all cgi extensions
-			if (path.extension() == ".py")
-				return handleCGI(path);
+			if (path.extension() == _location.get_cgi_extension())
+				return startCGIprocess(path);
 			else if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
 				return getResource(path);
 			else if (_req->getMethod() == "POST")
@@ -480,7 +464,6 @@ int Connection::processCGIOutput()
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "set error response" << std::endl;
 		return setErrorResponse(HttpError(e.what(), 500));
 	}
 }
