@@ -3,6 +3,11 @@
 // Constructor
 Cgi::Cgi()
 {
+	_cgi2parent[1] = -1;
+	_cgi2parent[0] = -1;
+	_parent2cgi[0] = -1;
+	_parent2cgi[1] = -1;
+	_cgiPid = 0;
 	// std::cout << "\e[2mDefault constructor Cgi called\e[0m" << std::endl;
 }
 
@@ -22,7 +27,7 @@ Cgi::Cgi(const Cgi &other)
 // Destructor
 Cgi::~Cgi()
 {
-	// std::cout << "\e[2mDestructor Cgi called\e[0m" << std::endl;
+	std::cout << "\e[2mDestructor Cgi called\e[0m" << std::endl;
 }
 
 // Overloads
@@ -94,14 +99,25 @@ void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const 
 	}
 }
 
-void Cgi::setPipes()
+void Cgi::init()
 {
+	_cgiPid = 0;
+	_cgiResult = "";
 	if (pipe(_cgi2parent) == -1)
 		throw std::runtime_error("Pipe failed");
 	if (pipe(_parent2cgi) == -1)
 		throw std::runtime_error("Pipe failed");
 }
 
+void Cgi::killCgi()
+{
+	if (!_cgiPid)
+		return;
+	std::cout << "ouch I'm dead " << _cgiPid << std::endl;
+	kill(_cgiPid, SIGKILL);
+	waitpid(_cgiPid, NULL, 0);
+	_cgiPid = 0;
+}
 // Getters
 
 // Setters

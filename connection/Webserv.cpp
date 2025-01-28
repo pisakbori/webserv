@@ -128,16 +128,24 @@ void Webserv::closeConnectionResource(int fd)
 	}
 }
 
+void Webserv::closeConnectionCgi(int fd)
+{
+	_connections[fd]->_cgi->killCgi();
+	_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[0]);
+	_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[1]);
+	_cgiFds.erase(_connections[fd]->_cgi->_parent2cgi[0]);
+	_cgiFds.erase(_connections[fd]->_cgi->_parent2cgi[1]);
+	closeFd(_connections[fd]->_cgi->_cgi2parent[0]);
+	closeFd(_connections[fd]->_cgi->_cgi2parent[1]);
+	closeFd(_connections[fd]->_cgi->_parent2cgi[0]);
+	closeFd(_connections[fd]->_cgi->_parent2cgi[1]);
+}
+
 void Webserv::closeConnection(int fd)
 {
 	std::cout << "close connection\n";
 	closeConnectionResource(fd);
-	closeFd(_connections[fd]->_cgi->_cgi2parent[0], "where parent was reading from");
-	closeFd(_connections[fd]->_cgi->_parent2cgi[1], "where parent was writing to");
-	_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[0]);
-	_cgiFds.erase(_connections[fd]->_cgi->_parent2cgi[1]);
-	// _connections[fd]->_cgi2parent[0] = -1;
-	// _connections[fd]->_cgi2parent[0] = -1;
+	closeConnectionCgi(fd);
 	delete _connections[fd];
 	_connections.erase(fd);
 	closeFd(fd, "socket");
@@ -184,7 +192,7 @@ void Webserv::readFromCGI(int fd)
 	}
 	else if (bytesRead == 0)
 	{
-		std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
+		// std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
 		_connections[_cgiFds[fd]]->setState(Connection::CGI_OUTPUT_READY);
 		int resourceFd = _connections[_cgiFds[fd]]->processCGIOutput();
 		if (resourceFd != -1)
@@ -375,10 +383,9 @@ void Webserv::writeToSocket(Connection *c, int i)
 			}
 			else
 			{
-				closeFd(_connections[i]->_cgi->_cgi2parent[0], "for read");
 				_cgiFds.erase(_connections[i]->_cgi->_cgi2parent[0]);
-				closeFd(_connections[i]->_cgi->_parent2cgi[1], "for write");
 				_cgiFds.erase(_connections[i]->_cgi->_parent2cgi[1]);
+				closeConnectionCgi(i);
 				c->reset();
 				_cgiFds[c->_cgi->_cgi2parent[0]] = i;
 				FD_SET(c->_cgi->_cgi2parent[0], &_master);
@@ -505,6 +512,7 @@ void Webserv::run()
 
 void Webserv::stop()
 {
+
 	for (auto it = _connections.begin(); it != _connections.end(); ++it)
 	{
 		closeFd(it->first, "socket");
@@ -519,7 +527,7 @@ void Webserv::stop()
 	}
 	for (auto it = _cgiFds.begin(); it != _cgiFds.end(); ++it)
 	{
-		// closeFd(it->first);
+		closeFd(it->first);
 	}
 }
 

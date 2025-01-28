@@ -26,7 +26,6 @@ private:
 	Location _location;
 	std::chrono::system_clock::time_point _keepAliveTimeout;
 	std::chrono::system_clock::time_point _clientHeaderTimeout;
-	std::string _cgiResult;
 	int _redirections;
 	int getResource(std::filesystem::path path);
 	int openResource(std::filesystem::path path);
@@ -76,7 +75,6 @@ public:
 	int acceptConnection();
 	int getDirectory(std::filesystem::path path);
 	void updateKeepAliveTimeout();
-	void parseCGIOutput();
 	int processCGIOutput();
 
 	// Getters

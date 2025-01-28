@@ -118,9 +118,11 @@ void Response::appendToBody(std::string const &str)
 
 void Response::setContentType(std::string const &str)
 {
-    if (mimeTypes.find(str) != mimeTypes.end())
+    std::string key = str;
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    if (mimeTypes.find(key) != mimeTypes.end())
     {
-        _header["CONTENT-TYPE"] = mimeTypes[str];
+        _header["CONTENT-TYPE"] = mimeTypes[key];
     }
     else if (str.empty())
         _header["CONTENT-TYPE"] = "application/octet-stream";

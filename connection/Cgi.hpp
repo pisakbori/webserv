@@ -3,6 +3,7 @@
 
 #include "Connection.hpp"
 #include "Request.hpp"
+#include <signal.h>
 
 class Request;
 
@@ -14,6 +15,8 @@ public:
 	std::vector<std::string> _cgiEnv;
 	int _cgi2parent[2];
 	int _parent2cgi[2];
+	std::string _cgiResult;
+
 	// Constructor
 	Cgi();
 
@@ -31,11 +34,11 @@ public:
 	// Member functions
 		void startCGIprocess(const Request *req, std::filesystem::path path, const Location &location);
 		void setCgiEnv(const Request *req, std::string cgiPath);
-
+		void killCgi();
 		// Getters
 
 		// Setters
-		void setPipes();
+		void init();
 };
 
 #endif

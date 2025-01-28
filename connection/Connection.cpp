@@ -33,6 +33,7 @@ Connection::~Connection()
 {
 	std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
 	delete _req;
+	delete _cgi;
 }
 
 // Overloads
@@ -75,7 +76,7 @@ int Connection::acceptConnection()
 	updateKeepAliveTimeout();
 	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
 
-	_cgi->setPipes();
+	_cgi->init();
 
 	return fd;
 }
@@ -99,8 +100,7 @@ void Connection::reset()
 	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_close = false;
-	_cgiResult = "";
-	_cgi->setPipes();
+	_cgi->init();
 };
 
 void Connection::append(std::string const &str)
@@ -117,7 +117,7 @@ void Connection::appendToResponseBody(std::string const &str)
 
 void Connection::appendToCGIResult(std::string const &str)
 {
-	_cgiResult.append(str);
+	_cgi->_cgiResult.append(str);
 }
 
 int Connection::getDirectory(std::filesystem::path dirPath)
@@ -167,11 +167,6 @@ int Connection::redirect()
 	_res.appendToHeader("Location", _location.get_redirect().second);
 	setState(RES_READY);
 	return -1;
-}
-
-void Connection::parseCGIOutput()
-{
-	_res.appendToBody(_cgiResult);
 }
 
 int Connection::getResource(std::filesystem::path path)
@@ -408,10 +403,8 @@ int Connection::processCGIOutput()
 		int status;
 		waitpid(_cgi->_cgiPid, &status, 0);
 		if (status != 0)
-		{
 			throw HttpError("CGI did not terminate normally", 500);
-		}
-		_res.setCGIContent(_cgiResult);
+		_res.setCGIContent(_cgi->_cgiResult);
 		err_page_t error_page = getResponsibleServer().get_error_page(_res.getCode());
 		auto v = error_page.code;
 		if (std::find(v.begin(), v.end(), _res.getCode()) != v.end())

@@ -68,6 +68,7 @@ public:
 	void closeFd(int i, std::string type = "");
 	void printOpenFds() const;
 	void closeConnectionResource(int fd);
+	void closeConnectionCgi(int fd);
 	// Getters
 
 	// Setters
