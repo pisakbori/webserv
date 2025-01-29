@@ -58,6 +58,7 @@ void Cgi::setCgiEnv(const Request *req, const Server &server)
 	// _cgiEnv.push_back("QUERY_STRING=" + _req->getQuery());
 	_cgiEnv.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_cgiEnv.push_back("SERVER_NAME=" + server.get_listen().get_host());
+	_cgiEnv.push_back("SERVER_PORT=" + std::to_string(server.get_listen().get_port()));
 	// SERVER_NAME: The server's hostname or IP address.
 	// SERVER_PORT: The port number on which the server is listening.
 	// relative path to the CGI script from the document root, including the script’s name but excluding any query string
