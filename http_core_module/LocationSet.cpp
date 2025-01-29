@@ -75,10 +75,7 @@ void Location::set_uri(std::string uri)
 
 void Location::set_allow(std::string arg)
 {
-	static bool already_set = false;
-	if (!already_set)
-		allow.clear();
-	already_set = true;
+	allow.clear();
 	std::istringstream iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 	{
