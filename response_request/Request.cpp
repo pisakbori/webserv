@@ -243,7 +243,7 @@ void Request::parseRequest(Connection *c)
 		if (_header.find("CONTENT-LENGTH") != _header.end())
 			parseContentLength(c);
 		else if (_header.find("TRANSFER-ENCODING") != _header.end())
-			parseTransferEncoding(c, "\n");
+			parseTransferEncoding(c, "\r\n");
 		else if (_method == "POST")
 			throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);
 		else
