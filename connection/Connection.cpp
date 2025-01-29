@@ -320,7 +320,7 @@ int Connection::process()
 			// replace to match with all cgi extensions
 			if (path.extension() == _location.get_cgi_extension())
 			{
-				_cgi->startCGIprocess(_req, path, _location);
+				_cgi->startCGIprocess(_req, path, server);
 				setState(CGI_READ_REQ_BODY);
 				return -1;
 			}

@@ -42,7 +42,7 @@ Cgi &Cgi::operator=(const Cgi &other)
 }
 
 // Member functions
-void Cgi::setCgiEnv(const Request *req, std::string cgiPath)
+void Cgi::setCgiEnv(const Request *req, const Server &server)
 {
 	_cgiEnv = std::vector<std::string>{};
 	for (auto it = req->getHeader().begin(); it != req->getHeader().end(); ++it)
@@ -57,21 +57,23 @@ void Cgi::setCgiEnv(const Request *req, std::string cgiPath)
 	_cgiEnv.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	// _cgiEnv.push_back("QUERY_STRING=" + _req->getQuery());
 	_cgiEnv.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	// TODO:Marian pls put servername here
+	_cgiEnv.push_back("SERVER_NAME=" + server.get_listen().get_host());
 	// SERVER_NAME: The server's hostname or IP address.
 	// SERVER_PORT: The port number on which the server is listening.
 	// relative path to the CGI script from the document root, including the script’s name but excluding any query string
 	// REMOTE_ADDR: The IP address of the client making the request.?????
 	// REMOTE_PORT: The port number of the client making the request. ????
-	_cgiEnv.push_back("SCRIPT_NAME=" + cgiPath); // The path of the CGI script relative to the server's root.  mine is not good
+	Location location = server.get_location(req->getUri());
+	std::string path = req->getUri();
+	_cgiEnv.push_back("SCRIPT_NAME=" + location.get_cgi_path() + path.substr(path.find_last_of('/') + 1)); // The path of the CGI script relative to the server's root.  mine is not good
 	_cgiEnv.push_back("REQUEST_URI=" + req->getUri());
 };
 
-void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const Location &location)
+void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const Server &server)
 {
-	std::string cgiPath = location.get_cgi_path();
+	std::string cgiPath = server.get_location(req->getUri()).get_cgi_path();
 	// pass the body to the CGI script via stdin
-	setCgiEnv(req, cgiPath);
+	setCgiEnv(req, server);
 
 	_cgiPid = fork();
 

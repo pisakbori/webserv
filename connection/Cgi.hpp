@@ -32,8 +32,8 @@ public:
 		Cgi	&operator=(const Cgi &);
 		
 	// Member functions
-		void startCGIprocess(const Request *req, std::filesystem::path path, const Location &location);
-		void setCgiEnv(const Request *req, std::string cgiPath);
+		void startCGIprocess(const Request *req, std::filesystem::path path, const Server &server);
+		void setCgiEnv(const Request *req, const Server &server);
 		void killCgi();
 		// Getters
 
