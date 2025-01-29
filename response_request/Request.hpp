@@ -16,6 +16,7 @@ private:
 	std::string _body;
 	std::map<std::string, std::string> _header;
 	std::string _input;
+	int			_chunk_size;
 
 public:
 	size_t _bodySize;
@@ -38,7 +39,9 @@ public:
 	void matchHost(Connection *c);
 	void parseRequestLine(std::string &line);
 	void parseFieldLine(std::string &line, bool *headerRead);
-	void parseContentLength(Connection *c, std::istringstream &stream);
+	void parseContentLength(Connection *c);
+	void parseTransferEncoding(Connection *c, const std::string &rclf);
+	void parseHead(Connection *c);
 	void parseRequest(Connection *c);
 
 	// Getters

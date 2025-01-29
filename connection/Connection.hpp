@@ -40,11 +40,12 @@ public:
 	bool _hasTimeout;
 	static constexpr int WAITING_REQ = 0;
 	static constexpr int READING_REQ = 1;
-	static constexpr int REQ_READY = 2;
-	static constexpr int READING_RESOURCE = 3;
-	static constexpr int WRITING_RESOURCE = 4;
-	static constexpr int RES_READY = 5;
-	static constexpr int RES_SENT = 6;
+	static constexpr int READING_REQ_BODY = 2;
+	static constexpr int REQ_READY = 3;
+	static constexpr int READING_RESOURCE = 4;
+	static constexpr int WRITING_RESOURCE = 5;
+	static constexpr int RES_READY = 6;
+	static constexpr int RES_SENT = 7;
 
 	// Parameterized constructor
 	Connection(const std::vector<Server>&, const std::vector<int>&, int);

@@ -8,6 +8,7 @@ Request::Request()
 	// std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
 	_input = "";
 	_bodySize = 0;
+	_chunk_size = -1;
 }
 
 // Copy constructor
@@ -113,8 +114,11 @@ void Request::parseFieldLine(std::string &line, bool *headerRead)
 	_header[key] = value;
 }
 
-void Request::parseContentLength(Connection *c, std::istringstream &stream)
+void Request::parseContentLength(Connection *c)
 {
+	if (_input.find("\n\n") == std::string::npos &&
+		_input.find("\r\n\r\n") == std::string::npos)
+		return;
 	if (_header.find("TRANSFER-ENCODING") != _header.end())
 		throw HttpError("Bad Request", 400);
 	std::string	value;
@@ -124,27 +128,54 @@ void Request::parseContentLength(Connection *c, std::istringstream &stream)
 	long long size = std::stoll(value);
 	if (size > c->getResponsibleServer().get_client_max_body_size())
 		throw HttpError("Payload Too Large", 413);
-	_bodySize = size;
-	char ch;
-	// TODO: if header read, only append to body would be ideal..
 	_body = "";
-	while (size > 0 && stream.get(ch))
-	{
-		_body.push_back(ch);
-		size--;
-	}
-	if (size > 0)
-		return;
-	else if (stream.get(ch))
+	_bodySize = size;
+	_body.append(_input, 0, size);
+	if ((long long)_body.size() > size)
 		throw HttpError("Request body is greater than Content-length", 400);
 	c->setState(Connection::REQ_READY);
 }
 
-void Request::parseRequest(Connection *c)
+void Request::parseTransferEncoding(Connection *c, const std::string &rclf)
+{
+	if (_header.find("CONTENT-LENGTH") != _header.end())
+		throw HttpError("Bad Request", 400);
+	if (_header["TRANSFER-ENCODING"] != "chunked")
+		throw HttpError("Not Implemented", 501);
+	while (!_input.empty())
+	{
+		if (_chunk_size == -1)
+		{
+			size_t pos = _input.find(rclf);
+			if (pos == std::string::npos)
+				return ;
+			std::string line = _input.substr(0, pos);
+			std::istringstream iss(line);
+			if (!(iss >> std::hex >> _chunk_size))
+				throw HttpError("Invalid Request", 400);
+			_input.erase(0, pos + rclf.size());
+			if (_chunk_size == 0)
+				return (c->setState(Connection::REQ_READY));
+		}
+		size_t pos = _input.find(rclf);
+		if (pos == std::string::npos)
+			return ;
+		if (pos != (size_t)_chunk_size)
+			throw HttpError("Invalid Request", 400);
+		_body.append(_input.substr(0, _chunk_size));
+		_bodySize += _chunk_size;
+		_input.erase(0, _chunk_size + rclf.size());
+		_chunk_size = -1;
+		if (_bodySize > (size_t)c->getResponsibleServer().get_client_max_body_size())
+			throw HttpError("Payload Too Large", 413);
+	}
+}
+
+void Request::parseHead(Connection *c)
 {
 	bool headerRead = false;
 	std::string line;
-	std::istringstream stream(_input);
+	std::stringstream stream(_input);
 	if (_input.find("\n") == std::string::npos &&
 		_input.find("\r\n") == std::string::npos)
 		return;
@@ -160,15 +191,34 @@ void Request::parseRequest(Connection *c)
 	matchHost(c);
 	if (_method == "GET" || _method == "HEAD" || _method == "DELETE")
 		c->setState(Connection::REQ_READY);
-	else if (_header.find("CONTENT-LENGTH") != _header.end())
-		parseContentLength(c, stream);
-	else if (_method == "POST")
-	{
-		// TODO: Chunked transfer encoding?
-		throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);
-	}
 	else
-		c->setState(Connection::REQ_READY);
+		c->setState(Connection::READING_REQ_BODY);
+}
+
+void Request::parseRequest(Connection *c)
+{
+	if (c->getState() == Connection::READING_REQ)
+	{
+		parseHead(c);
+		if (c->getState() == Connection::READING_REQ_BODY)
+		{
+			if (_input.find("\r\n\r\n") != std::string::npos)
+				_input.erase(0, _input.find("\r\n\r\n") + 4);
+			else
+				_input.erase(0, _input.find("\n\n") + 2);
+		}
+	}
+	if (c->getState() == Connection::READING_REQ_BODY)
+	{
+		if (_header.find("CONTENT-LENGTH") != _header.end())
+			parseContentLength(c);
+		else if (_header.find("TRANSFER-ENCODING") != _header.end())
+			parseTransferEncoding(c, "\n");
+		else if (_method == "POST")
+			throw HttpError("Content-Length or Transfer-Encoding header is required.", 411);
+		else
+			c->setState(Connection::REQ_READY);
+	}
 }
 
 void Request::append(std::string const &str)

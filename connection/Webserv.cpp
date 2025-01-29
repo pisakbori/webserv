@@ -146,7 +146,7 @@ void Webserv::readFromSocket(int fd)
 		std::cout << "read " << bytesRead << " from socket" << std::endl;
 		_connections[fd]->updateKeepAliveTimeout();
 		_connections[fd]->append(str);
-		if (_connections[fd]->getState() == Connection::READING_REQ)
+		if (_connections[fd]->getState() == Connection::READING_REQ || _connections[fd]->getState() == Connection::READING_REQ_BODY)
 		{
 			int resourceFd = _connections[fd]->process();
 			if (resourceFd != -1)
