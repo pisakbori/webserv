@@ -116,9 +116,6 @@ void Request::parseFieldLine(std::string &line, bool *headerRead)
 
 void Request::parseContentLength(Connection *c)
 {
-	if (_input.find("\n\n") == std::string::npos &&
-		_input.find("\r\n\r\n") == std::string::npos)
-		return;
 	if (_header.find("TRANSFER-ENCODING") != _header.end())
 		throw HttpError("Bad Request", 400);
 	std::string	value;
@@ -126,12 +123,14 @@ void Request::parseContentLength(Connection *c)
 	if (value.find_first_not_of("0123456789") != std::string::npos)
 		throw HttpError("Bad Request", 400);
 	long long size = std::stoll(value);
+	if ((long long)_input.length() < size)
+		return;
 	if (size > c->getResponsibleServer().get_client_max_body_size())
 		throw HttpError("Payload Too Large", 413);
 	_body = "";
 	_bodySize = size;
 	_body.append(_input, 0, size);
-	if ((long long)_body.size() > size)
+	if ((long long)_input.size() > size)
 		throw HttpError("Request body is greater than Content-length", 400);
 	c->setState(Connection::REQ_READY);
 }
