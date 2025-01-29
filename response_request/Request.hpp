@@ -12,7 +12,7 @@ private:
 	std::string _uri;
 	std::string _protocol;
 	std::string _body;
-	std::map<std::string, std::string> _query;
+	std::string _query;
 	std::string _input;
 	int			_chunk_size;
 
@@ -46,7 +46,7 @@ public:
 	std::string const &getProtocol() const;
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
-	const std::map<std::string, std::string> &getQuery() const;
+	const std::string &getQuery() const;
 	bool hasConnectionClose() const;
 	std::string const &getBody() const;
 	// Setters

@@ -53,21 +53,21 @@ void Cgi::setCgiEnv(const Request *req, const Server &server)
 			key = "HTTP_" + key;
 		_cgiEnv.push_back(key + "=" + it->second);
 	}
+	Location location = server.get_location(req->getUri());
 	_cgiEnv.push_back("REQUEST_METHOD=" + req->getMethod());
 	_cgiEnv.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	// _cgiEnv.push_back("QUERY_STRING=" + _req->getQuery());
+	_cgiEnv.push_back("QUERY_STRING=" + req->getQuery());
 	_cgiEnv.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_cgiEnv.push_back("SERVER_NAME=" + server.get_listen().get_host());
 	_cgiEnv.push_back("SERVER_PORT=" + std::to_string(server.get_listen().get_port()));
-	// SERVER_NAME: The server's hostname or IP address.
-	// SERVER_PORT: The port number on which the server is listening.
-	// relative path to the CGI script from the document root, including the script’s name but excluding any query string
-	// REMOTE_ADDR: The IP address of the client making the request.?????
-	// REMOTE_PORT: The port number of the client making the request. ????
-	Location location = server.get_location(req->getUri());
-	std::string path = req->getUri();
-	_cgiEnv.push_back("SCRIPT_NAME=" + location.get_cgi_path() + path.substr(path.find_last_of('/') + 1)); // The path of the CGI script relative to the server's root.  mine is not good
+	_cgiEnv.push_back("SERVER_SOFTWARE=Webserv");
+	_cgiEnv.push_back("REDIRECT_STATUS=200");
 	_cgiEnv.push_back("REQUEST_URI=" + req->getUri());
+	_cgiEnv.push_back("PATH_INFO=" + req->getUri());
+	auto uri = location.get_uri();
+	auto str = req->getUri();
+	auto route = std::filesystem::path(str.substr(uri.length()));
+	_cgiEnv.push_back("SCRIPT_NAME=" + route.string()); // The path of the CGI script relative to the server's root
 };
 
 void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const Server &server)
@@ -82,7 +82,6 @@ void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const 
 	{
 		close(_parent2cgi[1]);
 		close(_cgi2parent[0]);
-		// TODO: do i need to add more stuff to args??
 		std::vector<char *> args;
 		args.push_back(const_cast<char *>(cgiPath.c_str()));
 		args.push_back(const_cast<char *>(path.c_str()));
@@ -106,6 +105,7 @@ void Cgi::init()
 {
 	_cgiPid = 0;
 	_cgiResult = "";
+	_cgiEnv.clear();
 	if (pipe(_cgi2parent) == -1)
 		throw std::runtime_error("Pipe failed");
 	if (pipe(_parent2cgi) == -1)

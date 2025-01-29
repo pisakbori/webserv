@@ -57,6 +57,11 @@ std::string normalize_config(const std::string & file_name)
 	std::ifstream	infile(file_name);
 	std::string		config;
 
+	if (!infile)
+	{
+		std::cerr << "Cannot open file " + file_name << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	while (std::getline(infile, line))
 	{
 		std::string result;
