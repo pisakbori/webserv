@@ -318,7 +318,7 @@ int Connection::process()
 			std::filesystem::path path = _location.get_route(_req->getUri());
 
 			// replace to match with all cgi extensions
-			if (path.extension() == _location.get_cgi_extension())
+			if (!path.extension().empty() && path.extension() == _location.get_cgi_extension())
 			{
 				_cgi->startCGIprocess(_req, path, server);
 				setState(CGI_READ_REQ_BODY);
