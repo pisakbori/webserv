@@ -4,6 +4,7 @@ std::map<int, std::string> Response::statuses = {
     {200, "OK"},
     {201, "Created"},
     {204, "No content"},
+    {302, "Found"},
     {303, "See Other"},
     {400, "Bad Request"},
     {403, "Forbidden"},
@@ -49,7 +50,7 @@ std::map<std::string, std::string> Response::mimeTypes = {
     {".otf", "font/otf"},
     {".eot", "application/vnd.ms-fontobject"},
     {".wasm", "application/wasm"},
-};
+    {".py", "text/x-python"}};
 
 // Constructor
 Response::Response() : _body(std::make_unique<std::string>()), _fullContent(std::make_unique<std::string>())
@@ -100,7 +101,7 @@ Response &Response::operator=(const Response &other)
     // std::cout << "\e[2mAssign operator Response called\e[0m" << std::endl;
     if (this != &other)
     {
-        _header = other._header;
+        HttpMessage::operator=(other);
         setCode(other._statusCode);
         _body = std::make_unique<std::string>(*other._body);
         _fullContent = std::make_unique<std::string>(*other._fullContent);
@@ -117,18 +118,21 @@ void Response::appendToBody(std::string const &str)
 
 void Response::setContentType(std::string const &str)
 {
-    if (mimeTypes.find(str) != mimeTypes.end())
+    std::string key = str;
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    if (mimeTypes.find(key) != mimeTypes.end())
     {
-        _header["Content-Type"] = mimeTypes[str];
+        _header["CONTENT-TYPE"] = mimeTypes[key];
     }
     else if (str.empty())
-        _header["Content-Type"] = "application/octet-stream";
+        _header["CONTENT-TYPE"] = "application/octet-stream";
     else
         throw HttpError("Unsupported Media Type " + str, 415);
 }
 
 void Response::appendToHeader(std::string key, std::string value)
 {
+    std::transform(key.begin(), key.end(), key.begin(), ::toupper);
     _header[key] = value;
 }
 
@@ -163,6 +167,10 @@ std::string getHttpDate()
 }
 
 // Getters
+int Response::getCode() const
+{
+    return _statusCode;
+}
 
 const std::string Response::getContent(std::size_t from, std::size_t size) const
 {
@@ -177,13 +185,13 @@ std::size_t Response::getSize() const
 void Response::setContent(bool withBody)
 {
     std::stringstream content;
-    content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
-    content << "Date: " << getHttpDate() << std::endl;
-    content << "Content-Length: " << _body->size() << std::endl;
-    content << "Server: 4/2Elephants" << std::endl;
-    content << "Keep-Alive: timeout=" << KEEPALIVE_TIMEOUT << "s" << std::endl;
+    appendToHeader("DATE", getHttpDate());
+    appendToHeader("CONTENT-LENGTH", std::to_string(_body->size()));
+    appendToHeader("SERVER", "4/2Elephants");
+    appendToHeader("KEEP-ALIVE", "timeout=" + std::to_string(KEEPALIVE_TIMEOUT) + "s");
     if (_statusCode == 408)
-        content << "Connection: close" << KEEPALIVE_TIMEOUT << "s" << std::endl;
+        appendToHeader("CONNECTION", "close");
+    content << "HTTP/1.1" << " " << _statusCode << " " << _statusText << std::endl;
     for (auto it = _header.begin(); it != _header.end(); ++it)
     {
         content << it->first << ": " << it->second << std::endl;
@@ -194,6 +202,52 @@ void Response::setContent(bool withBody)
         _fullContent->append(*_body);
     _body.reset();
 }
+
+void Response::setCGIContent(std::string cgiOutput)
+{
+    std::string line;
+    std::istringstream stream(cgiOutput);
+    std::cout << "setting cgi response " << cgiOutput << std::endl;
+
+    if (cgiOutput.find("\n\n") == std::string::npos &&
+        cgiOutput.find("\r\n\r\n") == std::string::npos)
+    {
+        _body->append(cgiOutput);
+    }
+    else
+    {
+        bool headerRead = false;
+        while (!headerRead && std::getline(stream, line))
+            parseFieldLine(line, &headerRead, 500);
+        if (_header.find("STATUS") != _header.end())
+        {
+            std::string code = _header["STATUS"].substr(0, 3);
+            if (!code.empty() && std::all_of(code.begin(), code.end(), ::isdigit))
+            {
+                setCode(stoi(code));
+            }
+            else
+                setCode(200);
+        }
+        else
+            setCode(200);
+        if (_header.find("CONTENT-TYPE") == _header.end())
+            setContentType(".html");
+        long long size = LLONG_MAX;
+        if (_header.find("CONTENT-LENGTH") != _header.end())
+        {
+            size = Validate::contentLength(_header["CONTENT-LENGTH"], size);
+        }
+        char ch;
+        while (stream.get(ch) && size > 0)
+        {
+            _body->push_back(ch);
+            size--;
+        }
+    }
+    setContent();
+}
+
 // Setters
 
 std::string getMeta()
@@ -261,4 +315,13 @@ void Response::setCode(int code)
 {
     _statusCode = code;
     _statusText = statuses[_statusCode];
+}
+
+std::ostream &operator<<(std::ostream &os, const Response &res)
+{
+    for (auto it = res.getHeader().begin(); it != res.getHeader().end(); ++it)
+    {
+        std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
+    }
+    return os;
 }

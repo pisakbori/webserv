@@ -11,11 +11,14 @@
 class Webserv
 {
 private:
+	// key: socketFd
 	std::map<int, Connection *> _connections;
 	// key: resourceFd, value:socketFd
 	std::map<int, int> _resources;
 	// key: listeningFd, value: servers index
 	std::map<int, std::vector<int>> _listenFdLookup;
+	// key: cgiFd, value:socketFd
+	std::map<int, int> _cgiFds;
 	fd_set _master;
 	fd_set _readfds;
 	fd_set _writefds;
@@ -26,6 +29,7 @@ private:
 	void onRead(int i);
 	void acceptNewConnection(int fd);
 	void processRequest(int fd);
+	void readFromCGI(int fd);
 	void readFromResource(int fd);
 	void readFromSocket(int fd);
 	void writeToResourceFd(int i);
@@ -34,10 +38,12 @@ private:
 	void removeConnection(int fd);
 	void closeResourceFd(int i);
 	bool isResource(int i);
-	bool isConnection(int i);
+	bool isConnection(int fd);
+	bool isCGI(int fd);
 	int maxFd(void) const;
 	void closeConnection(int fd);
 	void writeToSocket(Connection *c, int i);
+	void writeToCGIStdin(int i);
 
 public:
 	// Constructor
@@ -59,9 +65,10 @@ public:
 	void configure(std::string configFile);
 	void run(void);
 	void stop();
-	void closeFd(int i);
+	void closeFd(int i, std::string type = "");
 	void printOpenFds() const;
 	void closeConnectionResource(int fd);
+	void closeConnectionCgi(int fd);
 	// Getters
 
 	// Setters

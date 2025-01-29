@@ -27,6 +27,8 @@ public:
 	static std::string url(std::string str);
 	static std::string sanitize(std::string &str);
 	static std::string headerName(std::string str);
+	static long long contentLength(std::string value, long long max);
+
 	// Getters
 
 	// Setters

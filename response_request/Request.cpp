@@ -30,8 +30,8 @@ Request &Request::operator=(const Request &other)
 	// std::cout << "\e[2mAssign operator Request called\e[0m" << std::endl;
 	if (this != &other)
 	{
+		HttpMessage::operator=(other);
 		_input = other._input;
-		_header = other._header;
 		_query = other._query;
 		_method = other._method;
 		_protocol = other._protocol;
@@ -120,40 +120,13 @@ void Request::parseRequestLine(std::string &line)
 		throw HttpError(_protocol + " protocol not supported", 505);
 }
 
-// field-line   = field-name ":" OWS field-value OWS
-void Request::parseFieldLine(std::string &line, bool *headerRead)
-{
-	line = Validate::sanitize(line);
-	if (line.empty())
-	{
-		*headerRead = true;
-		return;
-	}
-	auto colon_pos = line.find(":");
-	if (colon_pos == std::string::npos)
-	{
-		std::cout << line << std::endl;
-		throw HttpError("Malformed header field: missing colon separator", 400);
-	}
-	if (colon_pos > 0 && std::isspace(line[colon_pos - 1]))
-		throw HttpError("Malformed header field: whitespace before colon", 400);
-	std::string key = Validate::headerName(line.substr(0, colon_pos));
-	std::transform(key.begin(), key.end(), key.begin(), ::toupper );
-	std::string value = line.substr(colon_pos + 1);
-	value.erase(0, value.find_first_not_of(" \t"));
-    value.erase(value.find_last_not_of(" \t") + 1);
-	_header[key] = value;
-}
-
 void Request::parseContentLength(Connection *c)
 {
 	if (_header.find("TRANSFER-ENCODING") != _header.end())
 		throw HttpError("Bad Request", 400);
 	std::string	value;
 	value = _header["CONTENT-LENGTH"];
-	if (value.find_first_not_of("0123456789") != std::string::npos)
-		throw HttpError("Bad Request", 400);
-	long long size = std::stoll(value);
+	auto size = Validate::contentLength(value, c->getResponsibleServer().get_client_max_body_size());
 	if ((long long)_input.length() < size)
 		return;
 	if (size > c->getResponsibleServer().get_client_max_body_size())
@@ -215,7 +188,7 @@ void Request::parseHead(Connection *c)
 		_input.find("\r\n\r\n") == std::string::npos)
 		return;
 	while (!headerRead && std::getline(stream, line))
-		parseFieldLine(line, &headerRead);
+		parseFieldLine(line, &headerRead, 400);
 	if (!headerRead)
 		return;
 	matchHost(c);
@@ -289,10 +262,6 @@ bool Request::hasConnectionClose() const
 	return (key == "CLOSE");
 }
 
-const std::map<std::string, std::string> &Request::getHeader() const
-{
-	return _header;
-}
 
 const std::map<std::string, std::string> &Request::getQuery() const
 {

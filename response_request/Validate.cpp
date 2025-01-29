@@ -71,7 +71,7 @@ std::string Validate::sanitize(std::string &str)
 			i++;
 		else if (std::iscntrl(str[i]))
 		{
-			msg << "Bad Request: Control character found at position " << i
+			msg << "Control character found at position " << i
 				<< " " << static_cast<int>(str[i]);
 			throw HttpError(msg.str(), 400);
 		}
@@ -85,13 +85,13 @@ std::string Validate::headerName(std::string str)
 	size_t i = 0;
 
 	if (str.empty())
-		throw HttpError("Bad Request: Empty header name", 400);
+		throw HttpError("Empty header name", 400);
 	while (i < str.length())
 	{
 		if (!(isalnum(str[i]) || str[i] == '-' || str[i] == '_'))
 		{
 			std::cout << ">" << str << "<" << std::endl;
-			throw HttpError("Bad Request: Invalid character in header name",
+			throw HttpError("Invalid character in header name",
 							400);
 		}
 		i++;
@@ -99,6 +99,15 @@ std::string Validate::headerName(std::string str)
 	return str;
 }
 
+long long Validate::contentLength(std::string value, long long max)
+{
+	if (value.find_first_not_of("0123456789") != std::string::npos)
+		throw HttpError("Content-length contains nondigit", 400);
+	auto size = std::stoll(value);
+	if (size > max)
+		throw HttpError("Payload Too Large", 413);
+	return size;
+}
 // Getters
 
 // Setters

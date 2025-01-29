@@ -7,11 +7,13 @@ Connection::Connection(const std::vector<Server>& servers, const std::vector<int
 	_fd(fd)
 {
 	_req = new Request();
+	_cgi = new Cgi();
 	_hasTimeout = false;
 	// std::cout << "\e[2mParameterized constructor Connection called\e[0m" << std::endl;
 	_state = WAITING_REQ;
 	_sentBytes = 0;
 	_uploadedBytes = 0;
+	_redirections = 0;
 	_responsible_server = valid_idx.at(0);
 	_close = false;
 }
@@ -31,6 +33,7 @@ Connection::~Connection()
 {
 	std::cout << "\e[2mDestructor Connection called\e[0m" << std::endl;
 	delete _req;
+	delete _cgi;
 }
 
 // Overloads
@@ -46,6 +49,7 @@ Connection &Connection::operator=(const Connection &other)
 		_sentBytes = other._sentBytes;
 		_uploadedBytes = other._uploadedBytes;
 		_hasTimeout = other._hasTimeout;
+		_redirections = other._redirections;
 		setState(other._state);
 	}
 	return *this;
@@ -71,6 +75,9 @@ int Connection::acceptConnection()
 	std::cout << "fd is " << fd << std::endl;
 	updateKeepAliveTimeout();
 	_clientHeaderTimeout = std::chrono::system_clock::now() + std::chrono::seconds(CLIENT_HEADER_TIMEOUT);
+
+	_cgi->init();
+
 	return fd;
 }
 
@@ -83,6 +90,7 @@ void Connection::updateKeepAliveTimeout()
 
 void Connection::reset()
 {
+	_redirections = 0;
 	_hasTimeout = false;
 	setState(WAITING_REQ);
 	*_req = Request();
@@ -92,6 +100,7 @@ void Connection::reset()
 	_sentBytes = 0;
 	_uploadedBytes = 0;
 	_close = false;
+	_cgi->init();
 };
 
 void Connection::append(std::string const &str)
@@ -107,7 +116,12 @@ void Connection::appendToResponseBody(std::string const &str)
 	_res.appendToBody(str);
 }
 
-int Connection::getDirectory(std::filesystem::path dirPath, std::filesystem::path uri)
+void Connection::appendToCGIResult(std::string const &str)
+{
+	_cgi->_cgiResult.append(str);
+}
+
+int Connection::getDirectory(std::filesystem::path dirPath)
 {
 	if (_location.get_autoindex())
 	{
@@ -124,12 +138,12 @@ int Connection::getDirectory(std::filesystem::path dirPath, std::filesystem::pat
 			std::filesystem::path indexFile = _location.get_index()[i];
 			std::cout << "indexfile:>" << indexFile << "<" << std::endl;
 			std::filesystem::path path = dirPath / indexFile;
-			std::filesystem::path route = uri / indexFile;
+			// std::filesystem::path route = uri / indexFile;
 			if (std::filesystem::exists(path.string()))
 			{
 				std::cout << Colors::RED << "Try open resource " << path.string() << std::endl
 						  << Colors::RESET;
-				return getResource(route.string());
+				return getResource(path);
 			}
 		}
 	}
@@ -156,48 +170,32 @@ int Connection::redirect()
 	return -1;
 }
 
-int Connection::getResource(std::string uri)
+int Connection::getResource(std::filesystem::path path)
 {
-	Server server;
-
-	server = getResponsibleServer();
-	_location = server.get_location(uri);
-	_location.validate_allowed("GET");
-	if (_location.get_redirect().first)
-		return redirect();
-	std::filesystem::path path = _location.get_route(uri);
+	_redirections++;
+	if (_redirections == 10)
+		throw HttpError("Too many redirections", 500);
 	std::cout << Colors::RED << "GetResource " << path << std::endl
 			  << Colors::RESET;
 	if (!std::filesystem::exists(path))
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 	else if (std::filesystem::is_directory(path))
-		return getDirectory(path, uri);
+		return getDirectory(path);
 	else
 		return openResource(path);
 }
 
-int Connection::postResource(std::string uri)
+int Connection::postResource(std::filesystem::path path)
 {
 	// how should this work??? if i send a post request to any endpoint, it will upload to a default directory?
 	// only if it doesn't exist? if it exists, act like GET
-	Server server;
-
-	server = getResponsibleServer();
-	_location = server.get_location(_req->getUri());
-	_location.validate_allowed("POST");
-	if (_location.get_redirect().first)
-		return redirect();
-	std::filesystem::path path = _location.get_route(uri);
 	if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
 		return openResource(path);
-
-	std::filesystem::path filePath = uri;
-	std::string filename = filePath.filename().string();
+	std::string filename = path.filename().string();
 	_res.setCode(201);
 	_res.setContentType(".json");
 	std::filesystem::path accessLocation = _location.get_uri();
 	std::filesystem::path uploadLocation = _location.get_root();
-	;
 	accessLocation /= filename;
 	uploadLocation /= filename;
 	if (std::filesystem::exists(uploadLocation))
@@ -213,7 +211,7 @@ int Connection::postResource(std::string uri)
 	return resourceFd;
 }
 
-static bool file_in_use(const std::string& filePath)
+static bool file_in_use(const std::string &filePath)
 {
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	return !file.is_open();
@@ -244,20 +242,44 @@ int Connection::deleteResource(std::string uri)
 	return -1;
 }
 
-int Connection::setErrorResponse(const HttpError &e)
+int Connection::setErrorResponse(const std::exception &e)
 {
-	err_page_t error_page = getResponsibleServer().get_error_page(e.getCode());
-	auto v = error_page.code;
-	if (std::find(v.begin(), v.end(), e.getCode()) != v.end())
+	const HttpError *error = dynamic_cast<const HttpError *>(&e);
+	if (!error)
 	{
-		_res = Response(e);
+		auto err = HttpError(e.what(), 500);
+		error = &err;
+	}
+	err_page_t error_page = getResponsibleServer().get_error_page(error->getCode());
+	auto v = error_page.code;
+	if (std::find(v.begin(), v.end(), error->getCode()) != v.end())
+	{
+		std::filesystem::path path;
+		_res = Response(*error);
 		_res.setBody("");
 		if (error_page.overwrite)
 			_res.setCode(error_page.overwrite);
 		try
 		{
-			std::cout << Colors::RED << error_page.uri << Colors::RESET << std::endl;
-			return getResource(error_page.uri);
+			std::filesystem::path errorPagePath = error_page.uri;
+			if (errorPagePath.is_absolute())
+				_location = getResponsibleServer().get_location(error_page.uri);
+			else
+				_location = getResponsibleServer().get_location(_req->getUri());
+			_location.validate_allowed("GET");
+			if (_location.get_redirect().first)
+				return redirect();
+			if (errorPagePath.is_absolute())
+				path = _location.get_route(errorPagePath);
+			else
+			{
+				auto e = HttpError("Found", 302);
+				e.setField("LOCATION", error_page.uri);
+				throw e;
+				// path = _location.get_route(_req->getUri());
+				// path = (path.parent_path() / errorPagePath).string();
+			}
+			return getResource(path);
 		}
 		catch (HttpError &ex)
 		{
@@ -269,7 +291,7 @@ int Connection::setErrorResponse(const HttpError &e)
 		}
 	}
 	else
-		_res = Response(e);
+		_res = Response(*error);
 	setState(Connection::RES_READY);
 	return -1;
 }
@@ -287,21 +309,33 @@ int Connection::process()
 				_res.appendToHeader("Connection", "close");
 				_close = true;
 			}
-			if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
-				return getResource(_req->getUri());
+
+			Server server;
+			server = getResponsibleServer();
+			_location = server.get_location(_req->getUri());
+			_location.validate_allowed(_req->getMethod());
+			if (_location.get_redirect().first)
+				return redirect();
+			std::filesystem::path path = _location.get_route(_req->getUri());
+
+			// replace to match with all cgi extensions
+			if (!path.extension().empty() && path.extension() == _location.get_cgi_extension())
+			{
+				_cgi->startCGIprocess(_req, path, server);
+				setState(CGI_READ_REQ_BODY);
+				return -1;
+			}
+			else if (_req->getMethod() == "GET" || _req->getMethod() == "HEAD")
+				return getResource(path);
 			else if (_req->getMethod() == "POST")
-				return postResource(_req->getUri());
+				return postResource(path);
 			else if (_req->getMethod() == "DELETE")
 				return deleteResource(_req->getUri());
 		}
 	}
-	catch (HttpError &e)
-	{
-		return setErrorResponse(e);
-	}
 	catch (const std::exception &e)
 	{
-		return setErrorResponse(HttpError(e.what(), 500));
+		return setErrorResponse(e);
 	}
 	return -1;
 }
@@ -362,6 +396,32 @@ bool Connection::hasConnectionClose() const
 }
 
 // Setters
+
+int Connection::processCGIOutput()
+{
+	try
+	{
+		int status;
+		waitpid(_cgi->_cgiPid, &status, 0);
+		if (status != 0)
+			throw HttpError("CGI did not terminate normally", 500);
+		_res.setCGIContent(_cgi->_cgiResult);
+		err_page_t error_page = getResponsibleServer().get_error_page(_res.getCode());
+		auto v = error_page.code;
+		if (std::find(v.begin(), v.end(), _res.getCode()) != v.end())
+			throw HttpError("CGI exited correctly but set error code", _res.getCode());
+		_state = RES_READY;
+		return -1;
+	}
+	catch (const HttpError &e)
+	{
+		return setErrorResponse(e);
+	}
+	catch (const std::exception &e)
+	{
+		return setErrorResponse(HttpError(e.what(), 500));
+	}
+}
 
 void Connection::setState(int s)
 {

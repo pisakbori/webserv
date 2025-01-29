@@ -1,20 +1,17 @@
 #ifndef REQ_HPP
 #define REQ_HPP
 
-#include "HttpError.hpp"
-#include "Validate.hpp"
+#include "HttpMessage.hpp"
 #include "Connection.hpp"
-#include "CommonIncludes.hpp"
 
 class Connection;
-class Request
+class Request : public HttpMessage
 {
 private:
 	std::string _method;
 	std::string _uri;
 	std::string _protocol;
 	std::string _body;
-	std::map<std::string, std::string> _header;
 	std::map<std::string, std::string> _query;
 	std::string _input;
 	int			_chunk_size;
@@ -40,7 +37,6 @@ public:
 	void matchHost(Connection *c);
 	void extractQueryString();
 	void parseRequestLine(std::string &line);
-	void parseFieldLine(std::string &line, bool *headerRead);
 	void parseContentLength(Connection *c);
 	void parseTransferEncoding(Connection *c, const std::string &rclf);
 	void parseHead(Connection *c);
@@ -50,7 +46,6 @@ public:
 	std::string const &getProtocol() const;
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
-	const std::map<std::string, std::string> &getHeader() const;
 	const std::map<std::string, std::string> &getQuery() const;
 	bool hasConnectionClose() const;
 	std::string const &getBody() const;

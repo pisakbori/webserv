@@ -18,8 +18,10 @@ SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					$(REQ_RES_DIR)/HttpError.cpp \
 					$(REQ_RES_DIR)/Request.cpp \
 					$(REQ_RES_DIR)/Response.cpp \
+					$(REQ_RES_DIR)/HttpMessage.cpp \
 					connection/Connection.cpp \
 					connection/Webserv.cpp \
+					connection/Cgi.cpp \
 					# $(TEST_DIR)/server.cpp \
 					# $(TEST_DIR)/location.cpp 
 OBJECTS		=		$(SOURCES:.cpp=.o)

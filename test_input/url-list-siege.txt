@@ -1,0 +1,4 @@
+http://localhost:8080/index.htm
+http://localhost:8080/about
+http://localhost:8080/mock.py
+http://localhost:8080/mock-cgi.py

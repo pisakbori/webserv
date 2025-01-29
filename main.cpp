@@ -22,20 +22,27 @@ void sigpipe_handler(int sig)
 	// std::cerr << "SIGPIPE received " << sig << std::endl;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-	std::signal(SIGINT, handle_sigint);
-	signal(SIGPIPE, sigpipe_handler);
-	try
+	if (argc != 2)
 	{
-		webserv.configure("./test_input/1server.conf");
-	}
-	catch (std::runtime_error &e)
-	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << "Usage: " << argv[0] << " <config_file_path>" << std::endl;
 		return 1;
 	}
-	// webserv.configure("./test_input/1server_indextest.conf");
+
+	std::signal(SIGINT, handle_sigint);
+	signal(SIGPIPE, sigpipe_handler);
+
+	try
+	{
+		webserv.configure(argv[1]);
+	}
+	catch (const std::runtime_error &e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		return 1;
+	}
+
 	webserv.run();
 	return 0;
 }
