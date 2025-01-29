@@ -3,7 +3,7 @@ import time
 
 print("Content-Type: text/html")
 print("CONTENT-LENGTH: 800")
-print("Status: 404 Blabla")
+print("Status: 200 Blabla")
 print()  
 
 print("<html>")

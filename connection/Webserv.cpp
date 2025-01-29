@@ -130,6 +130,7 @@ void Webserv::closeConnectionResource(int fd)
 
 void Webserv::closeConnectionCgi(int fd)
 {
+	std::cout << "heree killing connection " << fd << std::endl;
 	_connections[fd]->_cgi->killCgi();
 	_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[0]);
 	_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[1]);
@@ -139,6 +140,10 @@ void Webserv::closeConnectionCgi(int fd)
 	closeFd(_connections[fd]->_cgi->_cgi2parent[1]);
 	closeFd(_connections[fd]->_cgi->_parent2cgi[0]);
 	closeFd(_connections[fd]->_cgi->_parent2cgi[1]);
+	_connections[fd]->_cgi->_cgi2parent[0] = -1;
+	_connections[fd]->_cgi->_cgi2parent[1] = -1;
+	_connections[fd]->_cgi->_parent2cgi[0] = -1;
+	_connections[fd]->_cgi->_parent2cgi[1] = -1;
 }
 
 void Webserv::closeConnection(int fd)
@@ -192,7 +197,7 @@ void Webserv::readFromCGI(int fd)
 	}
 	else if (bytesRead == 0)
 	{
-		// std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
+		std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
 		_connections[_cgiFds[fd]]->setState(Connection::CGI_OUTPUT_READY);
 		int resourceFd = _connections[_cgiFds[fd]]->processCGIOutput();
 		if (resourceFd != -1)
@@ -202,10 +207,7 @@ void Webserv::readFromCGI(int fd)
 			FD_SET(resourceFd, &_master);
 			printOpenFds();
 		}
-		// close cgi2parent, it finished.
-		_connections[_cgiFds[fd]]->_cgi->_cgi2parent[0] = -1;
-		closeFd(fd, "cgi2parent");
-		_cgiFds.erase(fd);
+		closeConnectionCgi(_cgiFds[fd]);
 	}
 }
 
@@ -235,6 +237,8 @@ void Webserv::readFromSocket(int fd)
 				closeFd(_connections[fd]->_cgi->_parent2cgi[0], "_parent2cgi read: useless");
 				_cgiFds.erase(_connections[fd]->_cgi->_cgi2parent[1]);
 				_cgiFds.erase(_connections[fd]->_cgi->_parent2cgi[0]);
+				_connections[fd]->_cgi->_cgi2parent[1] = -1;
+				_connections[fd]->_cgi->_parent2cgi[0] = -1;
 			}
 		}
 	}
