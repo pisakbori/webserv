@@ -31,6 +31,7 @@ Request &Request::operator=(const Request &other)
 	{
 		_input = other._input;
 		_header = other._header;
+		_query = other._query;
 		_method = other._method;
 		_protocol = other._protocol;
 		_uri = other._uri;
@@ -45,6 +46,10 @@ std::ostream &operator<<(std::ostream &os, const Request &req)
 	std::cout << "Method: " << req.getMethod() << std::endl;
 	std::cout << "Protocol: " << req.getProtocol() << std::endl;
 	std::cout << "URI: " << req.getUri() << std::endl;
+	for (auto it = req.getQuery().begin(); it != req.getQuery().end(); ++it)
+	{
+		std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
+	}
 	for (auto it = req.getHeader().begin(); it != req.getHeader().end(); ++it)
 	{
 		std::cout << it->first << ": \"" << it->second << "\"" << std::endl;
@@ -69,6 +74,31 @@ void Request::matchHost(Connection *c)
 	}
 }
 
+void Request::extractQueryString()
+{
+	std::string	query;
+
+	size_t question_pos = _uri.find('?');
+	if (question_pos == std::string::npos)
+		return ;
+	query = _uri.substr(question_pos + 1);
+	_uri = _uri.substr(0, question_pos);
+	std::istringstream	iss(query);
+	for (std::string line; getline(iss, line, '&');)
+	{
+		size_t	equal_pos = line.find('=');
+		if (equal_pos != std::string::npos)
+		{
+			std::string	key, value;
+			key = line.substr(0, equal_pos);
+			value = line.substr(equal_pos + 1);
+			_query[key] = value;
+		}
+		else
+			_query[line] = "";
+	}
+}
+
 // request-line   = method SP request-target SP HTTP-version
 void Request::parseRequestLine(std::string &line)
 {
@@ -76,7 +106,7 @@ void Request::parseRequestLine(std::string &line)
 	if (std::any_of(line.begin(), line.end(), [](char c)
 		{ return std::isspace(c) && c != ' '; }))
 	{
-		throw HttpError("Invalid whitespace in request line: ", 400);
+		throw HttpError("Invalid whitespace in request line", 400);
 	}
 	std::istringstream stream(line);
 
@@ -84,6 +114,7 @@ void Request::parseRequestLine(std::string &line)
 	if (_method.empty() || _uri.empty() || _protocol.empty())
 		throw HttpError("Bad Request", 400);
 	Validate::url(_uri);
+	extractQueryString();
 	if (_protocol != "HTTP/1.1")
 		throw HttpError(_protocol + " protocol not supported", 505);
 }
@@ -212,6 +243,11 @@ bool Request::hasConnectionClose() const
 const std::map<std::string, std::string> &Request::getHeader() const
 {
 	return _header;
+}
+
+const std::map<std::string, std::string> &Request::getQuery() const
+{
+	return _query;
 }
 
 // Setters

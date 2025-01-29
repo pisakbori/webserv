@@ -9,12 +9,6 @@
 #include <HttpError.hpp>
 #include "Parsing.hpp"
 
-/*
- * https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
- * #TODO
- * - [ ] Implement all CGI stuff...
- */
-
 class Location
 {
 	private:
@@ -24,9 +18,13 @@ class Location
 		std::string					root;
 		bool						autoindex;
 		std::vector<std::string>	index;
+		std::string					cgi_extension;
+		std::string					cgi_path;
 		bool						redirect_set;
 		bool						root_set;
 		bool						autoindex_set;
+		bool						cgi_extension_set;
+		bool						cgi_path_set;
 
 	// Setters
 		void						set_location(std::string directive);
@@ -36,6 +34,8 @@ class Location
 		void						set_root(std::string arg);
 		void						set_autoindex(std::string arg);
 		void						set_index(std::string arg);
+		void 						set_cgi_extension(std::string arg);
+		void 						set_cgi_path(std::string arg);
 
 	public:
 	// Constructor
@@ -61,6 +61,8 @@ class Location
 		std::string					get_root(void) const;
 		bool						get_autoindex(void) const;
 		std::vector<std::string>	get_index(void) const;
+		std::string 				get_cgi_extension(void) const;
+		std::string 				get_cgi_path(void) const;
 		std::filesystem::path 		get_route(const std::string &uri);
 
 };

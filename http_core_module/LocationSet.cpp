@@ -10,7 +10,14 @@ void	Location::populate_location(std::istringstream & infile, std::string line)
 		if (line.empty())
 			continue ;
 		if (line.find('}') != std::string::npos)
-			break ;
+		{
+			if ((cgi_extension_set && cgi_path_set) ||
+				(!cgi_extension_set && !cgi_path_set))
+				break ;
+			else
+				throw std::runtime_error(
+					"both \"cgi_extension\" and \"cgi_path\" must be set for CGI to work");
+		}
 		this->set_location(line);
 	}
 }
@@ -24,7 +31,9 @@ void	Location::set_location(std::string directive)
 		"redirect",
 		"root",
 		"autoindex",
-		"index"
+		"index",
+		"cgi_extension",
+		"cgi_path"
 	};
 	void	(Location::*fnptr[])( std::string ) =
 	{
@@ -32,7 +41,9 @@ void	Location::set_location(std::string directive)
 		&Location::set_redirect,
 		&Location::set_root,
 		&Location::set_autoindex,
-		&Location::set_index
+		&Location::set_index,
+		&Location::set_cgi_extension,
+		&Location::set_cgi_path
 	};
 	int			i;
 	const int	N = sizeof(directives) / sizeof(directives[0]);
@@ -140,4 +151,40 @@ void Location::set_index(std::string arg)
 	std::istringstream iss(arg);
 	for (std::string token; std::getline(iss, token, ' ');)
 		index.push_back(std::move(token));
+}
+
+void Location::set_cgi_extension(std::string arg)
+{
+	if (cgi_extension_set)
+		throw std::runtime_error(
+			"\"cgi_extension\" directive is duplicate");
+	cgi_extension_set = true;
+	if (std::any_of(arg.begin(), arg.end(), [](char c)
+		{ return std::isspace(c); }))
+		throw std::runtime_error(
+			"invalid number of arguments in \"cgi_extension\" directive");
+	if (arg.front() != '.')
+		throw std::runtime_error(
+			"extension must start with \".\"");
+	if (std::any_of(arg.begin() + 1, arg.end(), [](unsigned char c)
+		{ return !std::isalnum(c); }))
+		throw std::runtime_error(
+			"forbidden character in \"cgi_extension\" argument");
+	cgi_extension = arg;
+}
+
+void Location::set_cgi_path(std::string arg)
+{
+	if (cgi_path_set)
+		throw std::runtime_error(
+			"\"cgi_path\" directive is duplicate");
+	cgi_path_set = true;
+	if (std::any_of(arg.begin(), arg.end(), [](char c)
+		{ return std::isspace(c); }))
+		throw std::runtime_error(
+			"invalid number of arguments in \"cgi_path\" directive");
+	if (arg.find("//") != std::string::npos)
+		throw std::runtime_error(
+			"\"cgi_path\" argument cannot contain \"//\"");
+	cgi_path = arg;
 }

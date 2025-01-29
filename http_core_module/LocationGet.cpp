@@ -31,6 +31,16 @@ std::vector<std::string> Location::get_index(void) const
 	return index;
 }
 
+std::string Location::get_cgi_extension(void) const
+{
+	return cgi_extension;
+}
+
+std::string Location::get_cgi_path(void) const
+{
+	return cgi_path;
+}
+
 std::filesystem::path Location::get_route(const std::string &str)
 {
 	std::filesystem::path route;

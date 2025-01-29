@@ -4,7 +4,6 @@
 void	Server::populate_server(std::istringstream & infile)
 {
 	std::string		line;
-	Location		location;
 	bool			bracket_closed;
 
 	bracket_closed = false;
@@ -20,6 +19,7 @@ void	Server::populate_server(std::istringstream & infile)
 		}
 		if (line.find("location ") == 0)
 		{
+			Location	location;
 			locationBlockValid(line);
 			location.populate_location(infile, line);
 			this->location.push_back(location);

@@ -15,6 +15,7 @@ private:
 	std::string _protocol;
 	std::string _body;
 	std::map<std::string, std::string> _header;
+	std::map<std::string, std::string> _query;
 	std::string _input;
 
 public:
@@ -36,6 +37,7 @@ public:
 	// Member functions
 	void append(std::string const &str);
 	void matchHost(Connection *c);
+	void extractQueryString();
 	void parseRequestLine(std::string &line);
 	void parseFieldLine(std::string &line, bool *headerRead);
 	void parseContentLength(Connection *c, std::istringstream &stream);
@@ -46,6 +48,7 @@ public:
 	std::string const &getUri() const;
 	std::string const &getMethod() const;
 	const std::map<std::string, std::string> &getHeader() const;
+	const std::map<std::string, std::string> &getQuery() const;
 	bool hasConnectionClose() const;
 	std::string const &getBody() const;
 	// Setters

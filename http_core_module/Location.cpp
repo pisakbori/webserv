@@ -8,9 +8,13 @@ Location::Location() :
 	root("html"),
 	autoindex(false),
 	index(),
+	cgi_extension(),
+	cgi_path(),
 	redirect_set(false),
 	root_set(false),
-	autoindex_set(false)
+	autoindex_set(false),
+	cgi_extension_set(false),
+	cgi_path_set(false)
 {
 	allow.push_back("GET");
 	allow.push_back("HEAD");
@@ -26,9 +30,13 @@ Location::Location(Location const & src) :
 	root(src.root),
 	autoindex(src.autoindex),
 	index(src.index),
+	cgi_extension(src.cgi_extension),
+	cgi_path(src.cgi_path),
 	redirect_set(src.redirect_set),
 	root_set(src.root_set),
-	autoindex_set(src.autoindex_set)
+	autoindex_set(src.autoindex_set),
+	cgi_extension_set(src.cgi_extension_set),
+	cgi_path_set(src.cgi_path_set)
 {
 }
 
@@ -48,9 +56,13 @@ Location &	Location::operator=(Location const & rhs)
 		this->root = rhs.root;
 		this->autoindex = rhs.autoindex;
 		this->index = rhs.index;
+		this->cgi_extension = rhs.cgi_extension;
+		this->cgi_path = rhs.cgi_path;
 		this->redirect_set = rhs.redirect_set;
 		this->root_set = rhs.root_set;
 		this->autoindex_set = rhs.autoindex_set;
+		this->cgi_extension_set = rhs.cgi_extension_set;
+		this->cgi_path_set = rhs.cgi_path_set;
 	}
 	return *this;
 }
@@ -72,6 +84,9 @@ std::ostream &operator<<(std::ostream &os, const Location &location)
 	v = location.get_index();
 	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
 		os << *i << ' ';
+	os << std::endl;
+	os << "  cgi_extension: " << location.get_cgi_extension() << std::endl;
+	os << "  cgi_path: " << location.get_cgi_path();
 	return os;
 }
 
