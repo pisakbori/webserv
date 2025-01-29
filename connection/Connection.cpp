@@ -96,7 +96,8 @@ void Connection::reset()
 
 void Connection::append(std::string const &str)
 {
-	setState(READING_REQ);
+	if (_state != READING_REQ_BODY)
+		setState(READING_REQ);
 	_req->append(str);
 }
 

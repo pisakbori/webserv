@@ -17,6 +17,7 @@ private:
 	std::map<std::string, std::string> _header;
 	std::map<std::string, std::string> _query;
 	std::string _input;
+	int			_chunk_size;
 
 public:
 	size_t _bodySize;
@@ -40,7 +41,9 @@ public:
 	void extractQueryString();
 	void parseRequestLine(std::string &line);
 	void parseFieldLine(std::string &line, bool *headerRead);
-	void parseContentLength(Connection *c, std::istringstream &stream);
+	void parseContentLength(Connection *c);
+	void parseTransferEncoding(Connection *c, const std::string &rclf);
+	void parseHead(Connection *c);
 	void parseRequest(Connection *c);
 
 	// Getters
