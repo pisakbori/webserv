@@ -54,6 +54,8 @@ void Listen::startListening(void)
 	_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd == -1)
 		throw std::runtime_error("Error creating listening socket");
+	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("ERROR setting socket to non-blocking");
 	struct sockaddr_in serverAddr;
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = inet_addr(host.c_str());

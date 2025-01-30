@@ -65,12 +65,6 @@ int Connection::acceptConnection()
 
 	if (fd < 0)
 		throw std::runtime_error("ERROR on accept");
-	// TODO::forbidden flag
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-		throw std::runtime_error("ERROR getting socket flags");
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("ERROR setting socket to non-blocking");
 	std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << std::endl;
 	std::cout << "fd is " << fd << std::endl;
 	updateKeepAliveTimeout();
