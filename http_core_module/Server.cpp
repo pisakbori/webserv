@@ -1,61 +1,86 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mkijewsk <mkijewsk@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/14 22:03:33 by mkijewsk          #+#    #+#             */
-/*   Updated: 2024/12/17 21:13:06 by mkijewsk         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
 
+// Constructor
 Server::Server() :
-	host("0.0.0.0"),
-	port(80),
-	server_name(1),
+	listen(),
+	server_name(),
 	error_page(),
-	client_max_body_size(1 << 20)
+	client_max_body_size(1 << 20),
+	listen_set(false),
+	client_max_body_size_set(false),
+	location()
 {
+	std::cout << "\e[2mServer default constructor\e[0m" << Colors::RESET << std::endl;
 }
 
+// Copy constructor
 Server::Server(Server const & src) :
-	host(src.host),
-	port(src.port),
+	listen(src.listen),
 	server_name(src.server_name),
 	error_page(src.error_page),
-	client_max_body_size(src.client_max_body_size)
+	client_max_body_size(src.client_max_body_size),
+	listen_set(src.listen_set),
+	client_max_body_size_set(src.client_max_body_size_set),
+	location(src.location)
 {
+	std::cout << "\e[2mServer copy constructor\e[0m" << Colors::RESET << std::endl;
 }
 
+// Destructor
 Server::~Server()
 {
+	std::cout << "\e[2mServer destructor\e[0m" << Colors::RESET << std::endl;
 }
 
-Server &	Server::operator=(Server const & rhs)
+// Overloads
+Server &		Server::operator=(Server const & rhs)
 {
+	std::cout << "\e[2mServer equal operator" << Colors::RESET << std::endl;
 	if (this != &rhs)
 	{
-		this->host = rhs.host;
-		this->port = rhs.port;
+		this->listen = rhs.listen;
 		this->server_name = rhs.server_name;
 		this->error_page = rhs.error_page;
 		this->client_max_body_size = rhs.client_max_body_size;
+		this->location = rhs.location;
+		this->listen_set = rhs.listen_set;
+		this->client_max_body_size_set = rhs.client_max_body_size_set;
 	}
 	return *this;
 }
 
-std::string		extract_parameters(const std::string & name, const std::string & directive)
+std::ostream &operator<<(std::ostream &os, const Server &server)
 {
-	std::string	arg;
-
-	if (directive.find(name) == 0 && directive.find(' ') != std::string::npos)
+	os << server.get_listen();
+	os << "server_name: ";
+	std::vector<std::string> v(server.get_server_name());
+	for (std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i)
+		os << *i << ' ';
+	os << std::endl;
+	for (const err_page_t& error : server.get_error_page())
 	{
-		arg = directive.substr(directive.find(' ') + 1);
-		arg = arg.substr(0, arg.size() - 1);
-		return arg;
+		os << "error_page: " << std::endl;
+		std::vector<int> vint(error.code);
+		os << "  codes: ";
+		for (size_t i = 0; i < vint.size(); ++i)
+			os << vint[i] << ' ';
+		os << std::endl;
+		os << "  overwrite: " << error.overwrite << std::endl;
+		os << "  uri: " << error.uri << std::endl;
 	}
-	return "";
+	os << "client_max_body_size: " << server.get_client_max_body_size() << std::endl;
+	std::vector<Location> l(server.location);
+	for (size_t i = 0; i < l.size(); ++i)
+  		os << l[i] << std::endl;
+	return os;
+}
+
+void Server::startListening(void)
+{
+	listen.startListening();
+}
+
+void Server::stopListening(void)
+{
+	listen.stopListening();
 }

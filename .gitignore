@@ -1,0 +1,14 @@
+.vscode
+**/*.o
+**/*.a
+webserv
+obj
+.vscode
+bgnet_a4_c_1.pdf
+cgi_tester
+docs.md
+tester
+test_config
+test
+www/large-files/*
+www/videos/dance.mp4
