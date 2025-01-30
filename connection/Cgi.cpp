@@ -86,8 +86,12 @@ void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const 
 		args.push_back(const_cast<char *>(cgiPath.c_str()));
 		args.push_back(const_cast<char *>(path.c_str()));
 		args.push_back(nullptr);
-		dup2(_parent2cgi[0], STDIN_FILENO);
-		dup2(_cgi2parent[1], STDOUT_FILENO);
+		if (dup2(_parent2cgi[0], STDIN_FILENO) == -1 || dup2(_cgi2parent[1], STDOUT_FILENO) == -1)
+		{
+			close(_parent2cgi[0]);
+			close(_cgi2parent[1]);
+			exit(EXIT_FAILURE);
+		}
 		std::vector<char *> env;
 		for (auto it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it)
 			env.push_back(const_cast<char *>(it->c_str()));
