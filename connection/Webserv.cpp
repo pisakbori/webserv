@@ -264,14 +264,13 @@ void Webserv::writeToResourceFd(int i)
 {
 	auto c = _connections[_resources[i]];
 	size_t size = c->getRequest()->_bodySize;
-	if (size <= 0)
-		return;
-	if (c->_uploadedBytes < size)
+	if (size > 0 && c->_uploadedBytes < size)
 	{
 		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
 		int uploadedBytes = write(i, substring.c_str(), substring.size());
 		if (uploadedBytes == -1)
 		{
+			std::cout << "TODO:BORI here i should set them an 500" << std::endl;
 			closeConnection(_resources[i]);
 			return;
 		}
@@ -282,7 +281,7 @@ void Webserv::writeToResourceFd(int i)
 		}
 		else
 		{
-			// TODO:Bori    no space left?? shuld i respond internal server error?
+			std::cout << "TODO:Bori    no space left?? shuld i respond internal server error?" << std::endl;
 			closeConnection(_resources[i]);
 			return;
 		}
