@@ -5,7 +5,6 @@
 // Constructor
 Webserv::Webserv()
 {
-	// TODO:
 	// std::cout << "\e[2mDefault constructor Webserv called\e[0m" << std::endl;
 	FD_ZERO(&_master);
 	FD_ZERO(&_readfds);
@@ -425,7 +424,6 @@ void Webserv::run()
 	std::map<Listen, int> listenFdMap;
 	int maxfd = -1;
 
-// TODO:Marian there is somehow a leak related to listenFdMap. please take a look
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
 		Listen& listen = _servers[i].get_listen();

@@ -5,7 +5,6 @@ STANDARD	=		--std=c++17
 HTTP_DIR	=		http_core_module
 REQ_RES_DIR	=		response_request
 CONNECTION	=		connection
-TEST_DIR	=		tests
 INCLUDE		=		-I./http_core_module -I./connection -I./response_request
 SOURCES     =		main.cpp \
 					$(HTTP_DIR)/Server.cpp \
@@ -33,9 +32,6 @@ all:	$(NAME)
 
 $(NAME): $(OBJECTS)
 	$(COMPILER) $(OBJECTS) -o $(NAME)
-
-test: $(OBJECTS) test.o
-	$(COMPILER) $(OBJECTS) test.o -o test
 
 clean:
 	rm -rf $(OBJECTS)

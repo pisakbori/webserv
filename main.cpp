@@ -19,7 +19,6 @@ void handle_sigint(int signal)
 void sigpipe_handler(int sig)
 {
 	(void)sig;
-	// std::cerr << "SIGPIPE received " << sig << std::endl;
 }
 
 int main(int argc, char *argv[])
