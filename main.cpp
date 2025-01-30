@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 	try
 	{
 		webserv.configure(argv[1]);
+		webserv.run();
 	}
 	catch (const std::runtime_error &e)
 	{
@@ -43,6 +44,5 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	webserv.run();
 	return 0;
 }

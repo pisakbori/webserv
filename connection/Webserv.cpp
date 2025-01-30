@@ -462,7 +462,7 @@ void Webserv::run()
 		if (!_connections.empty())
 			maxfd = maxFd();
 		if (-1 == (_nReady = select(maxfd + 1, &_readfds, &_writefds, &_exceptfds, &timeout)))
-			throw std::runtime_error(strerror(errno));
+			throw std::runtime_error("error in select");
 		for (int i = 0; i <= maxfd && _nReady > 0; i++)
 		{
 			if (FD_ISSET(i, &_readfds))
