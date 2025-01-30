@@ -62,8 +62,8 @@ void Request::matchHost(Connection *c)
 {
 	if (_header.find("HOST") == _header.end())
 		throw HttpError("Missing Host", 400);
-	const std::string &host = _header["HOST"];
-
+	std::string &host = _header["HOST"];
+	host = host.substr(0, host.find(':'));
 	for (const int& i : c->getValidServers())
 	{
 		std::vector<std::string> server_names = c->getServ().at(i).get_server_name();
