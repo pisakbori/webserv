@@ -44,6 +44,7 @@ private:
 	void closeConnection(int fd);
 	void writeToSocket(Connection *c, int i);
 	void writeToCGIStdin(int i);
+	void closeCGIGracefully(int i);
 
 public:
 	// Constructor

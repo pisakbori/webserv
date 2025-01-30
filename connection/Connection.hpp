@@ -32,7 +32,6 @@ private:
 	int postResource(std::filesystem::path path);
 	int deleteResource(std::filesystem::path path);
 	int redirect();
-	int setErrorResponse(const std::exception &e);
 	int _state;
 	bool _close;
 
@@ -67,6 +66,7 @@ public:
 
 	// Member functions
 	int process();
+	int setErrorResponse(const std::exception &e);
 	void append(std::string const &str);
 	void appendToResponseBody(std::string const &str);
 	void appendToCGIResult(std::string const &str);

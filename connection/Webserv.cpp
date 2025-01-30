@@ -168,8 +168,9 @@ void Webserv::readFromResource(int fd)
 	}
 	else if (bytesRead < 0)
 	{
-		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from " << fd << Colors::RESET << std::endl;
-		// TODO:Bori disconnect?
+		_connections[_resources[fd]]->setErrorResponse(HttpError("Unable to read resource", 500));
+		closeConnectionResource(_resources[fd]);
+		return;
 	}
 	else if (bytesRead == 0)
 	{
@@ -191,10 +192,7 @@ void Webserv::readFromCGI(int fd)
 		_connections[_cgiFds[fd]]->appendToCGIResult(str);
 	}
 	else if (bytesRead < 0)
-	{
-		std::cout << Colors::RED << "Oh nooooo, there was a problem when reading from CGI" << fd << Colors::RESET << std::endl;
-		// TODO:Bori disconnect?
-	}
+		closeCGIGracefully(fd);
 	else if (bytesRead == 0)
 	{
 		std::cout << "read " << bytesRead << " bytes from CGI " << fd << std::endl;
@@ -268,22 +266,16 @@ void Webserv::writeToResourceFd(int i)
 	{
 		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
 		int uploadedBytes = write(i, substring.c_str(), substring.size());
-		if (uploadedBytes == -1)
+		if (uploadedBytes <= 0)
 		{
-			std::cout << "TODO:BORI here i should set them an 500" << std::endl;
-			closeConnection(_resources[i]);
+			_connections[_resources[i]]->setErrorResponse(HttpError("Unable to upload resource", 500));
+			closeConnectionResource(_resources[i]);
 			return;
-		}
-		else if (uploadedBytes > 0)
-		{
-			// std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
-			c->_uploadedBytes += uploadedBytes;
 		}
 		else
 		{
-			std::cout << "TODO:Bori    no space left?? shuld i respond internal server error?" << std::endl;
-			closeConnection(_resources[i]);
-			return;
+			// std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
+			c->_uploadedBytes += uploadedBytes;
 		}
 	}
 	else
@@ -294,33 +286,29 @@ void Webserv::writeToResourceFd(int i)
 	}
 }
 
+void Webserv::closeCGIGracefully(int i)
+{
+	_connections[_cgiFds[i]]->_cgi->killCgi();
+	_connections[_cgiFds[i]]->setErrorResponse(HttpError("Unable to write to CGI stdin", 500));
+}
+
 void Webserv::writeToCGIStdin(int i)
 {
+
 	auto c = _connections[_cgiFds[i]];
 	if (c->getState() != Connection::CGI_READ_REQ_BODY)
 		return;
-
 	size_t size = c->getRequest()->_bodySize;
 	if (size > 0 && c->_uploadedBytes < size)
 	{
 		std::string substring = c->getRequest()->getBody().substr(c->_uploadedBytes, WRITE_BUFFER_SIZE);
 		int uploadedBytes = write(i, substring.c_str(), substring.size());
-		if (uploadedBytes == -1)
-		{
-			// TODO:Bori - should i even close connection or just throw 500?
-			closeConnection(_cgiFds[i]);
-			return;
-		}
+		if (uploadedBytes <= 0)
+			return closeCGIGracefully(i);
 		else if (uploadedBytes > 0)
 		{
 			// std::cout << "\e[2mUploaded " << uploadedBytes << " bytes to  " << i << "\e[0m" << std::endl;
 			c->_uploadedBytes += uploadedBytes;
-		}
-		else
-		{
-			// TODO:Bori    no space left?? shuld i respond internal server error?
-			closeConnection(_cgiFds[i]);
-			return;
 		}
 	}
 	else
@@ -337,37 +325,29 @@ int Webserv::sendOneChunk(Connection *c, int i)
 {
 	std::string substring = c->getResponse().getContent(c->_sentBytes, WRITE_BUFFER_SIZE);
 	int bytesSent = send(i, substring.c_str(), substring.length(), 0);
-	if (bytesSent == -1)
+	if (bytesSent <= 0)
 	{
 		std::cout << Colors::RED << "Error sending response." << Colors::RESET << std::endl;
 		closeConnection(i);
+		return 0;
 	}
-	else if (bytesSent > 0)
+	else
 	{
 		c->updateKeepAliveTimeout();
 		c->_sentBytes += bytesSent;
 		// std::cout << "\e[2mSent " << bytesSent << " bytes to  " << i << "\e[0m" << std::endl;
 		return 1;
 	}
-	else if (bytesSent == 0)
-	{
-
-		std::cout << Colors::RED << "0 sent.....????" << Colors::RESET << std::endl;
-		closeConnection(i);
-	}
-	return 0;
 }
 
 void Webserv::writeToSocket(Connection *c, int i)
 {
 	// std::cout << "Sending response to " << i << "\n ";
-	try
+	if (c->_sentBytes < c->getResponse().getSize())
 	{
-		if (c->_sentBytes < c->getResponse().getSize())
-		{
-			if (!sendOneChunk(c, i))
+		if (!sendOneChunk(c, i))
 			return;
-		}
+	}
 		else
 			c->setState(Connection::RES_SENT);
 		if (c->getState() == Connection::RES_SENT)
@@ -397,11 +377,6 @@ void Webserv::writeToSocket(Connection *c, int i)
 				printOpenFds();
 			}
 		}
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << '\n';
-	}
 }
 
 void Webserv::onWrite(int i)
@@ -417,9 +392,7 @@ void Webserv::onWrite(int i)
 			writeToSocket(c, i);
 	}
 	else if (isCGI(i) && _connections[_cgiFds[i]]->_cgi->_parent2cgi[1] == i)
-	{
 		writeToCGIStdin(i);
-	}
 }
 
 void Webserv::onRead(int fd)
@@ -496,19 +469,7 @@ void Webserv::run()
 			if (FD_ISSET(i, &_writefds))
 				onWrite(i);
 			if (FD_ISSET(i, &_exceptfds))
-			{
 				_nReady--;
-				// std::cout << "ERRRRRRRRRRRRRRRRR " << i << "\n";
-				// int err = 0;
-				// socklen_t len = sizeof(err);
-				// if (isConnection(i) && getsockopt(i, SOL_SOCKET, SO_ERROR, &err, &len) == 0)
-				// {
-				// 	if (err != 0)
-				// 	{
-				// 		std::cerr << "Socket error on FD " << i << ": " << strerror(err) << std::endl;
-				// 	}
-				// }
-			}
 		}
 	}
 }
