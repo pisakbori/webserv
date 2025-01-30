@@ -57,6 +57,8 @@ Webserv &Webserv::operator=(const Webserv &other)
 void Webserv::configure(std::string configFile)
 {
 	parse_config(configFile, _servers);
+	if (_servers.size() == 0)
+		throw std::runtime_error("No servers configured. Empty file.");
 	std::cout << Colors::GREEN;
 	for (size_t i = 0; i < _servers.size(); ++i)
 		std::cout << _servers.at(i) << std::endl;
