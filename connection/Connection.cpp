@@ -132,7 +132,6 @@ int Connection::getDirectory(std::filesystem::path dirPath)
 			std::filesystem::path indexFile = _location.get_index()[i];
 			std::filesystem::path path = dirPath / indexFile;
 			std::cout << "indexfile:>" << path << "<" << std::endl;
-			// std::filesystem::path route = uri / indexFile;
 			if (std::filesystem::exists(path))
 			{
 				std::cout << Colors::RED << "Try open resource " << path.string() << std::endl
@@ -260,8 +259,6 @@ int Connection::setErrorResponse(const std::exception &e)
 				auto e = HttpError("Found", 302);
 				e.setField("LOCATION", error_page.uri);
 				throw e;
-				// path = _location.get_route(_req->getUri());
-				// path = (path.parent_path() / errorPagePath).string();
 			}
 			return getResource(path);
 		}
@@ -302,7 +299,6 @@ int Connection::process()
 				return redirect();
 			std::filesystem::path path = _location.get_route(_req->getUri());
 
-			// replace to match with all cgi extensions
 			if (!path.extension().empty() && path.extension() == _location.get_cgi_extension())
 			{
 				_cgi->startCGIprocess(_req, path, server);

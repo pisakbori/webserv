@@ -29,8 +29,8 @@ HttpError::~HttpError() noexcept {};
 
 HttpError::HttpError(HttpError const &ex) :
 	_message(ex._message),
-	_code(ex.code),
-	_extraHeaderFields(ex.extraHeaderFields)
+	_code(ex._code),
+	_extraHeaderFields(ex._extraHeaderFields)
 {
 }
 

@@ -99,7 +99,6 @@ void Webserv::closeFd(int fd, std::string type)
 	printOpenFds();
 }
 
-// should i do this inside Connection..?
 void Webserv::closeConnectionResource(int fd)
 {
 	auto it = std::find_if(_resources.begin(), _resources.end(),

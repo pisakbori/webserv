@@ -15,14 +15,6 @@
 #include "HttpError.hpp"
 #include "Parsing.hpp"
 
-/*
- * Server class stores information regarding server directive in the .conf
- * It's inspired by nginx directives:
- * https://nginx.org/en/docs/http/ngx_http_core_module.html
- * #TODO
- * - [ ] Check if port, host, error_code is in proper before assignment
- * - [ ] Server can have multiple locations
- */
 
 typedef struct err_page_s
 {
