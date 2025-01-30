@@ -92,6 +92,8 @@ void Cgi::startCGIprocess(const Request *req, std::filesystem::path path, const 
 		for (auto it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it)
 			env.push_back(const_cast<char *>(it->c_str()));
 		env.push_back(nullptr);
+		if (chdir(path.parent_path().c_str()))
+			exit(EXIT_FAILURE);
 		if (execve(cgiPath.c_str(), args.data(), env.data()) == -1)
 			exit(EXIT_FAILURE);
 	}
