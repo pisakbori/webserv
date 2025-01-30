@@ -20,6 +20,7 @@ print("<tr><td>SCRIPT_NAME</td><td>{}</td></tr>".format(os.environ.get("SCRIPT_N
 print("<tr><td>PATH_INFO</td><td>{}</td></tr>".format(os.environ.get("PATH_INFO", "")))
 print("<tr><td>SERVER_SOFTWARE</td><td>{}</td></tr>".format(os.environ.get("SERVER_SOFTWARE", "")))
 print("<tr><td>REMOTE_ADDR</td><td>{}</td></tr>".format(os.environ.get("REMOTE_ADDR", "")))
+print("<tr><td>CWD</td><td>{}</td></tr>".format(os.getcwd(), ""))
 
 # End the table and HTML document
 print("</table>")
