@@ -12,13 +12,27 @@
 
 #include "HttpError.hpp"
 
-HttpError::HttpError() : _message("Undefined Error"), _code(200) {};
+HttpError::HttpError() :
+	_message("Undefined Error"),
+	_code(200)
+{
+}
 
-HttpError::HttpError(const std::string &msg, const int code, const std::map<std::string, std::string> &extraHeaderFields) : _message(msg), _code(code), _extraHeaderFields(extraHeaderFields) {};
+HttpError::HttpError(const std::string &msg, const int code, const std::map<std::string, std::string> &extraHeaderFields) :
+	_message(msg),
+	_code(code),
+	_extraHeaderFields(extraHeaderFields)
+{
+}
 
 HttpError::~HttpError() noexcept {};
 
-HttpError::HttpError(HttpError const &ex) { *this = ex; };
+HttpError::HttpError(HttpError const &ex) :
+	_message(ex._message),
+	_code(ex.code),
+	_extraHeaderFields(ex.extraHeaderFields)
+{
+}
 
 HttpError &HttpError::operator=(const HttpError &ex)
 {
@@ -29,16 +43,22 @@ HttpError &HttpError::operator=(const HttpError &ex)
 		_extraHeaderFields = ex._extraHeaderFields;
 	}
 	return *this;
-};
+}
 
-std::string const &HttpError::getMessage() const { return _message; };
+std::string const &HttpError::getMessage() const
+{
+	return _message;
+}
 
 const std::map<std::string, std::string> &HttpError::getExtraFields() const
 {
 	return _extraHeaderFields;
-};
+}
 
-int HttpError::getCode() const { return _code; };
+int HttpError::getCode() const
+{
+	return _code;
+}
 
 const char *HttpError::what() const noexcept
 {

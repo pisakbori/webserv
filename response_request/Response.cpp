@@ -126,10 +126,6 @@ void Response::setContentType(std::string const &str)
     }
     else
         _header["CONTENT-TYPE"] = "application/octet-stream";
-    // else if (str.empty())
-    //     _header["CONTENT-TYPE"] = "application/octet-stream";
-    // else
-    //     throw HttpError("Unsupported Media Type " + str, 415);
 }
 
 void Response::appendToHeader(std::string key, std::string value)

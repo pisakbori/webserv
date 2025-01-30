@@ -3,16 +3,21 @@
 // Constructor
 
 // Default constructor
-Request::Request()
+Request::Request() :
+	_method(""),
+	_uri(""),
+	_protocol(""),
+	_body(""),
+	_query(""),
+	_input(""),
+	_chunk_size(-1)
 {
 	// std::cout << "\e[2mDefault constructor Request called\e[0m" << std::endl;
-	_input = "";
 	_bodySize = 0;
-	_chunk_size = -1;
 }
 
 // Copy constructor
-Request::Request(const Request &other): HttpMessage(other)
+Request::Request(const Request &other) : HttpMessage(other)
 {
 	// std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
 	*this = other;

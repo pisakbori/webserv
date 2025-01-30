@@ -3,21 +3,14 @@
 #include <iostream>
 
 // Constructor
-HttpMessage::HttpMessage()
+HttpMessage::HttpMessage() : _header()
 {
 	// std::cout << "\e[2mDefault constructor HttpMessage called\e[0m" << std::endl;
 }
 
-// Parameterized constructor
-// HttpMessage::HttpMessage()
-// {
-// 	std::cout << "\e[2mParameterized constructor HttpMessage called\e[0m" << std::endl;
-// }
-
 // Copy constructor
-HttpMessage::HttpMessage(const HttpMessage &other)
+HttpMessage::HttpMessage(const HttpMessage &other) : _header(other._header)
 {
-	*this = other;
 	// std::cout << "\e[2mCopy constructor HttpMessage called\e[0m" << std::endl;
 }
 
