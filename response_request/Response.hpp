@@ -3,6 +3,7 @@
 
 #include "Location.hpp"
 #include "HttpMessage.hpp"
+#include <climits>
 
 class Response : public HttpMessage
 {

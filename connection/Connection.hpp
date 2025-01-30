@@ -10,6 +10,8 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <sys/wait.h>
+
 
 class Request;
 class Cgi;

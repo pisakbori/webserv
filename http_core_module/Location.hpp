@@ -8,6 +8,7 @@
 #include <fstream>
 #include <HttpError.hpp>
 #include "Parsing.hpp"
+#include <filesystem>
 
 class Location
 {

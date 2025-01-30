@@ -83,7 +83,7 @@ Response::Response(const HttpError &err)
 }
 
 // Copy constructor
-Response::Response(const Response &other)
+Response::Response(const Response &other): HttpMessage(other)
 {
     *this = other;
     // std::cout << "\e[2mCopy constructor Response called\e[0m" << std::endl;

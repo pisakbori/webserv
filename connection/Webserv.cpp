@@ -38,6 +38,7 @@ Webserv::Webserv(const Webserv &other)
 Webserv::~Webserv()
 {
 	// std::cout << "\e[2mDestructor Webserv called\e[0m" << std::endl;
+	stop();
     for (auto& pair : _connections) {
         delete pair.second; 
     }

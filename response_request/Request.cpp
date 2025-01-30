@@ -12,7 +12,7 @@ Request::Request()
 }
 
 // Copy constructor
-Request::Request(const Request &other)
+Request::Request(const Request &other): HttpMessage(other)
 {
 	// std::cout << "\e[2mCopy constructor Request called\e[0m" << std::endl;
 	*this = other;
