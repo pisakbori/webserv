@@ -25,13 +25,6 @@ Webserv::Webserv(std::string configFile)
 	this->configure(configFile);
 }
 
-// Copy constructor
-Webserv::Webserv(const Webserv &other)
-{
-	(void)other;
-	// TODO:
-	// std::cout << "\e[2mCopy constructor Webserv called\e[0m" << std::endl;
-}
 
 // Destructor
 Webserv::~Webserv()
@@ -41,15 +34,6 @@ Webserv::~Webserv()
     for (auto& pair : _connections) {
         delete pair.second; 
     }
-}
-
-// Overloads
-Webserv &Webserv::operator=(const Webserv &other)
-{
-	// std::cout << "\e[2mAssign operator Webserv called\e[0m" << std::endl;
-	// TODO:
-	(void)other;
-	return (*this);
 }
 
 // Member functions

@@ -8,14 +8,10 @@ Cgi::Cgi()
 	_parent2cgi[0] = -1;
 	_parent2cgi[1] = -1;
 	_cgiPid = 0;
+	_cgiEnv = std::vector<std::string>{};
 	// std::cout << "\e[2mDefault constructor Cgi called\e[0m" << std::endl;
 }
 
-// Parameterized constructor
-// Cgi::Cgi()
-// {
-// 	std::cout << "\e[2mParameterized constructor Cgi called\e[0m" << std::endl;
-// }
 
 // Copy constructor
 Cgi::Cgi(const Cgi &other)
@@ -27,7 +23,7 @@ Cgi::Cgi(const Cgi &other)
 // Destructor
 Cgi::~Cgi()
 {
-	std::cout << "\e[2mDestructor Cgi called\e[0m" << std::endl;
+	// std::cout << "\e[2mDestructor Cgi called\e[0m" << std::endl;
 }
 
 // Overloads
@@ -35,7 +31,13 @@ Cgi &Cgi::operator=(const Cgi &other)
 {
 	if (this != &other)
 	{
-		(void)other;
+		_cgiPid = other._cgiPid;
+		_cgiEnv = other._cgiEnv;
+		_cgi2parent[0] = other._cgi2parent[0];
+		_cgi2parent[1] = other._cgi2parent[1];
+		_parent2cgi[0] = other._parent2cgi[0];
+		_parent2cgi[1] = other._parent2cgi[1];
+		_cgiResult = other._cgiResult;
 	}
 	// std::cout << "\e[2mAssignation operator Cgi called\e[0m" << std::endl;
 	return (*this);

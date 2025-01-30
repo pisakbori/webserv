@@ -53,14 +53,10 @@ public:
 	// Parameterized constructor
 	Webserv(std::string configFile);
 
-	// Copy constructor
-	Webserv(const Webserv &);
 
 	// Destructor
 	~Webserv();
 
-	// Overloads
-	Webserv &operator=(const Webserv &);
 
 	// Member functions
 	void configure(std::string configFile);

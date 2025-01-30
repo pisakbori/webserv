@@ -20,8 +20,6 @@ public:
 	// Constructor
 	Cgi();
 
-	// Parameterized constructor
-		
 	// Copy constructor
 		Cgi(const Cgi &);
 		
