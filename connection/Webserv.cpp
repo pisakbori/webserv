@@ -300,7 +300,6 @@ void Webserv::writeToCGIStdin(int i)
 	else
 	{
 		std::cout << "finished writing request\n";
-		// c->setState(Connection::CGI_WRITE_OUTPUT);
 		closeFd(i, "finished writing request body to CGI");
 		_cgiFds.erase(i);
 		c->_cgi->_parent2cgi[1] = -1;

@@ -91,7 +91,6 @@ std::ostream &operator<<(std::ostream &os, const Location &location)
 }
 
 // Member functions
-// TODO:move to utils
 std::string joinStrings(const std::vector<std::string> &vec, const std::string &delimiter)
 {
 	std::ostringstream oss;
