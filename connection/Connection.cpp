@@ -217,16 +217,8 @@ static bool file_in_use(const std::string &filePath)
 	return !file.is_open();
 }
 
-int Connection::deleteResource(std::string uri)
+int Connection::deleteResource(std::filesystem::path path)
 {
-	Server server;
-
-	server = getResponsibleServer();
-	_location = server.get_location(_req->getUri());
-	_location.validate_allowed("DELETE");
-	if (_location.get_redirect().first)
-		return redirect();
-	std::filesystem::path path = _location.get_route(uri);
 	if (!std::filesystem::exists(path))
 		throw HttpError("Oh no! " + _req->getUri() + " not found.", 404);
 	else if (std::filesystem::is_directory(path) && !std::filesystem::is_empty(path))
@@ -330,7 +322,7 @@ int Connection::process()
 			else if (_req->getMethod() == "POST")
 				return postResource(path);
 			else if (_req->getMethod() == "DELETE")
-				return deleteResource(_req->getUri());
+				return deleteResource(path);
 		}
 	}
 	catch (const std::exception &e)

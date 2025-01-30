@@ -1,0 +1,3 @@
+DELETE /../../../cpp06 HTTP/1.1
+Host: localhost
+

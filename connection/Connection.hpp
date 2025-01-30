@@ -30,7 +30,7 @@ private:
 	int getResource(std::filesystem::path path);
 	int openResource(std::filesystem::path path);
 	int postResource(std::filesystem::path path);
-	int deleteResource(std::string path);
+	int deleteResource(std::filesystem::path path);
 	int redirect();
 	int setErrorResponse(const std::exception &e);
 	int _state;

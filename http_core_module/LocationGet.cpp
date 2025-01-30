@@ -43,12 +43,22 @@ std::string Location::get_cgi_path(void) const
 
 std::filesystem::path Location::get_route(const std::string &str)
 {
-	std::filesystem::path route;
+	std::filesystem::path abs_root = std::filesystem::canonical(root);
+	std::filesystem::path requested;
 	if (str == uri)
-		route = std::filesystem::path(root);
+		requested = abs_root;
 	else if (str.find(uri) == 0)
-		route = std::filesystem::path(root) / std::filesystem::path(str.substr(uri.length())).relative_path();
+	{
+		auto requestedRelative = std::filesystem::path(str.substr(uri.length())).relative_path();
+		std::filesystem::path abs_root = std::filesystem::canonical(root);
+		requested = std::filesystem::weakly_canonical(root / requestedRelative);
+
+		std::cout << abs_root << std::endl;
+		std::cout << requested << std::endl;
+		if (requested.string().compare(0, abs_root.string().size(), abs_root.string()) != 0)
+			throw HttpError("Not allowed to go beyond root", 403);
+	}
 	else
 		throw HttpError("Oh no! " + str + " not found.", 404);
-	return route;
+	return requested;
 }
