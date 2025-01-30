@@ -4,9 +4,11 @@ FLAGS		=		-Wall -Wextra -Werror
 STANDARD	=		--std=c++17
 HTTP_DIR	=		http_core_module
 REQ_RES_DIR	=		response_request
+CONNECTION	=		connection
 TEST_DIR	=		tests
 INCLUDE		=		-I./http_core_module -I./connection -I./response_request
-SOURCES     =		$(HTTP_DIR)/Server.cpp \
+SOURCES     =		main.cpp \
+					$(HTTP_DIR)/Server.cpp \
 					$(HTTP_DIR)/ServerSet.cpp \
 					$(HTTP_DIR)/ServerGet.cpp \
 					$(HTTP_DIR)/Listen.cpp \
@@ -19,11 +21,9 @@ SOURCES     =		$(HTTP_DIR)/Server.cpp \
 					$(REQ_RES_DIR)/Request.cpp \
 					$(REQ_RES_DIR)/Response.cpp \
 					$(REQ_RES_DIR)/HttpMessage.cpp \
-					connection/Connection.cpp \
-					connection/Webserv.cpp \
-					connection/Cgi.cpp \
-					# $(TEST_DIR)/server.cpp \
-					# $(TEST_DIR)/location.cpp 
+					$(CONNECTION)/Connection.cpp \
+					$(CONNECTION)/Webserv.cpp \
+					$(CONNECTION)/Cgi.cpp 
 OBJECTS		=		$(SOURCES:.cpp=.o)
 
 all:	$(NAME)
@@ -31,8 +31,8 @@ all:	$(NAME)
 %.o: %.cpp
 	$(COMPILER) $(FLAGS) $(STANDARD) $(INCLUDE) -o $@ -c $<
 
-$(NAME): $(OBJECTS) main.o
-	$(COMPILER) $(OBJECTS) main.o -o $(NAME)
+$(NAME): $(OBJECTS)
+	$(COMPILER) $(OBJECTS) -o $(NAME)
 
 test: $(OBJECTS) test.o
 	$(COMPILER) $(OBJECTS) test.o -o test
