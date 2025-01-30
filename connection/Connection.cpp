@@ -136,10 +136,10 @@ int Connection::getDirectory(std::filesystem::path dirPath)
 		for (size_t i = 0; i < _location.get_index().size(); i++)
 		{
 			std::filesystem::path indexFile = _location.get_index()[i];
-			std::cout << "indexfile:>" << indexFile << "<" << std::endl;
 			std::filesystem::path path = dirPath / indexFile;
+			std::cout << "indexfile:>" << path << "<" << std::endl;
 			// std::filesystem::path route = uri / indexFile;
-			if (std::filesystem::exists(path.string()))
+			if (std::filesystem::exists(path))
 			{
 				std::cout << Colors::RED << "Try open resource " << path.string() << std::endl
 						  << Colors::RESET;
@@ -187,10 +187,8 @@ int Connection::getResource(std::filesystem::path path)
 
 int Connection::postResource(std::filesystem::path path)
 {
-	// how should this work??? if i send a post request to any endpoint, it will upload to a default directory?
-	// only if it doesn't exist? if it exists, act like GET
-	if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
-		return openResource(path);
+	if (std::filesystem::exists(path))
+		return getResource(path);
 	std::string filename = path.filename().string();
 	_res.setCode(201);
 	_res.setContentType(".json");

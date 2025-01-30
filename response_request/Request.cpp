@@ -99,7 +99,7 @@ void Request::parseRequestLine(std::string &line)
 		throw HttpError("Bad Request", 400);
 	Validate::url(_uri);
 	extractQueryString();
-	if (_protocol != "HTTP/1.1")
+	if (_protocol != "HTTP/1.1" && _protocol != "HTTP/1.0")
 		throw HttpError(_protocol + " protocol not supported", 505);
 }
 
