@@ -1,4 +1,2 @@
-http://localhost:8080/index.htm
-http://localhost:8080/about
-http://localhost:8080/mock.py
-http://localhost:8080/mock-cgi.py
+http://2elephants.sytes.net/index.htm
+http://2elephants.sytes.net/videos/smaller.mp4
